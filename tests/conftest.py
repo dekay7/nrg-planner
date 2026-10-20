@@ -22,7 +22,7 @@ def fixture(**overrides):
                        "battery_capacity": 12, "ev_max_amps": 32, "ev_kw_at_max": 7.2,
                        "ev_kwh_per_percent": .6, "departure_time": "08:00:00",
                        "supply_plan": "Hourly ComEd", "delivery_cents": 4, "export_rate": "Supply plus adder", "export_adder_cents": 2,
-                       "summer_guard": False, **overrides})
+                       **overrides})
     prices = [{"start": NOW + i * 3600, "supply": (.005 if i in (7, 8) else .15), "fetched_at": NOW} for i in range(48)]
     solar = {"hours": {str(int(NOW + i * 3600)): 0 for i in range(49)},
              "known": {str(int(NOW + i * 3600)): True for i in range(49)}}

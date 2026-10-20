@@ -122,6 +122,8 @@ class NRGSensor(NRGEntity, SensorEntity):
                 return "Not installed"
             if not self.coordinator.config["battery_control"]:
                 return "Monitoring only"
+            if planned.get("battery_forecast_available") is False:
+                return "Waiting for battery inputs"
             return {"charge": "Buy energy for later", "hold": "Save stored energy", "serve": "Power home from battery"}.get(planned.get(key), "Waiting for plan")
         if key == "ev_actual_status":
             if not self.coordinator.config["has_ev"]:

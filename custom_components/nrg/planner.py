@@ -12,11 +12,6 @@ from .forecast import price_at
 from .tariffs import boundaries as tariff_boundaries
 
 
-def peak(stamp, config, zone):
-    local = datetime.fromtimestamp(stamp, zone)
-    return config["summer_guard"] and local.month in (6, 7, 8, 9) and local.weekday() < 5 and 12 <= local.hour < 19
-
-
 def deadline(now, config, zone, telemetry, previous):
     override = config.get("departure_override")
     if override:
@@ -85,7 +80,6 @@ def make_slots(now, config, zone, stats, prices, solar, live, due):
                      "solar_kwh": solar.get("hours", {}).get(hour, 0) * duration if config["has_solar"] else 0,
                      "solar_known": solar_known,
                      "ev_available": start < due and in_window(start, config, zone),
-                     "peak_precaution": peak(start, config, zone),
                       "display_import_price": price["import_price"], **price,
                       "_model_import_price": model_import, "_model_export_price": model_export})
     return rows
@@ -96,9 +90,6 @@ def allocate(slots, need, power, cutoff, config, kind, all_time=False):
     result = [0.0] * len(slots)
     amps = [0] * len(slots)
     eligible = [i for i, s in enumerate(slots) if s["start"] < cutoff and (all_time or s["ev_available"])]
-    normal = [i for i in eligible if not slots[i]["peak_precaution"]]
-    if kind != "earliest" and sum(max(min(slots[i]["end"], cutoff) - slots[i]["start"], 0) / 3600 * power for i in normal) >= need:
-        eligible = normal
     if kind == "cheapest":
         eligible.sort(key=lambda i: (not slots[i]["price_known"], slots[i].get("_model_import_price", slots[i]["import_price"]), slots[i]["start"]))
     elif kind == "solar":
@@ -183,7 +174,7 @@ def replacement_value(slots, config, capacity=None):
             opportunities.append((credit / eta, solar * eta))
         grid_rate = max(slot["import_price"], 0) / eta
         rates.append(grid_rate)
-        if not slot["peak_precaution"] and quota > solar:
+        if quota > solar:
             opportunities.append((grid_rate, (quota - solar) * eta))
     need = (config["battery_capacity"] if capacity is None else capacity) * (1 - config["backup_reserve"] / 100)
     if need <= 0:
@@ -210,7 +201,7 @@ def battery_search(slots, ev, initial, config, capacity, terminal, available):
         if available and slot["solar_known"] and slot["price_known"] and slot.get("export_known", True):
             if not car or not config["hold_battery_for_ev"]:
                 modes.append("serve")
-            if not car and not slot["peak_precaution"] and config.get("allow_grid_charge", True):
+            if not car and config.get("allow_grid_charge", True):
                 modes.append("charge")
         next_nodes = {}
         for node in nodes.values():
@@ -388,10 +379,21 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
     elif not config["battery_control"]:
         battery_reason = "Battery monitoring only; its own controller decides when it charges or supplies the home."
     elif not available:
-        battery_reason = "Battery telemetry or native-event readiness is incomplete; no discretionary battery action."
+        issues = telemetry.get("guard_issues", [])
+        if issues:
+            battery_reason = "Battery forecast unavailable: " + "; ".join(
+                f"{issue['name']} ({issue['entity_id']}) is {issue['state']}; expected {issue['expected']}" for issue in issues) + "."
+        elif soc is None:
+            battery_reason = "Battery forecast unavailable: battery charge percentage is missing, invalid or stale."
+        elif telemetry.get("battery_controls_ready") is False:
+            battery_reason = "Battery forecast unavailable: battery mode feedback or compatible hold/serve options are missing."
+        elif config["_ev_duration_unknown"] and config["hold_battery_for_ev"]:
+            battery_reason = "Battery forecast unavailable: an active EV session has unknown charging duration."
+        else:
+            battery_reason = "Battery telemetry or native-event readiness is incomplete; no discretionary battery action."
     elif first["ev_kwh"] and config["hold_battery_for_ev"]:
         battery_reason = "Ask the home battery to save its energy while the EV charges."
-    if config["has_battery"] and config["battery_control"] and (not first["price_known"] or not first["export_known"] or not first["solar_known"]):
+    if available and (not first["price_known"] or not first["export_known"] or not first["solar_known"]):
         battery_reason = "Current forecast coverage is incomplete; keep discretionary grid charging off."
     # Do not publish feasibility-only numerical placeholders as tariff data.
     for slot in slots:
@@ -405,7 +407,7 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
             "next_charge": next_charge, "completion": completion,
             "ev_amps": first["ev_amps"],
             "ev_stop_at": first["start"] + first["ev_kwh"] / (power * first["ev_amps"] / config["ev_max_amps"]) * 3600 if first["ev_amps"] else None,
-            "battery_action": first["battery_action"], "battery_reason": battery_reason,
+            "battery_action": first["battery_action"], "battery_reason": battery_reason, "battery_forecast_available": available,
             "battery_target_soc": first["battery_soc"], "effective_capacity_kwh": capacity,
             "terminal_value": terminal, "selected_candidate": best["name"],
              "candidate_costs": [{"name": o["name"], "modeled_cost": round(o["score"], 4) if has_known_cost else None, "shortfall_kwh": o["missing"]} for o in outcomes],

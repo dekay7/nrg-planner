@@ -430,14 +430,6 @@ Accepted range: **0 to 50 ¢/kWh**; adjustable in increments of **0.1 ¢/kWh**.
 
 Reference key: `battery_wear_cents`.
 
-### Summer peak-import precaution
-
-Default: **Off**.
-
-Optional regional precaution: avoid discretionary grid battery charging and, if feasible, EV charging on June–September weekdays noon–7 p.m. Off until explicitly enabled. It is not a predicted dollar saving; departure and charge-now win.
-
-Reference key: `summer_guard`.
-
 ## Notifications
 
 Advice messages are opt-in. Select existing notify services in Configure → Notifications.

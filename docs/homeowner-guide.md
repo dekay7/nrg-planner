@@ -61,6 +61,19 @@ While Observation is selected, schedules are proposals. Devices may currently be
 following another controller. Monitoring-only equipment continues to use its own
 controls; NRG does not promise it will follow the modeled schedule.
 
+## Modeled energy plan: the battery line
+
+The **Battery %** line is the proposed NRG battery trajectory, not the measured
+percentage gauge. It works in **Observation** when battery planning/control is
+enabled and the battery inputs, compatible controls and selected protection guards
+are ready. Observation blocks commands, not this forecast.
+
+With monitoring-only equipment, unavailable battery data, or a missing/active
+selected guard, NRG omits the trajectory instead of inventing a flat percentage.
+The explanation below the chart names the blocker. **Operation → Protection
+guards** also exposes the affected entity and its expected state in More info.
+See [battery-line troubleshooting](troubleshooting.md#the-modeled-battery-line-is-missing).
+
 ## Net energy cost today
 
 Purchases minus export credits are estimated from covered meter readings and the

@@ -113,3 +113,8 @@ as described in [operations](operations.md). Remove the integration through Devi
 component through HACS or your manual file-management method. Check configuration
 before restarting. Use supported HA interfaces for stored configuration/history;
 do not manually edit HA's storage files.
+
+Removing the integration through Devices & services deletes its local learning,
+forecast caches, notification bookkeeping, and measured-cost ledger. Reloads and
+updates preserve these data. HA recorder history and existing backups follow HA's
+own retention settings.
