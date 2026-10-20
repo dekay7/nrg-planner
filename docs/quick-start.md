@@ -1,5 +1,14 @@
 # Quick start
 
+**Goal:** get useful advice before deciding whether to automate any equipment.
+You will need your electricity plan and the existing Home Assistant entities for
+any equipment you select. A Home Assistant **entity** is a single reading or
+control, such as a power sensor or charging switch.
+
+In these steps, **Configure → …** means **Settings → Devices & services → NRG
+Planner → Configure**, then the named section. Work through setup with an
+administrator account. You can return to these forms at any time.
+
 ## 1. Install and select equipment
 
 Follow [installation](installation.md), then add **NRG Planner** in **Settings →
@@ -63,3 +72,18 @@ must report the expected clear state; missing selected guards pause commands.
 Use the native entities or install the [optional dashboards](installation.md#optional-dashboards).
 Compare the inputs, forecast coverage, and proposed actions with actual readings.
 Use the [operations guide](operations.md) when transferring device control.
+
+## What a working setup looks like
+
+- The combined buying price matches your supply plus delivery. Blank prices call
+  for a coverage check, not an assumption that electricity is free.
+- The plan has a current explanation; a grid-only home can use price advice with
+  no EV, battery, solar, or site power meter.
+- Installed equipment readings make sense next to your meters or device apps.
+  Daily cost appears only when sufficient site readings and prices are covered.
+- In Observation, a proposed charging/battery action is advice rather than a
+  device command. You can stay in this mode for ongoing monitoring.
+
+You are ready for everyday use. Read the [homeowner guide](homeowner-guide.md) for
+the graphs, [common questions](faq.md) for typical decisions, or
+[troubleshooting](troubleshooting.md) if an expected reading is missing.

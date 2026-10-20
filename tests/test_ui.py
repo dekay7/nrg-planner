@@ -1,7 +1,10 @@
 from pathlib import Path
+from collections import Counter
+from html.parser import HTMLParser
 import json
 import subprocess
 import hashlib
+from urllib.parse import unquote, urlsplit
 
 import yaml
 
@@ -62,3 +65,55 @@ def test_handbook_links_bypass_ha_month_long_static_cache_after_updates():
     for filename in ("nrg-home.yaml","nrg-settings.yaml"):
         text=(INTEGRATION/"dashboards"/filename).read_text()
         assert "/nrg-planner/guide.html?v="+digest in text
+
+
+class HandbookParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.ids = []
+        self.links = []
+        self.tags = []
+        self.tables = []
+        self.headers = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        self.tags.append(tag)
+        if "id" in attrs:
+            self.ids.append(attrs["id"])
+        if tag == "a":
+            self.links.append(attrs["href"])
+        if tag == "div" and attrs.get("class") == "table-scroll":
+            self.tables.append(attrs)
+        if tag == "th":
+            self.headers.append(attrs)
+
+
+def test_handbook_is_self_contained_and_every_local_link_resolves():
+    page = HandbookParser()
+    page.feed((INTEGRATION / "assets/guide.html").read_text())
+    assert not {"script", "link", "img", "iframe", "object", "embed", "form"}.intersection(page.tags)
+    assert not [key for key, count in Counter(page.ids).items() if count > 1]
+    for target in page.links:
+        parts = urlsplit(target)
+        if not parts.scheme and not parts.netloc:
+            assert not parts.path, f"Link would leave the bundled handbook: {target}"
+            assert unquote(parts.fragment) in page.ids, f"Missing handbook target: {target}"
+    # In particular, root-level privacy and its relative links must work locally.
+    assert "#privacy-diagnostics-and-support" in page.links
+    assert "#installation-optional-dashboards" in page.links
+
+
+def test_handbook_has_accessible_navigation_and_complete_user_help():
+    page = HandbookParser()
+    page.feed((INTEGRATION / "assets/guide.html").read_text())
+    assert page.tags.count("h1") == 1
+    assert page.tags.count("main") == 1
+    assert "#content" in page.links
+    assert {"overview", "installation", "quick-start", "homeowner-guide", "operations",
+            "faq", "pricing", "integrations", "learning", "settings", "troubleshooting",
+            "glossary", "privacy", "design", "accounting", "alternatives", "review"} <= set(page.ids)
+    assert page.tables
+    assert all(table.get("role") == "region" and table.get("aria-label")
+               and table.get("tabindex") == "0" for table in page.tables)
+    assert page.headers and all(header.get("scope") == "col" for header in page.headers)

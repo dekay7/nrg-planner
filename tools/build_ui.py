@@ -9,6 +9,7 @@ import html
 import hashlib
 import re
 import sys
+from urllib.parse import unquote, urlsplit
 
 import yaml
 import markdown as md
@@ -16,7 +17,7 @@ import markdown as md
 ROOT = Path(__file__).resolve().parents[1]
 INTEGRATION = ROOT / "custom_components/nrg"
 sys.path.insert(0, str(ROOT))
-from custom_components.nrg.const import MAPPINGS, SETTINGS, CONTROL_VALUES, COMMAND_SCRIPTS
+from custom_components.nrg.const import MAPPINGS, SETTINGS, CONTROL_VALUES, COMMAND_SCRIPTS, VERSION
 from custom_components.nrg.sensor import METRICS
 
 DISPLAY = {"ev": "EV"}
@@ -36,32 +37,121 @@ def markdown(content):
 
 def handbook():
     """One locally hosted, responsive handbook; no scripts or external assets."""
-    chapters = [("README", "overview", "Overview"), ("quick-start", "quick-start", "Quick start"),
-                ("homeowner-guide", "homeowner-guide", "Homeowner guide"), ("pricing", "pricing", "Pricing periods"),
-                ("learning", "learning", "Learning explained"), ("settings", "settings", "Every setting"),
-                ("integrations", "integrations", "Integrations"), ("design", "design", "How it works"),
-                ("accounting", "accounting", "Costs"), ("installation", "installation", "Installation"),
-                ("operations", "operations", "Operations")]
-    mapping = {name + ".md": key for name, key, _ in chapters}
+    chapters = [
+        ("docs/README.md", "overview", "Start here", "Getting started"),
+        ("docs/installation.md", "installation", "Installation & updates", "Getting started"),
+        ("docs/quick-start.md", "quick-start", "Quick start", "Getting started"),
+        ("docs/homeowner-guide.md", "homeowner-guide", "Read the dashboard", "Everyday use"),
+        ("docs/operations.md", "operations", "Operation & handover", "Everyday use"),
+        ("docs/faq.md", "faq", "Common questions", "Everyday use"),
+        ("docs/pricing.md", "pricing", "Electricity pricing", "Set up your home"),
+        ("docs/integrations.md", "integrations", "Equipment & adapters", "Set up your home"),
+        ("docs/learning.md", "learning", "Learning explained", "Set up your home"),
+        ("docs/settings.md", "settings", "Every setting", "Set up your home"),
+        ("docs/troubleshooting.md", "troubleshooting", "Troubleshooting & support", "Help & reference"),
+        ("docs/glossary.md", "glossary", "Plain-language glossary", "Help & reference"),
+        ("PRIVACY.md", "privacy", "Privacy & diagnostics", "Help & reference"),
+        ("docs/design.md", "design", "How planning works", "Deeper reading"),
+        ("docs/accounting.md", "accounting", "Costs & accounting", "Deeper reading"),
+        ("docs/alternatives.md", "alternatives", "Other energy planners", "Deeper reading"),
+        ("docs/review.md", "review", "Project review", "Deeper reading"),
+    ]
+    mapping = {(ROOT / name).resolve(): key for name, key, _, _ in chapters}
     sections = []
-    for name, key, _ in chapters:
-        content = md.markdown((ROOT / "docs" / (name + ".md")).read_text(), extensions=["tables", "fenced_code", "toc"])
+    groups = {}
+    for name, key, label, group in chapters:
+        source = ROOT / name
+        renderer = md.Markdown(extensions=["tables", "fenced_code", "toc"],
+                               extension_configs={"toc": {"toc_depth": "2-3"}})
+        content = renderer.convert(source.read_text())
+        # Keep the page's single h1 in its header and preserve chapter hierarchy.
+        content = re.sub(r"<(/?)h([1-6])\b", lambda m: f"<{m[1]}h{min(int(m[2]) + 1, 6)}", content)
+        if renderer.toc:
+            topics = (f'<details class="chapter-contents"><summary>In this chapter</summary>'
+                      f'<nav aria-label="{html.escape(label, quote=True)} topics">{renderer.toc}</nav></details>')
+            content = re.sub(r"(<h2\b[^>]*>.*?</h2>)", lambda m: m[0] + topics, content, count=1, flags=re.S)
         content = re.sub(r'id="([^"]+)"', lambda m: f'id="{key}-{m[1]}"', content)
+
         def link(match):
-            target = match[1]
-            filename, _, anchor = target.partition("#")
-            if filename in mapping:
-                target = "#" + mapping[filename] + ("-" + anchor if anchor else "")
-            elif target.startswith("#"):
-                target = "#" + key + "-" + target[1:]
+            target = html.unescape(match[1])
+            parts = urlsplit(target)
+            if not parts.scheme and not parts.netloc:
+                destination = (source.parent / unquote(parts.path)).resolve() if parts.path else source.resolve()
+                if destination in mapping:
+                    target = "#" + mapping[destination] + ("-" + parts.fragment if parts.fragment else "")
+                elif parts.path.endswith(".md"):
+                    raise ValueError(f"Handbook link is not bundled: {name} → {target}")
             return 'href="' + html.escape(target, quote=True) + '"'
+
         content = re.sub(r'href="([^"]+)"', link, content)
-        sections.append(f'<section id="{key}">{content}<p><a href="#top">Back to contents</a></p></section>')
-    nav = " ".join(f'<a href="#{key}">{label}</a>' for _, key, label in chapters)
-    output = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NRG Planner · Household handbook</title><style>
-body{font:17px/1.65 system-ui,sans-serif;margin:0;background:#f2f5fa;color:#172b4d}main{max-width:1000px;margin:auto;padding:20px}header,section{background:white;border-radius:16px;padding:28px;margin-bottom:22px}h1,h2,h3{line-height:1.25;scroll-margin-top:20px}a{color:#0069b5}nav{display:flex;gap:12px;flex-wrap:wrap}nav a{background:#e9f3ff;border-radius:8px;padding:8px 12px;text-decoration:none}pre{overflow:auto;background:#f5f7fa;padding:14px;border-radius:8px;font-size:14px}code{overflow-wrap:anywhere}table{display:block;overflow-x:auto;border-collapse:collapse}th,td{border:1px solid #dce2eb;padding:8px 12px;text-align:left}th{background:#f2f5fa}section{overflow-wrap:anywhere}@media(max-width:600px){body{font-size:16px}main{padding:10px}header,section{padding:18px}}
-</style></head><body><main><header id="top"><h1>NRG household energy handbook</h1><p>Understand the dashboard, adjust settings, and see exactly how the planner makes decisions.</p><nav>""" + nav + "</nav></header>" + "".join(sections) + "</main></body></html>\n"
+        # Wide reference tables and code remain keyboard-scrollable on phones.
+        table_number = 0
+
+        def table(match):
+            nonlocal table_number
+            table_number += 1
+            title = html.escape(f"{label} table {table_number}", quote=True)
+            markup = re.sub(r"<th(\s[^>]*)?>", lambda m: '<th scope="col"' + (m[1] or "") + ">", match[0])
+            return (f'<div class="table-scroll" role="region" aria-label="{title}" tabindex="0">'
+                    + markup + "</div>")
+
+        content = re.sub(r"<table>.*?</table>", table, content, flags=re.S)
+        content = content.replace("<pre>", '<pre tabindex="0" aria-label="Code example">')
+        sections.append(f'<section id="{key}" aria-label="{html.escape(label, quote=True)}">{content}'
+                        '<p class="back"><a href="#contents">Back to contents ↑</a></p></section>')
+        groups.setdefault(group, []).append(f'<li><a href="#{key}">{html.escape(label)}</a></li>')
+    nav = "".join(f'<div class="nav-group"><h2>{html.escape(group)}</h2><ul>{"".join(items)}</ul></div>'
+                  for group, items in groups.items())
+    output = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="NRG Planner's plain-language Home Assistant guide: installation, electricity pricing, EV and battery setup, everyday use, troubleshooting, and every setting.">
+<title>NRG Planner · User wiki &amp; handbook</title>
+<style>
+:root{color-scheme:light dark;--bg:#f4f7f8;--paper:#fff;--ink:#192d35;--muted:#506570;--line:#d9e3e7;--accent:#096b5c;--soft:#edf6f3;--code:#f0f4f6}
+*{box-sizing:border-box}html{scroll-padding-top:1.5rem}body{margin:0;background:var(--bg);color:var(--ink);font:1rem/1.7 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+a{color:var(--accent);text-underline-offset:.18em}a:hover{text-decoration-thickness:2px}a:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--accent);outline-offset:4px;border-radius:3px}
+.skip{position:fixed;top:12px;left:12px;z-index:2;padding:.7rem 1rem;background:var(--paper);transform:translateY(-180%)}.skip:focus{transform:none}
+.shell{max-width:1280px;margin:auto;padding:32px 28px}.hero{padding:36px 40px;border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:14px;background:var(--paper)}
+.eyebrow{margin:0 0 8px;color:var(--accent);font-size:.78rem;font-weight:750;letter-spacing:.13em;text-transform:uppercase}h1{margin:0;font-size:clamp(2rem,5vw,3rem);line-height:1.15;letter-spacing:-.035em}.intro{max-width:65ch;font-size:1.1rem;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0}.button{display:inline-block;padding:9px 16px;border:1px solid var(--accent);border-radius:7px;text-decoration:none;font-weight:650}.button.primary{color:var(--paper);background:var(--accent)}.button:hover{text-decoration:underline}
+.reading-help,.meta{font-size:.875rem;color:var(--muted)}.reading-help{margin-bottom:0}kbd{font:inherit;border:1px solid var(--line);border-radius:4px;padding:1px 5px;background:var(--code)}
+.layout{display:grid;grid-template-columns:245px minmax(0,1fr);gap:28px;align-items:start;margin-top:28px}.contents{position:sticky;top:20px;max-height:calc(100vh - 40px);overflow:auto;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+summary{cursor:pointer;font-weight:650}.contents summary{font-size:1.05rem}.nav-group h2{margin:22px 0 6px;color:var(--muted);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase}.nav-group ul{list-style:none;padding:0;margin:0}.nav-group a{display:block;padding:7px 8px;border-radius:5px;font-size:.9rem;line-height:1.4;text-decoration:none}.nav-group a:hover{background:var(--soft);text-decoration:underline}
+main{min-width:0}section{margin-bottom:24px;padding:32px 36px;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow-wrap:anywhere}section>:first-child{margin-top:0}h2,h3,h4,h5,h6{line-height:1.3;letter-spacing:-.015em}section h2{font-size:1.75rem}h3{margin:2.2rem 0 .7rem;font-size:1.22rem}h4{font-size:1.05rem}p,ul,ol{margin-top:.7rem;margin-bottom:1rem}li{margin:.3rem 0}li>p{margin:.4rem 0}ul,ol{padding-left:1.4rem}[id]{scroll-margin-top:24px}
+.chapter-contents{border:1px solid var(--line);border-radius:7px;padding:10px 14px;margin:18px 0 24px;background:var(--soft);font-size:.9rem}.chapter-contents ul{margin:8px 0;padding-left:1.2rem}.chapter-contents li{margin:5px 0}
+code{font-size:.875em;background:var(--code);padding:2px 5px;border-radius:4px}pre{max-width:100%;overflow:auto;background:var(--code);padding:16px;border:1px solid var(--line);border-radius:7px;font-size:.85rem;line-height:1.6;white-space:pre;overflow-wrap:normal}pre code{padding:0;background:none;font-size:inherit}
+.table-scroll{max-width:100%;overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:7px}table{width:100%;min-width:28rem;border-collapse:collapse;font-size:.92rem}th,td{padding:11px 13px;vertical-align:top;text-align:left;border-bottom:1px solid var(--line);overflow-wrap:normal}th{background:var(--soft);font-weight:650}tr:last-child td{border-bottom:0}td+td,th+th{border-left:1px solid var(--line)}
+blockquote{margin:20px 0;padding:4px 18px;border-left:3px solid var(--accent);background:var(--soft)}hr{border:0;border-top:1px solid var(--line);margin:28px 0}.back{margin:28px 0 0;padding-top:18px;border-top:1px solid var(--line);font-size:.85rem}footer{margin:24px 0 0;text-align:center;font-size:.85rem;color:var(--muted)}
+@media(prefers-color-scheme:dark){:root{--bg:#101b20;--paper:#16262d;--ink:#e5eef1;--muted:#afc3cc;--line:#354b55;--accent:#85dcc1;--soft:#1d3638;--code:#102127}.button.primary{color:#102127}}
+@media(max-width:900px){.layout{grid-template-columns:minmax(0,1fr);gap:20px}.contents{position:static;max-height:none}.contents nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0 20px}.nav-group h2{margin-top:16px}}
+@media(max-width:600px){.shell{padding:16px 12px}.hero{padding:24px 20px}section{padding:24px 20px}section h2{font-size:1.5rem}th,td{padding:9px 10px}.table-scroll::before{content:"↔ Swipe or scroll for the full table";display:block;position:sticky;left:0;padding:8px 10px;font-size:.8rem;color:var(--muted);background:var(--soft)}.actions .button{flex:1;text-align:center}.layout{margin-top:20px}}
+@media print{:root{color-scheme:light;--bg:#fff;--paper:#fff;--ink:#000;--muted:#333;--line:#ccc;--accent:#000;--soft:#f5f5f5;--code:#f5f5f5}body{font-size:10.5pt}.shell{max-width:none;padding:0}.hero{padding:0 0 18px;border:0;border-bottom:1px solid #ccc;border-radius:0}.layout{display:block;margin-top:0}.contents,.skip,.actions,.reading-help,.chapter-contents,.back{display:none}section{padding:20px 0;margin:0;border:0;border-radius:0}h2,h3,h4{break-after:avoid}table,pre,blockquote{break-inside:avoid}.table-scroll{overflow:visible}pre{white-space:pre-wrap;overflow-wrap:anywhere}a{text-decoration:underline}footer{text-align:left}}
+</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to documentation</a>
+<div class="shell">
+<header class="hero" id="top">
+<p class="eyebrow">NRG Planner / Documentation</p>
+<h1>Your home energy handbook.</h1>
+<p class="intro">From your first electricity rate to everyday energy decisions. Clear explanations, practical setup steps, and the details when you need them.</p>
+<div class="actions"><a class="button primary" href="#quick-start">Get started</a><a class="button" href="#homeowner-guide">Read the dashboard</a><a class="button" href="#troubleshooting">Solve a problem</a></div>
+<p class="meta">Version """ + html.escape(VERSION) + """ · Private-review snapshot · Home Assistant 2026.10.2+ · USD pricing</p>
+<p class="reading-help">Find anything with your browser's <strong>Find in page</strong> (<kbd>Ctrl F</kbd> or <kbd>⌘ F</kbd>). Use <strong>Print → Save as PDF</strong> to keep a copy. This page contains generic guidance, not your live settings.</p>
+</header>
+<div class="layout">
+<aside class="contents" id="contents" tabindex="-1"><details open><summary>Contents</summary><nav aria-label="Handbook chapters">""" + nav + """</nav></details></aside>
+<main id="content" tabindex="-1">""" + "".join(sections) + """</main>
+</div>
+<footer>NRG Planner · Bundled with your integration · No scripts, external fonts, or external assets. <a href="#top">Back to top ↑</a></footer>
+</div>
+</body>
+</html>
+"""
     target = INTEGRATION / "assets/guide.html"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(output)
@@ -452,9 +542,42 @@ Includes remaining-energy value and any configured cycling cost. This is a model
     target = ROOT / "custom_components/nrg/translations/en.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(text)
-    reference = ["# Settings reference", "", "Generated from the same catalogue as the UI. All settings persist across HA restarts; the charge-now override is intentionally session-only.", "", "Open **NRG Planner settings**, or **Settings → Devices & services → NRG Planner → Configure**.", ""]
-    for key, field in SETTINGS.items():
-        reference.extend([f"## {field.name}", f"`{key}` · {field.section} · Default: **{field.default if field.default is not None else 'unset'}**" + (f" {field.unit}" if field.unit else ""), "", field.description, ""])
+    reference = ["# Settings reference", "",
+                 "Open **NRG Planner settings**, or **Settings → Devices & services → NRG Planner → Configure**.", "",
+                 "These descriptions and defaults are generated from the same catalogue as the setup forms. "
+                 "**On** means enabled; **Off** means disabled. **Unset** means no value has been supplied, not zero. "
+                 "Numeric ranges describe what the form accepts, not what your equipment supports.", "",
+                 "All settings below persist across HA restarts. The separate charge-now override is intentionally "
+                 "session-only; see [everyday controls](operations.md#everyday-controls).", ""]
+    setting_groups = {
+        "components": ("Components", "Select the equipment you have. Monitoring and command permission are separate."),
+        "operation": ("Operation", "Choose whether schedules remain proposals or can operate enabled equipment."),
+        "tariff": ("Tariff", "Set your supply, delivery, and export pricing. For timed rates, use [Pricing periods](pricing.md#editing-timed-periods-in-ha)."),
+        "solar": ("Solar", "Only relevant when solar is enabled. These settings adjust predictions, not measured production."),
+        "battery": ("Battery", "Only relevant when a home battery is enabled. Review the generic assumptions against your equipment."),
+        "ev": ("EV", "Only relevant when an EV is enabled. Review charging limits and times for your own vehicle and routine."),
+        "planning": ("Planning", "Set household-demand estimates, reference-appliance advice, and optional planning preferences."),
+        "notifications": ("Notifications", "Advice messages are opt-in. Select existing notify services in Configure → Notifications."),
+        "measurements": ("Meter conventions", "Normalize the readings reported by your existing integrations."),
+    }
+    for group, (label, description) in setting_groups.items():
+        reference.extend([f"## {label}", "", description, ""])
+        for key, field in SETTINGS.items():
+            if field.section != group:
+                continue
+            if isinstance(field.default, bool):
+                default = "On" if field.default else "Off"
+            else:
+                default = str(field.default) if field.default is not None else "Unset"
+            if field.unit and field.default is not None:
+                default += " " + field.unit
+            reference.extend([f"### {field.name}", "", f"Default: **{default}**.", "", field.description, ""])
+            if field.choices:
+                reference.extend(["Choices: " + ", ".join(f"**{choice}**" for choice in field.choices) + ".", ""])
+            if field.kind == "number":
+                reference.extend([f"Accepted range: **{field.low:g} to {field.high:g} {field.unit or ''}**; "
+                                  f"adjustable in increments of **{field.step:g} {field.unit or ''}**.", ""])
+            reference.extend([f"Reference key: `{key}`.", ""])
     (ROOT / "docs/settings.md").write_text("\n".join(reference))
     handbook()
     guide_version = hashlib.sha256((INTEGRATION / "assets/guide.html").read_bytes()).hexdigest()[:12]

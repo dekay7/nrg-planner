@@ -1,11 +1,47 @@
 # Installation and updates
 
+## What to have ready
+
+Use a Home Assistant administrator account and Home Assistant **2026.10.2 or
+newer**; this snapshot targets 2026.10.2. NRG runs inside HA, so end users do not
+need Python, Node.js, or build tools. Generated dashboards and the handbook are
+already included.
+
+The **HA configuration directory** is the folder containing your
+`configuration.yaml`, commonly `/config` on Home Assistant OS. Open it using your
+existing file-management method, such as File editor, Studio Code Server, or a
+network share. Other installation types may keep it at a different path.
+
 ## Private review
 
 HACS requires a public GitHub repository. While this repository remains private,
-download it using an authorized GitHub account and copy `custom_components/nrg/`
-into the HA configuration directory's `custom_components/nrg/`. Restart HA and
-add **NRG Planner** in Devices & services. No SSH deployer or site file is needed.
+install as follows:
+
+1. Download and extract the repository using an authorized GitHub account. On
+   GitHub, **Code → Download ZIP** provides a copy of the selected branch.
+2. Open your HA configuration directory. Create `custom_components` there if it
+   does not exist.
+3. Copy the repository's **`custom_components/nrg/` folder**, including all its
+   contents, into that directory. The result should look like this:
+
+   ```text
+   <HA configuration directory>/
+     configuration.yaml
+     custom_components/
+       nrg/
+         __init__.py
+         manifest.json
+         assets/
+         dashboards/
+         ...
+   ```
+
+4. Restart Home Assistant.
+5. Open **Settings → Devices & services → Add integration**, search for
+   **NRG Planner**, and follow the [quick start](quick-start.md).
+
+No SSH deployer or site file is needed. If NRG does not appear, see
+[troubleshooting](troubleshooting.md#nrg-does-not-appear-in-add-integration).
 
 No Git history, tests, development tools, or repository data files belong in the
 installed component directory beyond the files already under `custom_components/nrg/`.
@@ -59,7 +95,11 @@ rename those IDs, use your own dashboard copy and update the references. Keep
 customizations outside the integration directory so component updates preserve them.
 
 The local handbook is served at `/nrg-planner/guide.html` when HA's HTTP integration
-is available. Its contents are generic and do not include saved configuration.
+is available. Open that path on your own HA address, or use the handbook link in
+**Why?** or **Operation**. Its contents are generic and do not include saved
+configuration. It includes troubleshooting, FAQs, a glossary, and privacy details.
+There are no scripts, external fonts, or external assets. Use browser Find to
+search and Print to save a PDF; reading a loaded copy needs no internet connection.
 
 ## Updates and removal
 

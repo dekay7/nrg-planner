@@ -69,10 +69,15 @@ assets, but does not edit your HA configuration or register dashboard packages.
 
 ## Documentation
 
+- **[User wiki and complete documentation](docs/README.md)** — plain-language
+  overview, setup paths, everyday use, and a guide to every topic. Also bundled
+  as a self-contained, script-free page at `/nrg-planner/guide.html` in HA.
 - [Quick start](docs/quick-start.md) · [Installation and dashboards](docs/installation.md)
 - [Pricing](docs/pricing.md) · [Every setting](docs/settings.md)
 - [Integrations and adapters](docs/integrations.md) · [Learning](docs/learning.md)
 - [Homeowner guide](docs/homeowner-guide.md) · [Operations](docs/operations.md)
+- [Troubleshooting and support](docs/troubleshooting.md) · [Common questions](docs/faq.md)
+- [Plain-language glossary](docs/glossary.md)
 - [Privacy](PRIVACY.md) · [Review and publication gates](docs/review.md)
 - [Free alternatives and intended community value](docs/alternatives.md)
 

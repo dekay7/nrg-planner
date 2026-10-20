@@ -1,92 +1,406 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NRG Planner · Household handbook</title><style>
-body{font:17px/1.65 system-ui,sans-serif;margin:0;background:#f2f5fa;color:#172b4d}main{max-width:1000px;margin:auto;padding:20px}header,section{background:white;border-radius:16px;padding:28px;margin-bottom:22px}h1,h2,h3{line-height:1.25;scroll-margin-top:20px}a{color:#0069b5}nav{display:flex;gap:12px;flex-wrap:wrap}nav a{background:#e9f3ff;border-radius:8px;padding:8px 12px;text-decoration:none}pre{overflow:auto;background:#f5f7fa;padding:14px;border-radius:8px;font-size:14px}code{overflow-wrap:anywhere}table{display:block;overflow-x:auto;border-collapse:collapse}th,td{border:1px solid #dce2eb;padding:8px 12px;text-align:left}th{background:#f2f5fa}section{overflow-wrap:anywhere}@media(max-width:600px){body{font-size:16px}main{padding:10px}header,section{padding:18px}}
-</style></head><body><main><header id="top"><h1>NRG household energy handbook</h1><p>Understand the dashboard, adjust settings, and see exactly how the planner makes decisions.</p><nav><a href="#overview">Overview</a> <a href="#quick-start">Quick start</a> <a href="#homeowner-guide">Homeowner guide</a> <a href="#pricing">Pricing periods</a> <a href="#learning">Learning explained</a> <a href="#settings">Every setting</a> <a href="#integrations">Integrations</a> <a href="#design">How it works</a> <a href="#accounting">Costs</a> <a href="#installation">Installation</a> <a href="#operations">Operations</a></nav></header><section id="overview"><h1 id="overview-nrg-planner">NRG Planner</h1>
-<p>NRG Planner combines household electricity prices, optional solar forecasts,
-optional home batteries and optional EVs into understandable energy advice.
-Everything is configured through Home Assistant. It works with <strong>any combination
-of those components</strong>, including a grid-only home with no EV, battery or panels.</p>
-<p><strong>Start:</strong> <a href="#quick-start">Quick start</a> · <a href="#homeowner-guide">Homeowner dashboard</a></p>
-<p><strong>Configure:</strong> <a href="#pricing">Electricity pricing</a> · <a href="#settings">Every setting</a> ·
-<a href="#integrations">Integrations and control adapters</a></p>
-<p><strong>Understand:</strong> <a href="#learning">Learning and calibration</a> · <a href="#design">Exact planning method</a> ·
-<a href="#accounting">Money and energy accounting</a></p>
-<p><strong>Install:</strong> <a href="#installation">Installation and optional dashboards</a></p>
-<p><strong>Operate:</strong> <a href="#operations">Handover and recovery</a></p>
-<p>The complete phone-friendly handbook is also installed at
-<strong><code>/nrg-planner/guide.html</code></strong>, linked from Why? and Operation. No developer tools or
-GitHub account are needed to read it.</p>
-<h2 id="overview-fit-the-home-rather-than-requiring-particular-equipment">Fit the home, rather than requiring particular equipment</h2>
-<p>Under <strong>Configure → Components</strong>, choose whether the home has an EV, stationary
-battery and/or solar. Each can be monitored without giving NRG control. Components
-you turn off need no sensors, forecasts, calibration or controls, and their
-homeowner cards are hidden.</p>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="NRG Planner's plain-language Home Assistant guide: installation, electricity pricing, EV and battery setup, everyday use, troubleshooting, and every setting.">
+<title>NRG Planner · User wiki &amp; handbook</title>
+<style>
+:root{color-scheme:light dark;--bg:#f4f7f8;--paper:#fff;--ink:#192d35;--muted:#506570;--line:#d9e3e7;--accent:#096b5c;--soft:#edf6f3;--code:#f0f4f6}
+*{box-sizing:border-box}html{scroll-padding-top:1.5rem}body{margin:0;background:var(--bg);color:var(--ink);font:1rem/1.7 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+a{color:var(--accent);text-underline-offset:.18em}a:hover{text-decoration-thickness:2px}a:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--accent);outline-offset:4px;border-radius:3px}
+.skip{position:fixed;top:12px;left:12px;z-index:2;padding:.7rem 1rem;background:var(--paper);transform:translateY(-180%)}.skip:focus{transform:none}
+.shell{max-width:1280px;margin:auto;padding:32px 28px}.hero{padding:36px 40px;border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:14px;background:var(--paper)}
+.eyebrow{margin:0 0 8px;color:var(--accent);font-size:.78rem;font-weight:750;letter-spacing:.13em;text-transform:uppercase}h1{margin:0;font-size:clamp(2rem,5vw,3rem);line-height:1.15;letter-spacing:-.035em}.intro{max-width:65ch;font-size:1.1rem;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0}.button{display:inline-block;padding:9px 16px;border:1px solid var(--accent);border-radius:7px;text-decoration:none;font-weight:650}.button.primary{color:var(--paper);background:var(--accent)}.button:hover{text-decoration:underline}
+.reading-help,.meta{font-size:.875rem;color:var(--muted)}.reading-help{margin-bottom:0}kbd{font:inherit;border:1px solid var(--line);border-radius:4px;padding:1px 5px;background:var(--code)}
+.layout{display:grid;grid-template-columns:245px minmax(0,1fr);gap:28px;align-items:start;margin-top:28px}.contents{position:sticky;top:20px;max-height:calc(100vh - 40px);overflow:auto;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+summary{cursor:pointer;font-weight:650}.contents summary{font-size:1.05rem}.nav-group h2{margin:22px 0 6px;color:var(--muted);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase}.nav-group ul{list-style:none;padding:0;margin:0}.nav-group a{display:block;padding:7px 8px;border-radius:5px;font-size:.9rem;line-height:1.4;text-decoration:none}.nav-group a:hover{background:var(--soft);text-decoration:underline}
+main{min-width:0}section{margin-bottom:24px;padding:32px 36px;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow-wrap:anywhere}section>:first-child{margin-top:0}h2,h3,h4,h5,h6{line-height:1.3;letter-spacing:-.015em}section h2{font-size:1.75rem}h3{margin:2.2rem 0 .7rem;font-size:1.22rem}h4{font-size:1.05rem}p,ul,ol{margin-top:.7rem;margin-bottom:1rem}li{margin:.3rem 0}li>p{margin:.4rem 0}ul,ol{padding-left:1.4rem}[id]{scroll-margin-top:24px}
+.chapter-contents{border:1px solid var(--line);border-radius:7px;padding:10px 14px;margin:18px 0 24px;background:var(--soft);font-size:.9rem}.chapter-contents ul{margin:8px 0;padding-left:1.2rem}.chapter-contents li{margin:5px 0}
+code{font-size:.875em;background:var(--code);padding:2px 5px;border-radius:4px}pre{max-width:100%;overflow:auto;background:var(--code);padding:16px;border:1px solid var(--line);border-radius:7px;font-size:.85rem;line-height:1.6;white-space:pre;overflow-wrap:normal}pre code{padding:0;background:none;font-size:inherit}
+.table-scroll{max-width:100%;overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:7px}table{width:100%;min-width:28rem;border-collapse:collapse;font-size:.92rem}th,td{padding:11px 13px;vertical-align:top;text-align:left;border-bottom:1px solid var(--line);overflow-wrap:normal}th{background:var(--soft);font-weight:650}tr:last-child td{border-bottom:0}td+td,th+th{border-left:1px solid var(--line)}
+blockquote{margin:20px 0;padding:4px 18px;border-left:3px solid var(--accent);background:var(--soft)}hr{border:0;border-top:1px solid var(--line);margin:28px 0}.back{margin:28px 0 0;padding-top:18px;border-top:1px solid var(--line);font-size:.85rem}footer{margin:24px 0 0;text-align:center;font-size:.85rem;color:var(--muted)}
+@media(prefers-color-scheme:dark){:root{--bg:#101b20;--paper:#16262d;--ink:#e5eef1;--muted:#afc3cc;--line:#354b55;--accent:#85dcc1;--soft:#1d3638;--code:#102127}.button.primary{color:#102127}}
+@media(max-width:900px){.layout{grid-template-columns:minmax(0,1fr);gap:20px}.contents{position:static;max-height:none}.contents nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0 20px}.nav-group h2{margin-top:16px}}
+@media(max-width:600px){.shell{padding:16px 12px}.hero{padding:24px 20px}section{padding:24px 20px}section h2{font-size:1.5rem}th,td{padding:9px 10px}.table-scroll::before{content:"↔ Swipe or scroll for the full table";display:block;position:sticky;left:0;padding:8px 10px;font-size:.8rem;color:var(--muted);background:var(--soft)}.actions .button{flex:1;text-align:center}.layout{margin-top:20px}}
+@media print{:root{color-scheme:light;--bg:#fff;--paper:#fff;--ink:#000;--muted:#333;--line:#ccc;--accent:#000;--soft:#f5f5f5;--code:#f5f5f5}body{font-size:10.5pt}.shell{max-width:none;padding:0}.hero{padding:0 0 18px;border:0;border-bottom:1px solid #ccc;border-radius:0}.layout{display:block;margin-top:0}.contents,.skip,.actions,.reading-help,.chapter-contents,.back{display:none}section{padding:20px 0;margin:0;border:0;border-radius:0}h2,h3,h4{break-after:avoid}table,pre,blockquote{break-inside:avoid}.table-scroll{overflow:visible}pre{white-space:pre-wrap;overflow-wrap:anywhere}a{text-decoration:underline}footer{text-align:left}}
+</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to documentation</a>
+<div class="shell">
+<header class="hero" id="top">
+<p class="eyebrow">NRG Planner / Documentation</p>
+<h1>Your home energy handbook.</h1>
+<p class="intro">From your first electricity rate to everyday energy decisions. Clear explanations, practical setup steps, and the details when you need them.</p>
+<div class="actions"><a class="button primary" href="#quick-start">Get started</a><a class="button" href="#homeowner-guide">Read the dashboard</a><a class="button" href="#troubleshooting">Solve a problem</a></div>
+<p class="meta">Version 0.1.0 · Private-review snapshot · Home Assistant 2026.10.2+ · USD pricing</p>
+<p class="reading-help">Find anything with your browser's <strong>Find in page</strong> (<kbd>Ctrl F</kbd> or <kbd>⌘ F</kbd>). Use <strong>Print → Save as PDF</strong> to keep a copy. This page contains generic guidance, not your live settings.</p>
+</header>
+<div class="layout">
+<aside class="contents" id="contents" tabindex="-1"><details open><summary>Contents</summary><nav aria-label="Handbook chapters"><div class="nav-group"><h2>Getting started</h2><ul><li><a href="#overview">Start here</a></li><li><a href="#installation">Installation &amp; updates</a></li><li><a href="#quick-start">Quick start</a></li></ul></div><div class="nav-group"><h2>Everyday use</h2><ul><li><a href="#homeowner-guide">Read the dashboard</a></li><li><a href="#operations">Operation &amp; handover</a></li><li><a href="#faq">Common questions</a></li></ul></div><div class="nav-group"><h2>Set up your home</h2><ul><li><a href="#pricing">Electricity pricing</a></li><li><a href="#integrations">Equipment &amp; adapters</a></li><li><a href="#learning">Learning explained</a></li><li><a href="#settings">Every setting</a></li></ul></div><div class="nav-group"><h2>Help &amp; reference</h2><ul><li><a href="#troubleshooting">Troubleshooting &amp; support</a></li><li><a href="#glossary">Plain-language glossary</a></li><li><a href="#privacy">Privacy &amp; diagnostics</a></li></ul></div><div class="nav-group"><h2>Deeper reading</h2><ul><li><a href="#design">How planning works</a></li><li><a href="#accounting">Costs &amp; accounting</a></li><li><a href="#alternatives">Other energy planners</a></li><li><a href="#review">Project review</a></li></ul></div></nav></details></aside>
+<main id="content" tabindex="-1"><section id="overview" aria-label="Start here"><h2 id="overview-nrg-planner-documentation">NRG Planner documentation</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Start here topics"><div class="toc">
 <ul>
-<li>A grid-only home gets price graphs, flexible-use advice and optional meter-based costs.</li>
-<li>An EV-only home can use its own charger/vehicle integration without a Powerwall.</li>
-<li>A solar home can compare consumption with export credits without owning a battery.</li>
-<li>A battery home can schedule supported operating modes without solar or an EV.</li>
+<li><a href="#overview-find-what-you-need">Find what you need</a></li>
+<li><a href="#overview-before-you-begin">Before you begin</a></li>
+<li><a href="#overview-what-can-it-do-for-my-home">What can it do for my home?</a></li>
+<li><a href="#overview-the-three-ideas-that-make-setup-easier">The three ideas that make setup easier</a><ul>
+<li><a href="#overview-1-monitoring-and-control-are-separate-choices">1. Monitoring and control are separate choices</a></li>
+<li><a href="#overview-2-buying-and-selling-electricity-have-different-prices">2. Buying and selling electricity have different prices</a></li>
+<li><a href="#overview-3-measurements-and-predictions-tell-different-stories">3. Measurements and predictions tell different stories</a></li>
 </ul>
-<p>Supply and delivery are independent: either can have a flat rate, your own timed
-rate periods or an external HA price feed. ComEd hourly is an optional supply adapter.
-All numeric tariff fields start unset; no household rates or historical profile
-are bundled. Enter zero explicitly when it applies.</p>
-<h2 id="overview-integrations-and-commands">Integrations and commands</h2>
-<p>NRG reads ordinary HA entities from your chosen integrations. Compatible number,
-select and switch entities work directly, regardless of manufacturer. Optional HA
-scripts adapt other APIs, MQTT and custom automations.</p>
-<p><strong>Tessie is not required.</strong> Teslemetry entities can be selected directly where their
-capabilities match. TeslaMate can supply telemetry; charging control additionally
-needs an actual command path, such as another integration or user-provided scripts.
-NRG does not invent commands that a monitoring integration does not expose.</p>
-<h2 id="overview-main-screens">Main screens</h2>
-<table>
+</li>
+<li><a href="#overview-where-to-go-in-home-assistant">Where to go in Home Assistant</a></li>
+<li><a href="#overview-your-first-useful-result">Your first useful result</a></li>
+</ul>
+</div>
+</nav></details>
+<p><strong>Understand your electricity costs. Find a better time to use energy. Coordinate
+the equipment you already have.</strong></p>
+<p>NRG Planner is an integration for <strong>Home Assistant</strong>, the home-automation platform.
+It combines your electricity rates with available household readings to suggest
+when using energy may cost less. If you choose, it can also manage electric-vehicle
+(EV) charging and a home battery through your existing Home Assistant integrations.</p>
+<p>You can use it with any combination of an EV, home battery, and solar panels,
+including <strong>none of them</strong>. Start with advice and add equipment as needed.</p>
+<h3 id="overview-find-what-you-need">Find what you need</h3>
+<div class="table-scroll" role="region" aria-label="Start here table 1" tabindex="0"><table>
 <thead>
 <tr>
-<th>Screen</th>
-<th>Purpose</th>
+<th scope="col">I want to…</th>
+<th scope="col">Read this</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Set it up for the first time</td>
+<td><a href="#installation">Installation</a>, then <a href="#quick-start">Quick start</a></td>
+</tr>
+<tr>
+<td>Understand the dashboard and its advice</td>
+<td><a href="#homeowner-guide">Homeowner guide</a></td>
+</tr>
+<tr>
+<td>Enter my electricity rates</td>
+<td><a href="#pricing">Pricing</a></td>
+</tr>
+<tr>
+<td>Connect a car, home battery, or solar forecast</td>
+<td><a href="#integrations">Integrations and adapters</a></td>
+</tr>
+<tr>
+<td>Change a setting or check its default</td>
+<td><a href="#settings">Settings reference</a></td>
+</tr>
+<tr>
+<td>Charge now, change departure, or transfer control</td>
+<td><a href="#operations">Everyday operation</a></td>
+</tr>
+<tr>
+<td>Fix missing readings, charts, or commands</td>
+<td><a href="#troubleshooting">Troubleshooting</a></td>
+</tr>
+<tr>
+<td>Get a quick answer or translate an unfamiliar word</td>
+<td><a href="#faq">Common questions</a> · <a href="#glossary">Glossary</a></td>
+</tr>
+<tr>
+<td>Understand learning, calculations, or cost figures</td>
+<td><a href="#learning">Learning</a> · <a href="#design">Planning method</a> · <a href="#accounting">Accounting</a></td>
+</tr>
+<tr>
+<td>Check data use or get help</td>
+<td><a href="#privacy">Privacy</a> · <a href="#troubleshooting-getting-help">Support</a></td>
+</tr>
+<tr>
+<td>Compare projects or review publication readiness</td>
+<td><a href="#alternatives">Alternatives</a> · <a href="#review">Project review</a></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Read inside Home Assistant:</strong> open <strong>Why? → Open the complete household handbook</strong>
+or the handbook link in <strong>NRG Planner settings → Operation</strong>. You can also open
+<code>/nrg-planner/guide.html</code> on the same Home Assistant address. For example, replace
+the part after your Home Assistant address with that path.</p>
+<p>The bundled handbook is one self-contained page. It works on phones, uses no
+JavaScript or external fonts, and needs no GitHub account to read. Use your
+browser's <strong>Find in page</strong> to search, or <strong>Print → Save as PDF</strong> for a reference copy.
+Once loaded, reading it needs no internet connection; your Home Assistant server
+must still be reachable to open it. Its text is generic, not your live settings.</p>
+<h3 id="overview-before-you-begin">Before you begin</h3>
+<ul>
+<li><strong>Home Assistant 2026.10.2 or newer.</strong> This project targets 2026.10.2; newer
+  releases may need compatibility checks. A standalone app is not provided.</li>
+<li><strong>An administrator account</strong> for installing and configuring the integration.</li>
+<li><strong>Your electricity plan</strong>, showing the variable supply and delivery prices and,
+  if relevant, the credit for electricity you send to the grid.</li>
+<li><strong>Existing Home Assistant integrations</strong> for equipment you want to monitor or
+  control. NRG uses their readings and controls rather than connecting to each
+  manufacturer's account itself.</li>
+<li><strong>USD pricing.</strong> Rate inputs use cents per kilowatt-hour; other currencies are
+  not currently supported.</li>
+</ul>
+<p><strong>Current availability:</strong> this is a private-review snapshot. Authorized reviewers
+can install it manually. HACS installation becomes available after the owner
+publishes and validates the repository; it is not currently in the default HACS
+catalog. See <a href="#installation">installation</a> for the exact steps.</p>
+<h3 id="overview-what-can-it-do-for-my-home">What can it do for my home?</h3>
+<div class="table-scroll" role="region" aria-label="Start here table 2" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Your home</th>
+<th scope="col">What NRG can provide</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Grid electricity only</td>
+<td>Buying-price graphs and advice about moving a flexible task to a better time. A suitable power meter adds covered daily-cost estimates.</td>
+</tr>
+<tr>
+<td>An EV</td>
+<td>Monitor charging and charge level; optionally plan charging toward the selected vehicle limit before departure. No home battery is required.</td>
+</tr>
+<tr>
+<td>Solar panels</td>
+<td>Combine supported solar forecasts with demand and export credits to assess when using solar is worthwhile. No battery is required.</td>
+</tr>
+<tr>
+<td>A home battery</td>
+<td>Monitor charge level and usable-energy estimates; optionally plan supported hold, home-supply, and grid-charge modes. Solar and an EV are optional.</td>
+</tr>
+<tr>
+<td>A combination</td>
+<td>Compare their effects together, including charging losses, export credits, EV deadlines, and battery reserve.</td>
+</tr>
+</tbody>
+</table></div>
+<p>The current model supports <strong>one planned EV and one stationary-battery system</strong>.
+Forecast.Solar is the supported optional solar-forecast adapter. ComEd hourly is
+one optional supply-price adapter; you do not need to be a ComEd customer.</p>
+<p>NRG gives advice for a reference appliance, such as a task that uses 1 kWh over an
+hour. It does not automatically start dishwashers, laundry, heating, or other
+arbitrary appliances. It does not schedule forced battery sales to the grid.</p>
+<h3 id="overview-the-three-ideas-that-make-setup-easier">The three ideas that make setup easier</h3>
+<h4 id="overview-1-monitoring-and-control-are-separate-choices">1. Monitoring and control are separate choices</h4>
+<p>Enable the equipment your home has under <strong>Configure → Components</strong>. This shows
+its readings and relevant cards. Separately choose whether NRG may control the
+EV or battery. Choosing a measurement or control entity alone grants no permission.</p>
+<p>New installations use <strong>Observation</strong>: NRG proposes a plan without issuing
+equipment commands. <strong>Control</strong> permits commands only for components whose
+individual control switches are enabled and whose checks pass.</p>
+<p>For example, you can monitor a battery, let NRG manage the car, and leave the
+battery under its manufacturer's controller. See <a href="#operations-transfer-equipment-control">handover</a>
+when you are ready to change who controls a device.</p>
+<h4 id="overview-2-buying-and-selling-electricity-have-different-prices">2. Buying and selling electricity have different prices</h4>
+<p>Your <strong>buying price = supply + delivery</strong>. Supply pays for electricity; delivery
+covers the variable cost of bringing it to your home. Each can be flat,
+time-of-use, or an external price feed, independently of the other.</p>
+<p><strong>Example only:</strong> 8¢ supply plus 4¢ delivery means 12¢/kWh to buy. A task using
+2 kWh would cost 24¢ for that energy. If an all-in feed already includes delivery,
+enter <strong>0</strong> for separate delivery so it is not added twice.</p>
+<p><strong>Export credit</strong> is what your plan credits for electricity sent back to the grid.
+Set it separately; it may be lower than the buying price. Free-looking solar can
+still have a cost: using it now may mean giving up an export credit.</p>
+<p>All numeric tariff fields begin <strong>unset</strong>. Blank means <strong>unknown</strong>, not free.
+Enter zero explicitly when it really applies. The initial export basis is
+<strong>No credit</strong>. See <a href="#pricing">pricing</a> for schedules and external feeds.</p>
+<h4 id="overview-3-measurements-and-predictions-tell-different-stories">3. Measurements and predictions tell different stories</h4>
+<ul>
+<li><strong>Measured:</strong> what a meter or device reports now, such as battery percentage or
+  charging power.</li>
+<li><strong>Forecast or modeled:</strong> what may happen later, such as tomorrow's solar or a
+  proposed charging start.</li>
+<li><strong>Observed cost estimate:</strong> metered power combined with configured prices during
+  the time NRG actually covered.</li>
+</ul>
+<p>A plan is not proof that a device is doing it. A low partial-day cost is not proof
+of a low bill. NRG reports missing coverage rather than treating it as zero.
+The planner compares a bounded set of feasible schedules; it does not promise a
+mathematically perfect plan or guaranteed savings.</p>
+<h3 id="overview-where-to-go-in-home-assistant">Where to go in Home Assistant</h3>
+<p>In this guide, <strong>Configure → …</strong> means start at <strong>Settings → Devices &amp; services →
+NRG Planner → Configure</strong>, then choose the named section.</p>
+<div class="table-scroll" role="region" aria-label="Start here table 3" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Screen</th>
+<th scope="col">What you do there</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><strong>NRG Planner → Home Energy</strong></td>
-<td>Supply-plus-delivery price, best-use graph, the built-in live power-flow Sankey, applicable equipment levels, observed charging and optional costs. Read-only.</td>
+<td>Read prices, household advice, live power flow, enabled equipment, and available cost estimates. This optional homeowner view is read-only.</td>
 </tr>
 <tr>
-<td><strong>Why?</strong></td>
-<td>An accessible explanation and modeled energy timeline.</td>
+<td><strong>NRG Planner → Why?</strong></td>
+<td>Read the reason behind the advice, inspect the modeled energy timeline, and open this handbook.</td>
 </tr>
 <tr>
 <td><strong>NRG Planner settings</strong></td>
-<td>Components, Operation, Tariff, Pricing periods, optional equipment settings, learning, notifications, sources, adapters and diagnostics.</td>
+<td>Use the optional administrator dashboard for components, operation, rates, equipment assumptions, sources, and details.</td>
 </tr>
 <tr>
 <td><strong>Settings → Devices &amp; services → NRG Planner → Configure</strong></td>
-<td>Persistent setup forms, period editor, source pickers and adapter configuration.</td>
+<td>Use the setup forms to save rates, period schedules, measurements, forecast sources, control adapters, and notification services. Dashboards are not required.</td>
+</tr>
+<tr>
+<td><strong>Home Assistant's Energy dashboard configuration</strong></td>
+<td>Select the actual power meters used by the live power-flow diagram. NRG's own mappings do not configure that diagram.</td>
 </tr>
 </tbody>
-</table>
-<p>Homeowner views are read-only; the administrator dashboard uses HA's admin-only
-navigation. This presentation does not replace Home Assistant account/service
-permissions: HA can allow authenticated users to read entity/dashboard configuration.</p>
-<h2 id="overview-basic-vocabulary">Basic vocabulary</h2>
-<p><strong>kW</strong> is power now. <strong>kWh</strong> is energy over time: a 2 kW appliance running for half
-an hour uses 1 kWh. <strong>SOC</strong> is battery charge percentage. Rate inputs and graphs use
-<strong>cents/kWh</strong>; total costs use dollars. External feeds currently recognize USD/kWh
-or cents/kWh units.</p>
-<p><strong>Observation</strong> proposes schedules without device commands. <strong>Control</strong> authorizes
-only the components separately enabled for NRG control. Releasing control does not
-restore settings previously saved in equipment; follow the handover guide.</p>
-<p>The planner selects a low-cost feasible plan from a bounded set of alternatives.
-Forecasts and savings estimates remain distinguishable from measured power and
-recorded costs. It makes no global-optimum or guaranteed-savings claim.</p><p><a href="#top">Back to contents</a></p></section><section id="quick-start"><h1 id="quick-start-quick-start">Quick start</h1>
-<h2 id="quick-start-1-install-and-select-equipment">1. Install and select equipment</h2>
+</table></div>
+<p>The optional dashboards need a one-time package setup and ApexCharts Card. Their
+absence after installing the integration is expected until you complete
+<a href="#installation-optional-dashboards">dashboard installation</a>.</p>
+<p>The administrator dashboard's navigation is admin-only. Homeowner views provide
+read-only presentation; Home Assistant's own account and service permissions still
+govern access to entities and configuration.</p>
+<h3 id="overview-your-first-useful-result">Your first useful result</h3>
+<ol>
+<li><a href="#installation">Install</a> NRG and select only the equipment you actually have.</li>
+<li>Enter your supply and delivery pricing, plus export compensation if applicable.</li>
+<li>Map the measurements available from your existing integrations. Price advice
+   does not require a site meter; measured daily costs do.</li>
+<li>Replace generic capacity, charging-power, current, and departure assumptions
+   with values appropriate to your equipment and routine.</li>
+<li>Read the advice and explanation in <strong>Observation</strong>, then compare the readings
+   with your device apps or meters. Complete <a href="#operations">control handover</a>
+   if you want NRG to operate the enabled devices.</li>
+</ol>
+<p>Continue with the <a href="#quick-start">step-by-step quick start</a>. If something is
+missing, use <a href="#troubleshooting">troubleshooting</a>; unfamiliar terms are in the
+<a href="#glossary">plain-language glossary</a>.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="installation" aria-label="Installation &amp; updates"><h2 id="installation-installation-and-updates">Installation and updates</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Installation &amp; updates topics"><div class="toc">
+<ul>
+<li><a href="#installation-what-to-have-ready">What to have ready</a></li>
+<li><a href="#installation-private-review">Private review</a></li>
+<li><a href="#installation-hacs-after-publication">HACS after publication</a></li>
+<li><a href="#installation-optional-dashboards">Optional dashboards</a></li>
+<li><a href="#installation-updates-and-removal">Updates and removal</a></li>
+</ul>
+</div>
+</nav></details>
+<h3 id="installation-what-to-have-ready">What to have ready</h3>
+<p>Use a Home Assistant administrator account and Home Assistant <strong>2026.10.2 or
+newer</strong>; this snapshot targets 2026.10.2. NRG runs inside HA, so end users do not
+need Python, Node.js, or build tools. Generated dashboards and the handbook are
+already included.</p>
+<p>The <strong>HA configuration directory</strong> is the folder containing your
+<code>configuration.yaml</code>, commonly <code>/config</code> on Home Assistant OS. Open it using your
+existing file-management method, such as File editor, Studio Code Server, or a
+network share. Other installation types may keep it at a different path.</p>
+<h3 id="installation-private-review">Private review</h3>
+<p>HACS requires a public GitHub repository. While this repository remains private,
+install as follows:</p>
+<ol>
+<li>Download and extract the repository using an authorized GitHub account. On
+   GitHub, <strong>Code → Download ZIP</strong> provides a copy of the selected branch.</li>
+<li>Open your HA configuration directory. Create <code>custom_components</code> there if it
+   does not exist.</li>
+<li>Copy the repository's <strong><code>custom_components/nrg/</code> folder</strong>, including all its
+   contents, into that directory. The result should look like this:</li>
+</ol>
+<p><code>text
+   &lt;HA configuration directory&gt;/
+     configuration.yaml
+     custom_components/
+       nrg/
+         __init__.py
+         manifest.json
+         assets/
+         dashboards/
+         ...</code></p>
+<ol>
+<li>Restart Home Assistant.</li>
+<li>Open <strong>Settings → Devices &amp; services → Add integration</strong>, search for
+   <strong>NRG Planner</strong>, and follow the <a href="#quick-start">quick start</a>.</li>
+</ol>
+<p>No SSH deployer or site file is needed. If NRG does not appear, see
+<a href="#troubleshooting-nrg-does-not-appear-in-add-integration">troubleshooting</a>.</p>
+<p>No Git history, tests, development tools, or repository data files belong in the
+installed component directory beyond the files already under <code>custom_components/nrg/</code>.</p>
+<h3 id="installation-hacs-after-publication">HACS after publication</h3>
+<p>Add <code>https://github.com/dekay7/nrg-planner</code> in HACS Custom repositories, category
+<strong>Integration</strong>. Download, restart HA, and add the integration through Devices &amp;
+services. Default-catalog approval is not required for this custom-repository path.</p>
+<p>All integration assets, dashboard definitions, and the generic handbook are inside
+<code>custom_components/nrg/</code> and are delivered together. HACS does not edit your
+configuration, enable device control, or register dashboard packages.</p>
+<h3 id="installation-optional-dashboards">Optional dashboards</h3>
+<p>The integration's native entities and setup forms work without dashboards.
+For the bundled homeowner and admin views:</p>
+<ol>
+<li>Install <strong>ApexCharts Card</strong> through HACS and verify its JavaScript module is
+   registered in <strong>Settings → Dashboards → Resources</strong>. NRG does not redistribute
+   a copy or download it automatically. The chart templates target ApexCharts
+   Card 2.2.3; recheck charts after frontend updates.</li>
+<li>Merge the following into <code>configuration.yaml</code>. If a <code>homeassistant</code> section
+   or <code>packages</code> key already exists, merge rather than creating duplicate keys:</li>
+</ol>
+<p><code>yaml
+   homeassistant:
+     packages:
+       nrg_planner: !include custom_components/nrg/dashboard-package.yaml</code></p>
+<p>For an existing <code>!include_dir_named packages</code> setup, instead add a file in
+   that directory containing:</p>
+<p><code>yaml
+   !include ../custom_components/nrg/dashboard-package.yaml</code></p>
+<ol>
+<li>Check HA configuration and restart. <strong>NRG Planner</strong> and <strong>NRG Planner settings</strong>
+   appear in the sidebar. The settings dashboard requires an admin account.</li>
+<li>Configure power meters in HA's built-in Energy dashboard for the live Sankey.
+   NRG does not overwrite Energy preferences or create substitute meter readings.</li>
+</ol>
+<p>The package includes recorder exclusions for large NRG diagnostic entities; merge
+them with any existing recorder configuration as needed. It does not contain
+tariffs, entity mappings for your hardware, or an automatically imported site file.</p>
+<p>Bundled dashboards reference the integration's initial <code>nrg_*</code> entity IDs. If you
+rename those IDs, use your own dashboard copy and update the references. Keep
+customizations outside the integration directory so component updates preserve them.</p>
+<p>The local handbook is served at <code>/nrg-planner/guide.html</code> when HA's HTTP integration
+is available. Open that path on your own HA address, or use the handbook link in
+<strong>Why?</strong> or <strong>Operation</strong>. Its contents are generic and do not include saved
+configuration. It includes troubleshooting, FAQs, a glossary, and privacy details.
+There are no scripts, external fonts, or external assets. Use browser Find to
+search and Print to save a PDF; reading a loaded copy needs no internet connection.</p>
+<h3 id="installation-updates-and-removal">Updates and removal</h3>
+<p>For manual updates, replace only the component directory with a reviewed newer
+copy and restart. HACS updates follow the same component boundary. Integration
+options, learning, and ledgers use HA storage, not files inside the component.</p>
+<p>Before removing NRG, release its control and establish the desired device baseline
+as described in <a href="#operations">operations</a>. Remove the integration through Devices
+&amp; services, remove its dashboard-package include if present, then remove its
+component through HACS or your manual file-management method. Check configuration
+before restarting. Use supported HA interfaces for stored configuration/history;
+do not manually edit HA's storage files.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="quick-start" aria-label="Quick start"><h2 id="quick-start-quick-start">Quick start</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Quick start topics"><div class="toc">
+<ul>
+<li><a href="#quick-start-1-install-and-select-equipment">1. Install and select equipment</a></li>
+<li><a href="#quick-start-2-enter-your-own-electricity-plan">2. Enter your own electricity plan</a></li>
+<li><a href="#quick-start-3-map-available-ha-measurements">3. Map available HA measurements</a></li>
+<li><a href="#quick-start-4-review-generic-equipment-assumptions">4. Review generic equipment assumptions</a></li>
+<li><a href="#quick-start-5-configure-optional-controls">5. Configure optional controls</a></li>
+<li><a href="#quick-start-6-review-the-plan">6. Review the plan</a></li>
+<li><a href="#quick-start-what-a-working-setup-looks-like">What a working setup looks like</a></li>
+</ul>
+</div>
+</nav></details>
+<p><strong>Goal:</strong> get useful advice before deciding whether to automate any equipment.
+You will need your electricity plan and the existing Home Assistant entities for
+any equipment you select. A Home Assistant <strong>entity</strong> is a single reading or
+control, such as a power sensor or charging switch.</p>
+<p>In these steps, <strong>Configure → …</strong> means <strong>Settings → Devices &amp; services → NRG
+Planner → Configure</strong>, then the named section. Work through setup with an
+administrator account. You can return to these forms at any time.</p>
+<h3 id="quick-start-1-install-and-select-equipment">1. Install and select equipment</h3>
 <p>Follow <a href="#installation">installation</a>, then add <strong>NRG Planner</strong> in <strong>Settings →
 Devices &amp; services</strong>. Choose only the EV, stationary battery, and solar equipment
 you have. All three can be off. Monitoring and equipment control are separate.</p>
 <p>Fresh installations start in <strong>Observation</strong>. Merely mapping a control entity does
 not grant command permission.</p>
-<h2 id="quick-start-2-enter-your-own-electricity-plan">2. Enter your own electricity plan</h2>
+<h3 id="quick-start-2-enter-your-own-electricity-plan">2. Enter your own electricity plan</h3>
 <p>Supply and delivery are independent. Either supports flat rates, time-of-use
 periods, or external HA entities/forecasts. ComEd hourly is an optional supply
 adapter. Rates use cents/kWh; external feeds also accept USD/kWh.</p>
@@ -98,7 +412,7 @@ template has blank rates. Missing times and missing rates remain unknown.</p>
 <p>Configure export compensation separately: No credit, Flat credit, or Supply plus
 adder. Both numeric export fields start unset. They are never inferred from
 delivery. See <a href="#pricing">pricing</a>.</p>
-<h2 id="quick-start-3-map-available-ha-measurements">3. Map available HA measurements</h2>
+<h3 id="quick-start-3-map-available-ha-measurements">3. Map available HA measurements</h3>
 <p>In <strong>Configure → Mappings</strong>, choose ordinary entities from existing integrations:</p>
 <ul>
 <li>Grid and/or whole-home power for measured flows and cost estimates.</li>
@@ -109,24 +423,47 @@ delivery. See <a href="#pricing">pricing</a>.</p>
 <p>Disabled components contribute known zero. Missing enabled equipment stays
 unknown. Review meter signs and whether the home meter includes EV charging in
 <strong>Configure → Meter conventions</strong>.</p>
-<h2 id="quick-start-4-review-generic-equipment-assumptions">4. Review generic equipment assumptions</h2>
+<h3 id="quick-start-4-review-generic-equipment-assumptions">4. Review generic equipment assumptions</h3>
 <p>The capacity, power, efficiency, current, charging window, and departure fields are
 generic starting assumptions, not discovered specifications. Replace them with
 appropriate values for your equipment before relying on a schedule.</p>
 <p>Installation dates start unset. Leave them unset until known. Learning uses only
 this HA installation's covered measurements; no household profile is bundled.</p>
-<h2 id="quick-start-5-configure-optional-controls">5. Configure optional controls</h2>
+<h3 id="quick-start-5-configure-optional-controls">5. Configure optional controls</h3>
 <p>Compatible switches, numbers, and selects work directly. <strong>Configure → Control
 adapters</strong> maps battery modes, export settings, and optional command scripts to
 your device's actual behavior. Default option names are examples, not proof of
 compatibility. See <a href="#integrations">adapters</a>.</p>
 <p>Map available protection and external-controller-priority flags. A selected guard
 must report the expected clear state; missing selected guards pause commands.</p>
-<h2 id="quick-start-6-review-the-plan">6. Review the plan</h2>
+<h3 id="quick-start-6-review-the-plan">6. Review the plan</h3>
 <p>Use the native entities or install the <a href="#installation-optional-dashboards">optional dashboards</a>.
 Compare the inputs, forecast coverage, and proposed actions with actual readings.
-Use the <a href="#operations">operations guide</a> when transferring device control.</p><p><a href="#top">Back to contents</a></p></section><section id="homeowner-guide"><h1 id="homeowner-guide-reading-nrg-planner">Reading NRG Planner</h1>
-<h2 id="homeowner-guide-electricity-price-now">Electricity price now</h2>
+Use the <a href="#operations">operations guide</a> when transferring device control.</p>
+<h3 id="quick-start-what-a-working-setup-looks-like">What a working setup looks like</h3>
+<ul>
+<li>The combined buying price matches your supply plus delivery. Blank prices call
+  for a coverage check, not an assumption that electricity is free.</li>
+<li>The plan has a current explanation; a grid-only home can use price advice with
+  no EV, battery, solar, or site power meter.</li>
+<li>Installed equipment readings make sense next to your meters or device apps.
+  Daily cost appears only when sufficient site readings and prices are covered.</li>
+<li>In Observation, a proposed charging/battery action is advice rather than a
+  device command. You can stay in this mode for ongoing monitoring.</li>
+</ul>
+<p>You are ready for everyday use. Read the <a href="#homeowner-guide">homeowner guide</a> for
+the graphs, <a href="#faq">common questions</a> for typical decisions, or
+<a href="#troubleshooting">troubleshooting</a> if an expected reading is missing.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="homeowner-guide" aria-label="Read the dashboard"><h2 id="homeowner-guide-reading-nrg-planner">Reading NRG Planner</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Read the dashboard topics"><div class="toc">
+<ul>
+<li><a href="#homeowner-guide-electricity-price-now">Electricity price now</a></li>
+<li><a href="#homeowner-guide-the-recommendation">The recommendation</a></li>
+<li><a href="#homeowner-guide-current-power-flow-the-sankey-diagram">Current power flow: the Sankey diagram</a></li>
+<li><a href="#homeowner-guide-only-the-equipment-this-home-has">Only the equipment this home has</a></li>
+<li><a href="#homeowner-guide-net-energy-cost-today">Net energy cost today</a></li>
+</ul>
+</div>
+</nav></details>
+<h3 id="homeowner-guide-electricity-price-now">Electricity price now</h3>
 <p>The large <strong>¢/kWh</strong> number includes the selected <strong>supply plus delivery</strong> prices.
 They may each be flat, follow independent timed periods, or come from external
 feeds. Supply and delivery are also shown separately so the total is explainable.</p>
@@ -134,7 +471,7 @@ feeds. Supply and delivery are also shown separately so the total is explainable
 change at the configured boundaries. Solid forecast lines represent published
 outlooks; dashed lines are estimates. A gap means price information is missing,
 not that energy is free.</p>
-<h2 id="homeowner-guide-the-recommendation">The recommendation</h2>
+<h3 id="homeowner-guide-the-recommendation">The recommendation</h3>
 <ul>
 <li><strong>Good time to use energy:</strong> now is among the better modeled opportunities.</li>
 <li><strong>Use energy as usual:</strong> shifting the reference task is not worth the difference.</li>
@@ -149,7 +486,7 @@ without changing equipment.</p>
 <p>Solar can have an export-credit opportunity cost, and stored energy has losses and
 future value. NRG considers applicable equipment rather than assuming all solar or
 battery electricity is free. Homes without that equipment need no such assumptions.</p>
-<h2 id="homeowner-guide-current-power-flow-the-sankey-diagram">Current power flow: the Sankey diagram</h2>
+<h3 id="homeowner-guide-current-power-flow-the-sankey-diagram">Current power flow: the Sankey diagram</h3>
 <p>The Home Energy tab shows Home Assistant's built-in <strong>power Sankey card</strong>, the
 same live power-flow diagram as the <strong>Now</strong> tab of the Energy dashboard. It is
 unaffected by the dashboard's date selection and shows instantaneous power: the
@@ -160,7 +497,7 @@ Energy</strong>, not planner estimates. Devices are grouped into floors and area
 when those are configured there. A meter that is not configured in the Energy
 dashboard is simply absent from the diagram; NRG never substitutes an invented
 or estimated flow for missing equipment.</p>
-<h2 id="homeowner-guide-only-the-equipment-this-home-has">Only the equipment this home has</h2>
+<h3 id="homeowner-guide-only-the-equipment-this-home-has">Only the equipment this home has</h3>
 <p>EV cards, battery gauges and solar information appear only when enabled under
 Components. Monitoring does not mean NRG is controlling a device. Observed charging
 status uses local/provider power and connection readings; a proposed plan is shown
@@ -174,7 +511,7 @@ capacity and reserve, rather than claiming a measured battery-health test.</p>
 <p>While Observation is selected, schedules are proposals. Devices may currently be
 following another controller. Monitoring-only equipment continues to use its own
 controls; NRG does not promise it will follow the modeled schedule.</p>
-<h2 id="homeowner-guide-net-energy-cost-today">Net energy cost today</h2>
+<h3 id="homeowner-guide-net-energy-cost-today">Net energy cost today</h3>
 <p>Purchases minus export credits are estimated from covered meter readings and the
 contemporaneous supply-plus-delivery rates. A negative total means modeled credits
 exceed purchases over the covered time; it does not establish a cash payout.</p>
@@ -182,9 +519,191 @@ exceed purchases over the covered time; it does not establish a cash payout.</p>
 Fixed fees, capacity charges and unconfigured taxes are excluded. A home with no
 site power meter gets price advice but no claimed metered daily cost.</p>
 <p>Use <strong>Why?</strong> and the linked complete handbook for explanations. The homeowner
-dashboard has no equipment or configuration controls.</p><p><a href="#top">Back to contents</a></p></section><section id="pricing"><h1 id="pricing-supply-delivery-and-time-of-use-plans">Supply, delivery and time-of-use plans</h1>
-<h2 id="pricing-the-prominent-buying-price">The prominent buying price</h2>
-<pre><code class="language-text">Buying price at a time = supply price at that time + delivery price at that time
+dashboard has no equipment or configuration controls.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="operations" aria-label="Operation &amp; handover"><h2 id="operations-operation-handover-and-recovery">Operation, handover, and recovery</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Operation &amp; handover topics"><div class="toc">
+<ul>
+<li><a href="#operations-observation-and-control">Observation and Control</a></li>
+<li><a href="#operations-transfer-equipment-control">Transfer equipment control</a></li>
+<li><a href="#operations-everyday-controls">Everyday controls</a></li>
+<li><a href="#operations-missing-data">Missing data</a></li>
+<li><a href="#operations-recovery">Recovery</a></li>
+</ul>
+</div>
+</nav></details>
+<h3 id="operations-observation-and-control">Observation and Control</h3>
+<p><strong>Observation</strong> calculates plans without equipment commands. <strong>Control</strong> authorizes
+only components separately enabled for NRG control. Mapping entities does not
+implicitly enable commands. Notifications are opt-in and never operate appliances.</p>
+<p>Switching back to Observation stops new commands but does not restore settings
+already saved in equipment. Choose a desired physical baseline when transferring
+ownership, disabling control, or removing NRG.</p>
+<h3 id="operations-transfer-equipment-control">Transfer equipment control</h3>
+<ol>
+<li>Check component selections, rates, measurements, meter conventions, and modeled
+   assumptions in Observation. Missing rates are unknown, not free electricity.</li>
+<li>Match actual mode/state names and command/readback capabilities. Do not map a
+   forced-export mode to the logical "serve home" action.</li>
+<li>Record device settings needed for recovery: charging state/current/target and
+   applicable battery mode, reserve, export policy, and grid-charge permission.</li>
+<li>Disable competing controllers and scheduled command automations. Use the optional
+   external-controller-priority/protection mappings where suitable; NRG cannot
+   automatically discover every other controller.</li>
+<li>Enable the desired EV/battery control switches and select Control.</li>
+<li>Compare acknowledged commands with readback and measured device response.</li>
+</ol>
+<p>The equipment retains its own electrical protections. A service acknowledgment
+does not establish instantaneous power delivery or completion of a charge cycle.</p>
+<h3 id="operations-everyday-controls">Everyday controls</h3>
+<ul>
+<li><strong>Charge now</strong> bypasses prices and the normal charging window, but respects
+  connection, selected vehicle target, current limits, and mapped guards. It clears
+  on completion, disconnection, or restart.</li>
+<li><strong>One-off departure</strong> overrides the daily time. An incomplete connected session
+  stays overdue rather than silently moving to the following day.</li>
+<li><strong>Refresh</strong> reloads configured pricing/forecast inputs.</li>
+<li><strong>Reset learning</strong> removes learned profiles and calibration, preserving settings
+  and the measured-cost ledger.</li>
+<li><strong>Notifications</strong> require opt-in, selected notify services, stable advice, a
+  minimum modeled benefit, and non-quiet hours.</li>
+</ul>
+<h3 id="operations-missing-data">Missing data</h3>
+<p>Selected guard inputs must remain available and clear. Unsupported operations
+are not scheduled. Missing current/forecast prices or solar coverage prevent
+discretionary battery moves. Locally learned price estimates remain tentative;
+there is no bundled historical household fallback.</p>
+<p>A missing or stale plan revokes charging grants where supported. Explicit
+charge-now can operate without price data when EV checks pass. Battery failures
+are reported independently of EV execution.</p>
+<h3 id="operations-recovery">Recovery</h3>
+<p>Use an HA backup and a previously reviewed component version when recovering from
+an update. Backups may contain private settings and measurements. Keep them out of
+issues and repositories.</p>
+<p>Release NRG control before enabling another controller. Restoring component files
+does not restore physical equipment settings or rewind saved options, learning,
+ledgers, or recorder history. Reestablish the desired device baseline explicitly.</p>
+<p>The standard integration diagnostics download is an intentionally limited support
+summary. See <a href="#privacy">privacy</a> before sharing logs, screenshots, or state exports.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="faq" aria-label="Common questions"><h2 id="faq-common-questions">Common questions</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Common questions topics"><div class="toc">
+<ul>
+<li><a href="#faq-do-i-need-solar-a-battery-or-an-electric-car">Do I need solar, a battery, or an electric car?</a></li>
+<li><a href="#faq-does-nrg-replace-home-assistants-energy-dashboard">Does NRG replace Home Assistant's Energy dashboard?</a></li>
+<li><a href="#faq-do-i-have-to-install-the-dashboards-or-edit-yaml">Do I have to install the dashboards or edit YAML?</a></li>
+<li><a href="#faq-will-installation-start-controlling-my-equipment">Will installation start controlling my equipment?</a></li>
+<li><a href="#faq-how-do-i-stop-nrg-controlling-a-device">How do I stop NRG controlling a device?</a></li>
+<li><a href="#faq-can-i-use-my-existing-car-charger-or-battery-integration">Can I use my existing car, charger, or battery integration?</a></li>
+<li><a href="#faq-does-it-raise-my-cars-charge-limit">Does it raise my car's charge limit?</a></li>
+<li><a href="#faq-why-wait-when-the-buying-price-is-negative-or-solar-is-producing">Why wait when the buying price is negative or solar is producing?</a></li>
+<li><a href="#faq-why-does-nrg-recommend-using-energy-as-usual-on-a-flat-rate">Why does NRG recommend using energy as usual on a flat rate?</a></li>
+<li><a href="#faq-does-the-displayed-cost-equal-my-bill-or-show-money-saved">Does the displayed cost equal my bill or show money saved?</a></li>
+<li><a href="#faq-can-it-manage-multiple-evs-other-currencies-or-timed-battery-exports">Can it manage multiple EVs, other currencies, or timed battery exports?</a></li>
+<li><a href="#faq-does-it-need-the-internet-or-an-nrg-account">Does it need the internet or an NRG account?</a></li>
+<li><a href="#faq-how-long-does-learning-take-and-can-i-turn-it-off">How long does learning take, and can I turn it off?</a></li>
+<li><a href="#faq-what-stays-saved-when-home-assistant-restarts">What stays saved when Home Assistant restarts?</a></li>
+<li><a href="#faq-is-nrg-free-and-where-do-i-ask-for-help">Is NRG free, and where do I ask for help?</a></li>
+</ul>
+</div>
+</nav></details>
+<h3 id="faq-do-i-need-solar-a-battery-or-an-electric-car">Do I need solar, a battery, or an electric car?</h3>
+<p>No. All three are optional and start disabled. A grid-only home can use price
+information and flexible-use advice. Add a suitable grid or home power meter for
+covered cost estimates. Turn off equipment you do not own under
+<strong>Configure → Components</strong>.</p>
+<h3 id="faq-does-nrg-replace-home-assistants-energy-dashboard">Does NRG replace Home Assistant's Energy dashboard?</h3>
+<p>No. The Energy dashboard remains useful for historical energy totals. NRG adds
+forward-looking advice, optional EV/battery planning, and covered cost estimates.
+The live power-flow diagram uses the meters already configured for HA Energy.
+Its setup is separate from NRG's measurement mappings.</p>
+<p>For HA Energy pricing, use <code>sensor.nrg_import_price_usd</code> for buying and
+<code>sensor.nrg_export_price_usd</code> for export credit. The buying sensor already
+includes delivery. See <a href="#accounting-built-in-ha-energy">accounting</a>.</p>
+<h3 id="faq-do-i-have-to-install-the-dashboards-or-edit-yaml">Do I have to install the dashboards or edit YAML?</h3>
+<p>The integration's setup forms and native entities work without the optional
+dashboards. NRG's own settings do not require YAML editing. The bundled dashboards
+do require the small package include described in <a href="#installation-optional-dashboards">installation</a>,
+plus the separately installed ApexCharts Card for charts. YAML is a text-based
+configuration format; copy the example carefully and merge existing sections.</p>
+<h3 id="faq-will-installation-start-controlling-my-equipment">Will installation start controlling my equipment?</h3>
+<p>Fresh installations use <strong>Observation</strong>, with EV control, battery control, and
+notifications off. Monitoring, individual control permission, and operating mode
+are separate settings. Read <a href="#operations">operation and handover</a> before enabling
+commands.</p>
+<h3 id="faq-how-do-i-stop-nrg-controlling-a-device">How do I stop NRG controlling a device?</h3>
+<p>Select <strong>Observation</strong> to stop new equipment commands, or turn off the relevant
+component's control switch. Settings already stored in the car, charger, or battery
+remain there. Set the desired device baseline in its own controls before enabling
+another controller. <a href="#operations">Handover and recovery</a> explains the sequence.</p>
+<h3 id="faq-can-i-use-my-existing-car-charger-or-battery-integration">Can I use my existing car, charger, or battery integration?</h3>
+<p>NRG uses compatible Home Assistant measurements, switches, numbers, and selects
+rather than requiring a particular brand. Compatibility depends on the operations
+and feedback that your integration exposes. Tessie is not required; compatible
+Teslemetry entities can be used directly. TeslaMate can supply readings, but
+charging control needs a separate command integration or suitable HA scripts.
+See <a href="#integrations">integrations and adapters</a>.</p>
+<h3 id="faq-does-it-raise-my-cars-charge-limit">Does it raise my car's charge limit?</h3>
+<p>No. The selected vehicle target is read-only to NRG. It plans toward that limit
+using the available time and configured charging assumptions. A shortfall means
+the model cannot reach the selected target by departure under those conditions.
+Use <strong>Charge now</strong> or adjust the departure override when appropriate; see
+<a href="#operations-everyday-controls">everyday controls</a>.</p>
+<h3 id="faq-why-wait-when-the-buying-price-is-negative-or-solar-is-producing">Why wait when the buying price is negative or solar is producing?</h3>
+<p>The relevant price includes <strong>supply plus delivery</strong>. Negative supply can still
+leave a positive total. Solar used at home may give up an export credit; battery
+energy has conversion losses and possible future value. Advice also compares a
+complete run of your reference appliance rather than one cheap moment.
+See <a href="#homeowner-guide-the-recommendation">the homeowner guide</a>.</p>
+<h3 id="faq-why-does-nrg-recommend-using-energy-as-usual-on-a-flat-rate">Why does NRG recommend using energy as usual on a flat rate?</h3>
+<p>If shifting the complete task offers too little modeled benefit, that is the
+expected recommendation. Solar, export credits, or a controllable battery may
+still create differences, but a flat grid rate alone does not make one hour
+cheaper than another.</p>
+<h3 id="faq-does-the-displayed-cost-equal-my-bill-or-show-money-saved">Does the displayed cost equal my bill or show money saved?</h3>
+<p>No. Today's net energy cost estimates covered grid purchases minus export credits.
+Missing readings and restart downtime reduce coverage. Fixed fees, capacity/demand
+charges, and unconfigured taxes are excluded. Credit banks and billing restrictions
+are not reconstructed. Modeled plan costs and appliance benefits answer different
+questions; <a href="#accounting-different-money-figures">accounting</a> explains them.</p>
+<h3 id="faq-can-it-manage-multiple-evs-other-currencies-or-timed-battery-exports">Can it manage multiple EVs, other currencies, or timed battery exports?</h3>
+<p>The current scope is one planned EV, one modeled stationary-battery system, and
+USD-denominated pricing. It does not schedule forced battery exports or arbitrary
+household appliances. Export permission is not a sale schedule. See
+<a href="#design">how it works</a> and <a href="#alternatives">alternatives</a> for context.</p>
+<h3 id="faq-does-it-need-the-internet-or-an-nrg-account">Does it need the internet or an NRG account?</h3>
+<p>There is no NRG account, analytics, or telemetry-upload service. Planning, saved
+settings, and learning run in Home Assistant. Flat or configured timed prices need
+no online price feed. ComEd and solar forecasts depend on their providers, and
+your selected equipment integrations or notification services may use the cloud.
+The bundled handbook needs no external assets. See <a href="#privacy">privacy</a>.</p>
+<h3 id="faq-how-long-does-learning-take-and-can-i-turn-it-off">How long does learning take, and can I turn it off?</h3>
+<p>NRG uses the fallback assumptions until enough well-covered observations exist.
+Solar calibration starts after six valid daylight hours; EV calibration needs
+qualifying charging sessions; household learning builds from covered hours over
+time. Each switch can be turned off independently. <strong>Reset learning</strong> clears
+profiles and calibration while keeping settings and the measured-cost ledger.
+See <a href="#learning">learning</a> for the exact requirements.</p>
+<h3 id="faq-what-stays-saved-when-home-assistant-restarts">What stays saved when Home Assistant restarts?</h3>
+<p>Settings, source mappings, learned summaries, and cost ledgers use Home Assistant
+storage. <strong>Charge now</strong> is session-only and clears on restart; it also clears on
+completion or disconnection. A one-off departure persists until cleared and takes
+precedence over the daily time. Restart gaps are not filled with invented use.
+The <a href="#operations">operations guide</a> covers updates and recovery.</p>
+<h3 id="faq-is-nrg-free-and-where-do-i-ask-for-help">Is NRG free, and where do I ask for help?</h3>
+<p>NRG is <a href="https://github.com/dekay7/nrg-planner/blob/main/LICENSE">MIT-licensed</a>.
+Home Assistant hardware, electricity, and third-party integrations or services
+may have their own costs. The maintainer is
+<a href="https://github.com/dekay7">@dekay7</a>. Follow <a href="#troubleshooting-getting-help">getting help</a>
+to prepare a useful report. This snapshot's repository access is limited to
+authorized reviewers until publication.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="pricing" aria-label="Electricity pricing"><h2 id="pricing-supply-delivery-and-time-of-use-plans">Supply, delivery and time-of-use plans</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Electricity pricing topics"><div class="toc">
+<ul>
+<li><a href="#pricing-the-prominent-buying-price">The prominent buying price</a></li>
+<li><a href="#pricing-editing-timed-periods-in-ha">Editing timed periods in HA</a><ul>
+<li><a href="#pricing-boundary-and-weekday-rules">Boundary and weekday rules</a></li>
+</ul>
+</li>
+<li><a href="#pricing-external-utility-price-integrations">External utility-price integrations</a></li>
+<li><a href="#pricing-export-compensation">Export compensation</a></li>
+</ul>
+</div>
+</nav></details>
+<h3 id="pricing-the-prominent-buying-price">The prominent buying price</h3>
+<pre tabindex="0" aria-label="Code example"><code class="language-text">Buying price at a time = supply price at that time + delivery price at that time
 </code></pre>
 <p>The schedules are independent. A flat supply contract can have variable delivery,
 and a flat delivery rate can accompany variable supply. You can also use two
@@ -194,7 +713,7 @@ supply source; it is never used as a fallback for another provider's missing rat
 Negative rates remain signed. A −2¢ supply price plus 6¢ delivery still costs 4¢ to import.
 These are illustrative numbers, not defaults. All numeric rate inputs start unset;
 unknown rates remain unknown until supplied. Enter zero explicitly if applicable.</p>
-<h2 id="pricing-editing-timed-periods-in-ha">Editing timed periods in HA</h2>
+<h3 id="pricing-editing-timed-periods-in-ha">Editing timed periods in HA</h3>
 <ol>
 <li>Open <strong>Settings → Devices &amp; services → NRG Planner → Configure → Pricing periods</strong>.</li>
 <li>Choose <strong>Supply</strong> or <strong>Delivery</strong>.</li>
@@ -205,14 +724,14 @@ unknown rates remain unknown until supplied. Enter zero explicitly if applicable
    for the components whose schedules should operate.</li>
 </ol>
 <p>The template starts with these times. Its rates are blank until you enter them:</p>
-<table>
+<div class="table-scroll" role="region" aria-label="Electricity pricing table 1" tabindex="0"><table>
 <thead>
 <tr>
-<th>Period</th>
-<th>Starts</th>
-<th>Ends</th>
-<th>Supply rate</th>
-<th>Delivery rate</th>
+<th scope="col">Period</th>
+<th scope="col">Starts</th>
+<th scope="col">Ends</th>
+<th scope="col">Supply rate</th>
+<th scope="col">Delivery rate</th>
 </tr>
 </thead>
 <tbody>
@@ -245,10 +764,10 @@ unknown rates remain unknown until supplied. Enter zero explicitly if applicable
 <td>Your rate</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>Each component has its own copy: changing delivery's peak time does not change
 supply's. The template never overwrites an existing schedule.</p>
-<h3 id="pricing-boundary-and-weekday-rules">Boundary and weekday rules</h3>
+<h4 id="pricing-boundary-and-weekday-rules">Boundary and weekday rules</h4>
 <ul>
 <li>Start is included; end is excluded. A 1 p.m. reading belongs to the period starting
   at 1 p.m., not the one ending then.</li>
@@ -265,16 +784,16 @@ supply's. The template never overwrites an existing schedule.</p>
 <p>For weekend rates that change exactly at midnight, split weekday overnight into
 <strong>00:00–06:00</strong> and <strong>21:00–00:00</strong>, both Monday–Friday, then add <strong>00:00–00:00</strong> for
 Saturday/Sunday. This avoids a Friday overnight period overlapping Saturday's rate.</p>
-<h2 id="pricing-external-utility-price-integrations">External utility-price integrations</h2>
+<h3 id="pricing-external-utility-price-integrations">External utility-price integrations</h3>
 <p>Choose External supply/delivery entity and map its current sensor. Optionally map
 a forecast sensor too; it can be the same entity. Configure the forecast attribute
 name, default <code>forecast</code>.</p>
 <p>Supported interval fields are:</p>
-<table>
+<div class="table-scroll" role="region" aria-label="Electricity pricing table 2" tabindex="0"><table>
 <thead>
 <tr>
-<th>Purpose</th>
-<th>Accepted fields</th>
+<th scope="col">Purpose</th>
+<th scope="col">Accepted fields</th>
 </tr>
 </thead>
 <tbody>
@@ -295,12 +814,12 @@ name, default <code>forecast</code>.</p>
 <td>row <code>unit</code> / <code>unit_of_measurement</code>, otherwise the entity's unit</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>Use explicit timezone-aware ISO timestamps and <code>USD/kWh</code>, <code>$/kWh</code>, <code>¢/kWh</code>,
 <code>c/kWh</code> or <code>cents/kWh</code>. Overlapping intervals, missing end times, unrecognized units
 and naive timestamps are rejected. A template sensor can normalize other formats.
 An example forecast attribute:</p>
-<pre><code class="language-yaml">forecast:
+<pre tabindex="0" aria-label="Code example"><code class="language-yaml">forecast:
   - start: '2026-10-20T06:00:00-05:00'
     end: '2026-10-20T07:00:00-05:00'
     price: 0.12
@@ -309,261 +828,23 @@ An example forecast attribute:</p>
 <p>A current entity alone provides a current observation. It does not invent a future
 hourly schedule. Supply/delivery forecasts may have different interval lengths;
 the planner includes their exact boundaries.</p>
-<h2 id="pricing-export-compensation">Export compensation</h2>
+<h3 id="pricing-export-compensation">Export compensation</h3>
 <p>Configure <strong>Supply plus adder</strong>, <strong>Flat credit</strong> or <strong>No credit</strong> independently of
 delivery. A net-metering credit may have billing-period restrictions; NRG values it
 at the configured marginal rate, rather than claiming a cash payout or maintaining
-a utility credit bank. Fixed, capacity and unconfigured tax charges are excluded.</p><p><a href="#top">Back to contents</a></p></section><section id="learning"><h1 id="learning-what-the-learning-and-calibration-controls-do">What the learning and calibration controls do</h1>
-<p>These controls improve estimates from observed data. They never alter recorded
-meter values, appliance behavior, battery settings or a vehicle's selected limit.
-They work only for installed components with enough valid measurements.</p>
-<h2 id="learning-solar-forecast-calibration">Solar forecast calibration</h2>
-<p><strong>Purpose:</strong> correct a forecast that is consistently too optimistic or pessimistic
-for the actual installation.</p>
-<p>Before an hour starts, NRG saves the combined age-adjusted forecast for that hour.
-Afterward, it compares it with the solar meter's covered production. It does not
-compare against a forecast updated after the result was already known.</p>
-<p>After six valid daylight hours, it calculates:</p>
-<pre><code class="language-text">Correction = total measured solar ÷ total previously forecast solar
-Corrected future forecast = age-adjusted forecast × correction
-</code></pre>
-<p>For example, repeatedly measuring 8 kWh when 10 kWh was forecast suggests a <strong>0.8×</strong>
-correction. If actual output is consistently higher, the factor can exceed 1.</p>
-<p>The calculation uses up to 168 recent covered daylight hours within the retained
-history, excludes tiny/nighttime forecasts, and bounds the factor to <strong>0.5–1.5</strong>.
-Mean absolute error in Details indicates how far the saved hourly forecasts missed.
-Cloud changes can still cause surprises: this corrects a persistent bias, not weather.</p>
-<p>It does not infer individual-roof accuracy from one whole-system meter. Changing
-sources or age settings clears the old solar comparisons. Turning calibration off
-uses the source forecast and configured age correction without the learned multiplier.</p>
-<h2 id="learning-calibrate-ev-charging-estimates">Calibrate EV charging estimates</h2>
-<p><strong>Purpose:</strong> estimate how much AC electricity and time the car needs to reach its
-already selected charge limit.</p>
-<p>A valid session has at least <strong>five percentage points gained</strong>, <strong>five minutes</strong>,
-and good uninterrupted measurement coverage. The increasing AC energy counter and
-SOC change give:</p>
-<pre><code class="language-text">AC kWh per percentage point = energy used by charging ÷ SOC percentage-point gain
-</code></pre>
-<p>Example: 9 kWh for a change from 60% to 70% suggests <strong>0.9 kWh per point</strong>. Another
-10-point gain is provisionally budgeted at about 9 kWh. This includes charging losses.</p>
-<p>NRG keeps the last <strong>12 valid sessions</strong> and chooses a conservative upper-percentile
-energy estimate. Covered charging power divided by measured/set current also gives
-power per amp; a conservative lower-percentile value helps avoid promising a finish
-time based on an unusually fast session. Details shows the effective estimates.</p>
-<p>Missing meters, gaps and counter resets do not create learned sessions. Without a
-valid estimate—or with the switch off—NRG uses the fallback kWh/point and charging
-power you entered. <strong>No EV battery degradation percentage or health estimate is made.</strong></p>
-<h2 id="learning-learn-household-demand">Learn household demand</h2>
-<p><strong>Purpose:</strong> predict ordinary household usage so storage and flexible-use advice
-can work around daily life.</p>
-<p>NRG integrates the home power meter. If an EV is installed and separately measured,
-it subtracts car charging; otherwise it can learn while the car is known not to be
-charging. A home without an EV uses the whole-home reading directly.</p>
-<p>An hour needs at least <strong>80% valid coverage</strong>. Missing time is not learned as zero.
-Impossible/inconsistent meter combinations pause the relevant learning rather than
-creating a false zero-house baseline.</p>
-<p>It keeps up to <strong>28 days</strong> of hourly summaries, compares matching clock hours, and
-gives each older matching observation <strong>0.9×</strong> the weight of the next newer one.
-After three matching observations, weekdays/weekends can have their own profile.</p>
-<p>Example: if evenings repeatedly use more power than afternoons, the forecast
-reserves more energy for those evenings. An unfamiliar hour still uses your fallback.
-It predicts patterns rather than identifying individual appliances or controlling
-comfort settings. Turning learning off uses your explicit house-demand estimate.</p>
-<h2 id="learning-solar-alternative-weight">Solar alternative weight</h2>
-<p><strong>Purpose:</strong> combine multiple estimates for the <strong>same physical panels</strong> without
-counting their electricity twice.</p>
-<p>For forecasts in the same physical coverage group:</p>
-<pre><code class="language-text">Combined forecast = sum(forecast × weight) ÷ sum(weights)
-</code></pre>
-<p>For example:</p>
-<table>
-<thead>
-<tr>
-<th>Forecast for the same roof</th>
-<th style="text-align: right;">Energy</th>
-<th style="text-align: right;">Weight</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>A</td>
-<td style="text-align: right;">10 kWh</td>
-<td style="text-align: right;">1</td>
-</tr>
-<tr>
-<td>B</td>
-<td style="text-align: right;">14 kWh</td>
-<td style="text-align: right;">3</td>
-</tr>
-</tbody>
-</table>
-<p>The result is <code>(10 × 1 + 14 × 3) ÷ 4 = 13 kWh</code>. Equal weights give a simple average.
-With only one forecast, changing its weight changes nothing. A weight is not a panel
-count or capacity multiplier.</p>
-<p>After averaging alternatives, forecasts for different physical arrays are added.
-A separate west roof forecast of 5 kWh would make the total 18 kWh. Weights are
-explicit user choices; the whole-system solar calibration is a separate operation.</p>
-<h2 id="learning-resetting-or-disabling-learning">Resetting or disabling learning</h2>
-<p>Each learning switch can be turned off independently. Reset learning clears the
-learned profiles, EV sessions and forecast comparisons, while retaining the measured
-cost ledger. Installation dates, manual assumptions, tariff periods and entity
-selections remain saved. Disabled/nonexistent components need no calibration setup.</p><p><a href="#top">Back to contents</a></p></section><section id="settings"><h1 id="settings-settings-reference">Settings reference</h1>
-<p>Generated from the same catalogue as the UI. All settings persist across HA restarts; the charge-now override is intentionally session-only.</p>
-<p>Open <strong>NRG Planner settings</strong>, or <strong>Settings → Devices &amp; services → NRG Planner → Configure</strong>.</p>
-<h2 id="settings-this-home-has-an-ev">This home has an EV</h2>
-<p><code>has_ev</code> · components · Default: <strong>False</strong></p>
-<p>Enable vehicle monitoring and its dashboard cards. Leave off if you have no EV; EV readings, controls and calibration will not be required.</p>
-<h2 id="settings-this-home-has-a-stationary-battery">This home has a stationary battery</h2>
-<p><code>has_battery</code> · components · Default: <strong>False</strong></p>
-<p>Enable battery monitoring and capacity estimates. Leave off if you have no home battery; battery sensors, reserve and operating controls will not be required.</p>
-<h2 id="settings-this-home-has-solar">This home has solar</h2>
-<p><code>has_solar</code> · components · Default: <strong>False</strong></p>
-<p>Enable solar production, forecasts and their dashboard cards. Leave off for a home without panels; the planner then knows solar production is zero.</p>
-<h2 id="settings-let-nrg-control-ev-charging">Let NRG control EV charging</h2>
-<p><code>ev_control</code> · components · Default: <strong>False</strong></p>
-<p>Optional. Enable after mapping your charging switch/current controls or HA command scripts. With this off, NRG monitors the car and leaves its charging to your existing system.</p>
-<h2 id="settings-let-nrg-control-the-home-battery">Let NRG control the home battery</h2>
-<p><code>battery_control</code> · components · Default: <strong>False</strong></p>
-<p>Optional. Enable after mapping the battery's operating controls or command scripts. With this off, the battery remains monitored and NRG does not assume it can schedule its energy.</p>
-<h2 id="settings-operating-mode">Operating mode</h2>
-<p><code>mode</code> · operation · Default: <strong>Observation</strong></p>
-<p>Observation calculates without equipment commands. Control authorizes only the components you enabled for NRG control. Switching to Observation does not restore settings already saved in your equipment.</p>
-<h2 id="settings-supply-plan">Supply plan</h2>
-<p><code>supply_plan</code> · tariff · Default: <strong>Flat supply</strong></p>
-<p>Choose your provider's supply pricing: a flat rate, your own timed periods, an external HA price sensor/forecast, or the optional ComEd hourly feed. Delivery is configured separately and added once.</p>
-<h2 id="settings-flat-supply-rate">Flat supply rate</h2>
-<p><code>flat_supply_cents</code> · tariff · Default: <strong>unset</strong> ¢/kWh</p>
-<p>Your contracted supply price, excluding delivery. Unset means unknown, not free. Enter an explicit zero only if your contract really has a zero supply rate.</p>
-<h2 id="settings-supply-forecast-attribute">Supply forecast attribute</h2>
-<p><code>external_supply_attribute</code> · tariff · Default: <strong>forecast</strong></p>
-<p>For an external provider, name the attribute containing forecast intervals. Each interval needs start, end and price (or the documented aliases). Units are read from the row or price entity. An external current price alone does not invent future prices.</p>
-<h2 id="settings-delivery-plan">Delivery plan</h2>
-<p><code>delivery_plan</code> · tariff · Default: <strong>Flat delivery</strong></p>
-<p>Delivery can have its own flat rate, timed periods or external sensor. Its schedule need not match the supply schedule. Edit periods under Configure → Pricing periods.</p>
-<h2 id="settings-flat-delivery-rate">Flat delivery rate</h2>
-<p><code>delivery_cents</code> · tariff · Default: <strong>unset</strong> ¢/kWh</p>
-<p>Your variable delivery/rider cost in cents per imported kWh. Include applicable variable riders, not fixed monthly fees. Unset means unknown; explicitly enter zero if no separate delivery charge applies.</p>
-<h2 id="settings-delivery-forecast-attribute">Delivery forecast attribute</h2>
-<p><code>external_delivery_attribute</code> · tariff · Default: <strong>forecast</strong></p>
-<p>Attribute containing external delivery-price intervals. Supply and delivery forecasts are independent. See the handbook's supported interval fields and units.</p>
-<h2 id="settings-export-credit-basis">Export credit basis</h2>
-<p><code>export_rate</code> · tariff · Default: <strong>No credit</strong></p>
-<p>Configure how exported energy is credited; do not assume exports receive the import delivery rate. Credits may have billing restrictions not modeled here.</p>
-<h2 id="settings-export-credit-adder">Export credit adder</h2>
-<p><code>export_adder_cents</code> · tariff · Default: <strong>unset</strong> ¢/kWh</p>
-<p>Added to the selected supply price only for Supply plus adder exports. Enter your own export agreement's value, including an explicit zero if appropriate. Unset means unknown.</p>
-<h2 id="settings-flat-export-credit">Flat export credit</h2>
-<p><code>flat_export_cents</code> · tariff · Default: <strong>unset</strong> ¢/kWh</p>
-<p>Credit per exported kWh when Flat credit is selected. Independent of your buying rate. Enter your own value; unset means unknown.</p>
-<h2 id="settings-export-policy">Export policy</h2>
-<p><code>export_policy</code> · tariff · Default: <strong>Solar only</strong></p>
-<p>Solar only allows solar exports; Battery also allows stored energy exports; No exports requests neither. NRG sends this preference only when a matching control is configured. Otherwise set the same policy in your equipment. Permission alone does not force a sale.</p>
-<h2 id="settings-solar-installation-date">Solar installation date</h2>
-<p><code>solar_install_date</code> · solar · Default: <strong>unset</strong></p>
-<p>Used for panel age when a source has Apply age correction enabled. Leave unset until known; no age correction is invented. Measured solar is never reduced.</p>
-<h2 id="settings-solar-annual-degradation">Solar annual degradation</h2>
-<p><code>solar_degradation</code> · solar · Default: <strong>0.7</strong> %/year</p>
-<p>Compounded yearly reduction in an unadjusted forecast: (1 − rate/100)^age. Sources already calibrated to present output should have age correction off.</p>
-<h2 id="settings-solar-forecast-calibration">Solar forecast calibration</h2>
-<p><code>solar_learning</code> · solar · Default: <strong>True</strong></p>
-<p>Compare the forecast saved before each daylight hour with what your solar meter later measured. After six well-measured daylight hours, NRG adjusts future forecasts by actual ÷ forecast, using up to 168 recent daylight hours. For example, consistently producing 8 kWh when 10 kWh was forecast gives about a 0.8 multiplier. The correction is limited to 0.5–1.5. It changes predictions, never measured production or panel settings.</p>
-<h2 id="settings-battery-capacity-at-installation">Battery capacity at installation</h2>
-<p><code>battery_capacity</code> · battery · Default: <strong>10</strong> kWh</p>
-<p>Generic starting assumption: replace with your equipment's full-charge capacity before backup reserve. The age estimate reduces this number; reserve and conversion losses are applied separately.</p>
-<h2 id="settings-battery-installation-date">Battery installation date</h2>
-<p><code>battery_install_date</code> · battery · Default: <strong>unset</strong></p>
-<p>Baseline date for the capacity entered above. If capacity is a current measured value, use its measurement date. An unset date applies no age adjustment.</p>
-<h2 id="settings-battery-annual-degradation">Battery annual degradation</h2>
-<p><code>battery_degradation</code> · battery · Default: <strong>2</strong> %/year</p>
-<p>Compounded yearly reduction of estimated full-charge capacity. Does not change measured SOC, power limits or efficiency, and is not a measured battery health result.</p>
-<h2 id="settings-backup-reserve">Backup reserve</h2>
-<p><code>backup_reserve</code> · battery · Default: <strong>20</strong> %</p>
-<p>Minimum battery percentage kept out of discretionary use. NRG also sets the device's reserve if that control is mapped. Configured outage/protection sensors take priority.</p>
-<h2 id="settings-battery-round-trip-efficiency">Battery round-trip efficiency</h2>
-<p><code>round_trip_efficiency</code> · battery · Default: <strong>90</strong> %</p>
-<p>Estimated AC-to-storage-to-AC efficiency. Equal square-root losses are applied when charging and discharging.</p>
-<h2 id="settings-modeled-battery-charging-power">Modeled battery charging power</h2>
-<p><code>battery_charge_kw</code> · battery · Default: <strong>5</strong> kW</p>
-<p>Charging power used to estimate future battery energy. This setting does not directly set device watts. Use a conservative value supported by your equipment.</p>
-<h2 id="settings-modeled-battery-discharge-power">Modeled battery discharge power</h2>
-<p><code>battery_discharge_kw</code> · battery · Default: <strong>5</strong> kW</p>
-<p>Discharging power used in the energy forecast. Your equipment may deliver a different rate; compare the forecast with its meter readings.</p>
-<h2 id="settings-solar-can-recharge-the-battery-while-held">Solar can recharge the battery while held</h2>
-<p><code>battery_solar_while_held</code> · battery · Default: <strong>True</strong></p>
-<p>Enable if the selected hold mode still accepts solar charging, as Tesla Backup normally does. Turn off if your inverter's standby mode prevents solar charging too. This changes the battery forecast to match the device's behavior.</p>
-<h2 id="settings-preserve-battery-during-ev-charging">Preserve battery during EV charging</h2>
-<p><code>hold_battery_for_ev</code> · ev · Default: <strong>True</strong></p>
-<p>When NRG controls both devices, ask the home battery to hold its energy while the car charges. Commands can take time to reach the equipment, so the battery may briefly supply the car before the hold takes effect. With a monitored-only battery, set that behavior in its own controller.</p>
-<h2 id="settings-daily-ev-departure">Daily EV departure</h2>
-<p><code>departure_time</code> · ev · Default: <strong>08:00:00</strong></p>
-<p>Generic starting time: enter your own local departure. A one-off departure takes precedence. Incomplete connected sessions remain overdue.</p>
-<h2 id="settings-normal-charging-window-starts">Normal charging window starts</h2>
-<p><code>ev_start_time</code> · ev · Default: <strong>20:00:00</strong></p>
-<p>Start of normal daily charging availability. Review this generic window. It ends at departure; charge-now and deadline urgency can use time outside it.</p>
-<h2 id="settings-ev-completion-buffer">EV completion buffer</h2>
-<p><code>completion_buffer</code> · ev · Default: <strong>45</strong> min</p>
-<p>Aim to finish this many minutes before departure. Use the buffer if needed rather than miss the actual departure.</p>
-<h2 id="settings-maximum-ev-charging-current">Maximum EV charging current</h2>
-<p><code>ev_max_amps</code> · ev · Default: <strong>16</strong> A</p>
-<p>Generic starting limit: enter a current supported by your charger and circuit. Also bounded by the control entity's maximum. Script adapters need the real supported limit here. NRG never raises the vehicle's selected charge limit.</p>
-<h2 id="settings-minimum-stable-ev-current">Minimum stable EV current</h2>
-<p><code>ev_min_amps</code> · ev · Default: <strong>6</strong> A</p>
-<p>Smallest current used for solar-aware charging. Below this the car is paused. Must be no greater than your maximum current.</p>
-<h2 id="settings-conservative-ev-power-at-maximum-current">Conservative EV power at maximum current</h2>
-<p><code>ev_kw_at_max</code> · ev · Default: <strong>3.2</strong> kW</p>
-<p>Generic starting estimate: enter your measured AC charging power at the configured maximum current. Covered wall-charger observations can calibrate it.</p>
-<h2 id="settings-ev-ac-energy-per-percentage-point">EV AC energy per percentage point</h2>
-<p><code>ev_kwh_per_percent</code> · ev · Default: <strong>0.6</strong> kWh/%</p>
-<p>Generic starting estimate: replace with AC energy per vehicle SOC percentage point, including losses. Covered charging sessions can calibrate it; this is not an EV degradation model.</p>
-<h2 id="settings-calibrate-ev-charging-estimates">Calibrate EV charging estimates</h2>
-<p><code>ev_learning</code> · ev · Default: <strong>True</strong></p>
-<p>Use observed AC energy and the car's percentage gain to estimate how much electricity charging needs. Sessions need at least 5 percentage points, 5 minutes and good meter coverage. NRG uses a conservative estimate from the last 12 sessions, and measured power per amp to improve charging-time estimates. Example: 9 kWh for a 10-point gain suggests 0.9 kWh per point. This estimates charging needs, not EV battery degradation. Off uses your fallback values.</p>
-<h2 id="settings-allow-saved-vehicle-readings-while-plugged-in">Allow saved vehicle readings while plugged in</h2>
-<p><code>ev_allow_saved_readings</code> · ev · Default: <strong>False</strong></p>
-<p>Some MQTT/vehicle feeds publish SOC, target and settings only when they change, so their saved values become old while the car sleeps. Enable to accept those available saved values while the home charger reports connected. Connection/protection checks and command readbacks still apply. Otherwise vehicle data needs recent reports; an asleep feed may need its own wake/refresh automation. Estimates can be less current when saved readings are allowed.</p>
-<h2 id="settings-learn-household-demand">Learn household demand</h2>
-<p><code>house_learning</code> · planning · Default: <strong>True</strong></p>
-<p>Learn typical home use at each clock hour from up to 28 days of meter readings. If an EV is installed, subtract its separately measured charging so it is not counted twice. An hour needs at least 80% valid coverage. Recent observations count more; weekday/weekend patterns separate after enough samples. This predicts ordinary demand so the battery and price advice can plan around daily life. Missing hours use your fallback, not zero.</p>
-<h2 id="settings-fallback-house-demand-without-ev">Fallback house demand without EV</h2>
-<p><code>house_kw</code> · planning · Default: <strong>1</strong> kW</p>
-<p>Used for clock hours without enough observations, or with learning disabled. Excludes the car to avoid counting it twice.</p>
-<h2 id="settings-flexible-appliance-energy">Flexible appliance energy</h2>
-<p><code>flexible_load_kwh</code> · planning · Default: <strong>1</strong> kWh</p>
-<p>Energy used for household run-now versus later advice. Advice never starts an appliance.</p>
-<h2 id="settings-flexible-appliance-duration">Flexible appliance duration</h2>
-<p><code>flexible_load_minutes</code> · planning · Default: <strong>60</strong> min</p>
-<p>Contiguous running time for the reference appliance. Every suggested window must fit this whole duration.</p>
-<h2 id="settings-minimum-worthwhile-plan-improvement">Minimum worthwhile plan improvement</h2>
-<p><code>minimum_saving_cents</code> · planning · Default: <strong>2</strong> ¢</p>
-<p>Prefer a stable existing feasible plan unless a replacement improves modeled horizon cost by at least this amount. Also used for generic household advice.</p>
-<h2 id="settings-optional-battery-cycling-cost">Optional battery cycling cost</h2>
-<p><code>battery_wear_cents</code> · planning · Default: <strong>0</strong> ¢/kWh</p>
-<p>Optional estimated wear cost per AC kWh discharged. Calendar degradation above does not establish a cycling cost; zero makes no invented wear charge.</p>
-<h2 id="settings-summer-peak-import-precaution">Summer peak-import precaution</h2>
-<p><code>summer_guard</code> · planning · Default: <strong>False</strong></p>
-<p>Optional regional precaution: avoid discretionary grid battery charging and, if feasible, EV charging on June–September weekdays noon–7 p.m. Off until explicitly enabled. It is not a predicted dollar saving; departure and charge-now win.</p>
-<h2 id="settings-send-household-advice-notifications">Send household advice notifications</h2>
-<p><code>notifications</code> · notifications · Default: <strong>False</strong></p>
-<p>Opt in to stable, worthwhile wait-until recommendations. Choose notify services in Configure → Notifications. Notifications do not command equipment.</p>
-<h2 id="settings-minimum-notification-benefit">Minimum notification benefit</h2>
-<p><code>notification_saving_cents</code> · notifications · Default: <strong>25</strong> ¢</p>
-<p>Notify only when delaying the reference appliance is expected to save at least this amount and the recommendation stays stable for two minutes.</p>
-<h2 id="settings-notification-quiet-hours-start">Notification quiet hours start</h2>
-<p><code>quiet_start</code> · notifications · Default: <strong>21:00:00</strong></p>
-<p>Local start of quiet hours. Advice remains available on the dashboard.</p>
-<h2 id="settings-notification-quiet-hours-end">Notification quiet hours end</h2>
-<p><code>quiet_end</code> · notifications · Default: <strong>08:00:00</strong></p>
-<p>Local end of quiet hours. Equal start/end disables the quiet-hours restriction.</p>
-<h2 id="settings-grid-meter-reports-export-as-positive">Grid meter reports export as positive</h2>
-<p><code>grid_power_inverted</code> · measurements · Default: <strong>False</strong></p>
-<p>Enable when your provider reports positive export and negative import. NRG reverses that reading so its normalized grid power always means positive buying and negative selling.</p>
-<h2 id="settings-battery-meter-reports-charging-as-positive">Battery meter reports charging as positive</h2>
-<p><code>battery_power_inverted</code> · measurements · Default: <strong>False</strong></p>
-<p>Enable when your provider reports positive charging and negative discharge. NRG reverses it so positive always means supplying the home in its own displays and model.</p>
-<h2 id="settings-home-meter-includes-ev-charging">Home meter includes EV charging</h2>
-<p><code>home_includes_ev</code> · measurements · Default: <strong>True</strong></p>
-<p>Enable for a whole-home load meter that includes the car. Disable for a house-only circuit meter; NRG then adds separately measured EV power for the Home total while learning the house-only reading directly.</p><p><a href="#top">Back to contents</a></p></section><section id="integrations"><h1 id="integrations-integrations-sources-and-control-adapters">Integrations, sources and control adapters</h1>
-<h2 id="integrations-provider-neutral-measurements">Provider-neutral measurements</h2>
+a utility credit bank. Fixed, capacity and unconfigured tax charges are excluded.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="integrations" aria-label="Equipment &amp; adapters"><h2 id="integrations-integrations-sources-and-control-adapters">Integrations, sources and control adapters</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Equipment &amp; adapters topics"><div class="toc">
+<ul>
+<li><a href="#integrations-provider-neutral-measurements">Provider-neutral measurements</a></li>
+<li><a href="#integrations-tessie-teslemetry-teslamate-and-other-providers">Tessie, Teslemetry, TeslaMate and other providers</a></li>
+<li><a href="#integrations-direct-controls-and-option-names">Direct controls and option names</a></li>
+<li><a href="#integrations-script-adapters">Script adapters</a></li>
+<li><a href="#integrations-optional-protection-inputs">Optional protection inputs</a></li>
+<li><a href="#integrations-solar-forecasts-and-alternatives">Solar forecasts and alternatives</a></li>
+<li><a href="#integrations-check-measurement-conventions">Check measurement conventions</a></li>
+</ul>
+</div>
+</nav></details>
+<h3 id="integrations-provider-neutral-measurements">Provider-neutral measurements</h3>
 <p>Open <strong>Settings → Devices &amp; services → NRG Planner → Configure → Mappings</strong>.
 Only relevant optional component roles are shown. Select ordinary HA entities from
 the integrations you already use. No credentials are copied into NRG.</p>
@@ -571,11 +852,11 @@ the integrations you already use. No credentials are copied into NRG.</p>
 provider's grid/battery power sign and identify a house-only meter that excludes
 EV charging. These switches avoid requiring a custom template just to normalize
 different manufacturers' conventions.</p>
-<table>
+<div class="table-scroll" role="region" aria-label="Equipment &amp; adapters table 1" tabindex="0"><table>
 <thead>
 <tr>
-<th>Role</th>
-<th>Meaning</th>
+<th scope="col">Role</th>
+<th scope="col">Meaning</th>
 </tr>
 </thead>
 <tbody>
@@ -620,7 +901,7 @@ different manufacturers' conventions.</p>
 <td>Optional AC observations for flows, household subtraction and calibration.</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>Prefer local meters when available. For a complete set of applicable site meters,
 NRG can calculate a missing home/grid flow from the power balance; its basis is
 identified in component diagnostics. Absent solar/battery/EV is known zero. A missing
@@ -635,7 +916,7 @@ the home connection is reported. It is off initially. Without it, a sleeping fee
 may need a wake/refresh automation before control becomes ready. Connection and
 configured protection inputs still need valid reports; command readbacks remain
 required. Saved data can make estimates less current.</p>
-<h2 id="integrations-tessie-teslemetry-teslamate-and-other-providers">Tessie, Teslemetry, TeslaMate and other providers</h2>
+<h3 id="integrations-tessie-teslemetry-teslamate-and-other-providers">Tessie, Teslemetry, TeslaMate and other providers</h3>
 <ul>
 <li><strong>Tessie:</strong> existing number/select/switch entities can be selected directly.</li>
 <li><strong>Teslemetry:</strong> compatible entities work the same way; no Tessie dependency or
@@ -648,7 +929,7 @@ required. Saved data can make estimates less current.</p>
 </ul>
 <p>No EV requires a home battery. No battery requires solar or an EV. Only the devices
 enabled for NRG control receive equipment requests.</p>
-<h2 id="integrations-direct-controls-and-option-names">Direct controls and option names</h2>
+<h3 id="integrations-direct-controls-and-option-names">Direct controls and option names</h3>
 <p>Use <strong>Configure → Control adapters</strong> to match actual option/state names:</p>
 <ul>
 <li>Battery hold: preserve stored energy.</li>
@@ -667,15 +948,15 @@ no corresponding control; reserve is still respected in modeled use and hold req
 <p>Commands take time to reach equipment. For example, a battery may briefly supply
 the car before a requested hold takes effect. NRG checks readbacks and measured
 response; the device's own electrical protections remain responsible for its limits.</p>
-<h2 id="integrations-script-adapters">Script adapters</h2>
+<h3 id="integrations-script-adapters">Script adapters</h3>
 <p>Optionally select scripts for EV current/start/stop, battery mode/export/reserve,
 or grid-charge permission. Keep the matching feedback entity mapped too. Scripts
 are called with these variables:</p>
-<table>
+<div class="table-scroll" role="region" aria-label="Equipment &amp; adapters table 2" tabindex="0"><table>
 <thead>
 <tr>
-<th>Variable</th>
-<th>Value</th>
+<th scope="col">Variable</th>
+<th scope="col">Value</th>
 </tr>
 </thead>
 <tbody>
@@ -700,30 +981,30 @@ are called with these variables:</p>
 <td>Solar only, Battery or No exports.</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>An EV-current script can use <code>{{ value }}</code> as amps in its integration/MQTT action.
 The selected current-setting feedback must then report that setting. Actual measured
 current is a separate role: a stopped car drawing zero cannot confirm a 16 A setting.</p>
 <p>Scripts should complete promptly and recheck NRG ownership before delayed device
 operations. NRG validates before/after each script and waits up to fifteen seconds
 for matching feedback, but it cannot rewrite a user script's internal sequence.</p>
-<h2 id="integrations-optional-protection-inputs">Optional protection inputs</h2>
+<h3 id="integrations-optional-protection-inputs">Optional protection inputs</h3>
 <p>A selected grid-connected sensor must report on. Selected protection/grid-services/
 external-controller flags must report off. Missing selected guards pause applicable
 commands. Battery-specific guards are not required for a home without a battery.
 Remove a guard mapping if its device has been removed; an explicitly selected guard
 is not silently ignored because it stops reporting.</p>
-<h2 id="integrations-solar-forecasts-and-alternatives">Solar forecasts and alternatives</h2>
+<h3 id="integrations-solar-forecasts-and-alternatives">Solar forecasts and alternatives</h3>
 <p>For solar homes, open <strong>Configure → Sources → Add forecast</strong>. Select an enabled
 Forecast.Solar entity, descriptive name, physical coverage group, alternative weight
 and age-correction choice. NRG reads the entry's full time series once; today's,
 tomorrow's and current-power sensors from one entry are not independent forecasts.</p>
-<table>
+<div class="table-scroll" role="region" aria-label="Equipment &amp; adapters table 3" tabindex="0"><table>
 <thead>
 <tr>
-<th>Sources</th>
-<th>Physical coverage groups</th>
-<th>Combination</th>
+<th scope="col">Sources</th>
+<th scope="col">Physical coverage groups</th>
+<th scope="col">Combination</th>
 </tr>
 </thead>
 <tbody>
@@ -748,7 +1029,7 @@ tomorrow's and current-power sensors from one entry are not independent forecast
 <td>Rejected because coverage overlaps.</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>See <a href="#learning-solar-alternative-weight">learning</a> for the worked weight example.
 No calibration identifies individual-roof error from one combined meter.</p>
 <p>Cached solar expires after three hours; failures retain the original age. A valid
@@ -760,12 +1041,922 @@ after five minutes, normal refresh after thirty.</p>
 <p>Turn age correction off for a source already configured to current aged output.
 Actual measured production is never reduced. Disable solar entirely for a home
 without panels; no Forecast.Solar setup is then required.</p>
-<h2 id="integrations-check-measurement-conventions">Check measurement conventions</h2>
+<h3 id="integrations-check-measurement-conventions">Check measurement conventions</h3>
 <p>Review your charger's documented electrical-service/phase configuration if reported
 charging power disagrees with other meters. NRG does not change that configuration.
 Use independently measured power and equipment documentation when resolving a
-measurement mismatch; do not assume one manufacturer's defaults apply to your home.</p><p><a href="#top">Back to contents</a></p></section><section id="design"><h1 id="design-how-nrg-planner-makes-decisions">How NRG Planner makes decisions</h1>
-<h2 id="design-scope-and-objective">Scope and objective</h2>
+measurement mismatch; do not assume one manufacturer's defaults apply to your home.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="learning" aria-label="Learning explained"><h2 id="learning-what-the-learning-and-calibration-controls-do">What the learning and calibration controls do</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Learning explained topics"><div class="toc">
+<ul>
+<li><a href="#learning-solar-forecast-calibration">Solar forecast calibration</a></li>
+<li><a href="#learning-calibrate-ev-charging-estimates">Calibrate EV charging estimates</a></li>
+<li><a href="#learning-learn-household-demand">Learn household demand</a></li>
+<li><a href="#learning-solar-alternative-weight">Solar alternative weight</a></li>
+<li><a href="#learning-resetting-or-disabling-learning">Resetting or disabling learning</a></li>
+</ul>
+</div>
+</nav></details>
+<p>These controls improve estimates from observed data. They never alter recorded
+meter values, appliance behavior, battery settings or a vehicle's selected limit.
+They work only for installed components with enough valid measurements.</p>
+<h3 id="learning-solar-forecast-calibration">Solar forecast calibration</h3>
+<p><strong>Purpose:</strong> correct a forecast that is consistently too optimistic or pessimistic
+for the actual installation.</p>
+<p>Before an hour starts, NRG saves the combined age-adjusted forecast for that hour.
+Afterward, it compares it with the solar meter's covered production. It does not
+compare against a forecast updated after the result was already known.</p>
+<p>After six valid daylight hours, it calculates:</p>
+<pre tabindex="0" aria-label="Code example"><code class="language-text">Correction = total measured solar ÷ total previously forecast solar
+Corrected future forecast = age-adjusted forecast × correction
+</code></pre>
+<p>For example, repeatedly measuring 8 kWh when 10 kWh was forecast suggests a <strong>0.8×</strong>
+correction. If actual output is consistently higher, the factor can exceed 1.</p>
+<p>The calculation uses up to 168 recent covered daylight hours within the retained
+history, excludes tiny/nighttime forecasts, and bounds the factor to <strong>0.5–1.5</strong>.
+Mean absolute error in Details indicates how far the saved hourly forecasts missed.
+Cloud changes can still cause surprises: this corrects a persistent bias, not weather.</p>
+<p>It does not infer individual-roof accuracy from one whole-system meter. Changing
+sources or age settings clears the old solar comparisons. Turning calibration off
+uses the source forecast and configured age correction without the learned multiplier.</p>
+<h3 id="learning-calibrate-ev-charging-estimates">Calibrate EV charging estimates</h3>
+<p><strong>Purpose:</strong> estimate how much AC electricity and time the car needs to reach its
+already selected charge limit.</p>
+<p>A valid session has at least <strong>five percentage points gained</strong>, <strong>five minutes</strong>,
+and good uninterrupted measurement coverage. The increasing AC energy counter and
+SOC change give:</p>
+<pre tabindex="0" aria-label="Code example"><code class="language-text">AC kWh per percentage point = energy used by charging ÷ SOC percentage-point gain
+</code></pre>
+<p>Example: 9 kWh for a change from 60% to 70% suggests <strong>0.9 kWh per point</strong>. Another
+10-point gain is provisionally budgeted at about 9 kWh. This includes charging losses.</p>
+<p>NRG keeps the last <strong>12 valid sessions</strong> and chooses a conservative upper-percentile
+energy estimate. Covered charging power divided by measured/set current also gives
+power per amp; a conservative lower-percentile value helps avoid promising a finish
+time based on an unusually fast session. Details shows the effective estimates.</p>
+<p>Missing meters, gaps and counter resets do not create learned sessions. Without a
+valid estimate—or with the switch off—NRG uses the fallback kWh/point and charging
+power you entered. <strong>No EV battery degradation percentage or health estimate is made.</strong></p>
+<h3 id="learning-learn-household-demand">Learn household demand</h3>
+<p><strong>Purpose:</strong> predict ordinary household usage so storage and flexible-use advice
+can work around daily life.</p>
+<p>NRG integrates the home power meter. If an EV is installed and separately measured,
+it subtracts car charging; otherwise it can learn while the car is known not to be
+charging. A home without an EV uses the whole-home reading directly.</p>
+<p>An hour needs at least <strong>80% valid coverage</strong>. Missing time is not learned as zero.
+Impossible/inconsistent meter combinations pause the relevant learning rather than
+creating a false zero-house baseline.</p>
+<p>It keeps up to <strong>28 days</strong> of hourly summaries, compares matching clock hours, and
+gives each older matching observation <strong>0.9×</strong> the weight of the next newer one.
+After three matching observations, weekdays/weekends can have their own profile.</p>
+<p>Example: if evenings repeatedly use more power than afternoons, the forecast
+reserves more energy for those evenings. An unfamiliar hour still uses your fallback.
+It predicts patterns rather than identifying individual appliances or controlling
+comfort settings. Turning learning off uses your explicit house-demand estimate.</p>
+<h3 id="learning-solar-alternative-weight">Solar alternative weight</h3>
+<p><strong>Purpose:</strong> combine multiple estimates for the <strong>same physical panels</strong> without
+counting their electricity twice.</p>
+<p>For forecasts in the same physical coverage group:</p>
+<pre tabindex="0" aria-label="Code example"><code class="language-text">Combined forecast = sum(forecast × weight) ÷ sum(weights)
+</code></pre>
+<p>For example:</p>
+<div class="table-scroll" role="region" aria-label="Learning explained table 1" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Forecast for the same roof</th>
+<th scope="col" style="text-align: right;">Energy</th>
+<th scope="col" style="text-align: right;">Weight</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td style="text-align: right;">10 kWh</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td>B</td>
+<td style="text-align: right;">14 kWh</td>
+<td style="text-align: right;">3</td>
+</tr>
+</tbody>
+</table></div>
+<p>The result is <code>(10 × 1 + 14 × 3) ÷ 4 = 13 kWh</code>. Equal weights give a simple average.
+With only one forecast, changing its weight changes nothing. A weight is not a panel
+count or capacity multiplier.</p>
+<p>After averaging alternatives, forecasts for different physical arrays are added.
+A separate west roof forecast of 5 kWh would make the total 18 kWh. Weights are
+explicit user choices; the whole-system solar calibration is a separate operation.</p>
+<h3 id="learning-resetting-or-disabling-learning">Resetting or disabling learning</h3>
+<p>Each learning switch can be turned off independently. Reset learning clears the
+learned profiles, EV sessions and forecast comparisons, while retaining the measured
+cost ledger. Installation dates, manual assumptions, tariff periods and entity
+selections remain saved. Disabled/nonexistent components need no calibration setup.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="settings" aria-label="Every setting"><h2 id="settings-settings-reference">Settings reference</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Every setting topics"><div class="toc">
+<ul>
+<li><a href="#settings-components">Components</a><ul>
+<li><a href="#settings-this-home-has-an-ev">This home has an EV</a></li>
+<li><a href="#settings-this-home-has-a-stationary-battery">This home has a stationary battery</a></li>
+<li><a href="#settings-this-home-has-solar">This home has solar</a></li>
+<li><a href="#settings-let-nrg-control-ev-charging">Let NRG control EV charging</a></li>
+<li><a href="#settings-let-nrg-control-the-home-battery">Let NRG control the home battery</a></li>
+</ul>
+</li>
+<li><a href="#settings-operation">Operation</a><ul>
+<li><a href="#settings-operating-mode">Operating mode</a></li>
+</ul>
+</li>
+<li><a href="#settings-tariff">Tariff</a><ul>
+<li><a href="#settings-supply-plan">Supply plan</a></li>
+<li><a href="#settings-flat-supply-rate">Flat supply rate</a></li>
+<li><a href="#settings-supply-forecast-attribute">Supply forecast attribute</a></li>
+<li><a href="#settings-delivery-plan">Delivery plan</a></li>
+<li><a href="#settings-flat-delivery-rate">Flat delivery rate</a></li>
+<li><a href="#settings-delivery-forecast-attribute">Delivery forecast attribute</a></li>
+<li><a href="#settings-export-credit-basis">Export credit basis</a></li>
+<li><a href="#settings-export-credit-adder">Export credit adder</a></li>
+<li><a href="#settings-flat-export-credit">Flat export credit</a></li>
+<li><a href="#settings-export-policy">Export policy</a></li>
+</ul>
+</li>
+<li><a href="#settings-solar">Solar</a><ul>
+<li><a href="#settings-solar-installation-date">Solar installation date</a></li>
+<li><a href="#settings-solar-annual-degradation">Solar annual degradation</a></li>
+<li><a href="#settings-solar-forecast-calibration">Solar forecast calibration</a></li>
+</ul>
+</li>
+<li><a href="#settings-battery">Battery</a><ul>
+<li><a href="#settings-battery-capacity-at-installation">Battery capacity at installation</a></li>
+<li><a href="#settings-battery-installation-date">Battery installation date</a></li>
+<li><a href="#settings-battery-annual-degradation">Battery annual degradation</a></li>
+<li><a href="#settings-backup-reserve">Backup reserve</a></li>
+<li><a href="#settings-battery-round-trip-efficiency">Battery round-trip efficiency</a></li>
+<li><a href="#settings-modeled-battery-charging-power">Modeled battery charging power</a></li>
+<li><a href="#settings-modeled-battery-discharge-power">Modeled battery discharge power</a></li>
+<li><a href="#settings-solar-can-recharge-the-battery-while-held">Solar can recharge the battery while held</a></li>
+</ul>
+</li>
+<li><a href="#settings-ev">EV</a><ul>
+<li><a href="#settings-preserve-battery-during-ev-charging">Preserve battery during EV charging</a></li>
+<li><a href="#settings-daily-ev-departure">Daily EV departure</a></li>
+<li><a href="#settings-normal-charging-window-starts">Normal charging window starts</a></li>
+<li><a href="#settings-ev-completion-buffer">EV completion buffer</a></li>
+<li><a href="#settings-maximum-ev-charging-current">Maximum EV charging current</a></li>
+<li><a href="#settings-minimum-stable-ev-current">Minimum stable EV current</a></li>
+<li><a href="#settings-conservative-ev-power-at-maximum-current">Conservative EV power at maximum current</a></li>
+<li><a href="#settings-ev-ac-energy-per-percentage-point">EV AC energy per percentage point</a></li>
+<li><a href="#settings-calibrate-ev-charging-estimates">Calibrate EV charging estimates</a></li>
+<li><a href="#settings-allow-saved-vehicle-readings-while-plugged-in">Allow saved vehicle readings while plugged in</a></li>
+</ul>
+</li>
+<li><a href="#settings-planning">Planning</a><ul>
+<li><a href="#settings-learn-household-demand">Learn household demand</a></li>
+<li><a href="#settings-fallback-house-demand-without-ev">Fallback house demand without EV</a></li>
+<li><a href="#settings-flexible-appliance-energy">Flexible appliance energy</a></li>
+<li><a href="#settings-flexible-appliance-duration">Flexible appliance duration</a></li>
+<li><a href="#settings-minimum-worthwhile-plan-improvement">Minimum worthwhile plan improvement</a></li>
+<li><a href="#settings-optional-battery-cycling-cost">Optional battery cycling cost</a></li>
+<li><a href="#settings-summer-peak-import-precaution">Summer peak-import precaution</a></li>
+</ul>
+</li>
+<li><a href="#settings-notifications">Notifications</a><ul>
+<li><a href="#settings-send-household-advice-notifications">Send household advice notifications</a></li>
+<li><a href="#settings-minimum-notification-benefit">Minimum notification benefit</a></li>
+<li><a href="#settings-notification-quiet-hours-start">Notification quiet hours start</a></li>
+<li><a href="#settings-notification-quiet-hours-end">Notification quiet hours end</a></li>
+</ul>
+</li>
+<li><a href="#settings-meter-conventions">Meter conventions</a><ul>
+<li><a href="#settings-grid-meter-reports-export-as-positive">Grid meter reports export as positive</a></li>
+<li><a href="#settings-battery-meter-reports-charging-as-positive">Battery meter reports charging as positive</a></li>
+<li><a href="#settings-home-meter-includes-ev-charging">Home meter includes EV charging</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</nav></details>
+<p>Open <strong>NRG Planner settings</strong>, or <strong>Settings → Devices &amp; services → NRG Planner → Configure</strong>.</p>
+<p>These descriptions and defaults are generated from the same catalogue as the setup forms. <strong>On</strong> means enabled; <strong>Off</strong> means disabled. <strong>Unset</strong> means no value has been supplied, not zero. Numeric ranges describe what the form accepts, not what your equipment supports.</p>
+<p>All settings below persist across HA restarts. The separate charge-now override is intentionally session-only; see <a href="#operations-everyday-controls">everyday controls</a>.</p>
+<h3 id="settings-components">Components</h3>
+<p>Select the equipment you have. Monitoring and command permission are separate.</p>
+<h4 id="settings-this-home-has-an-ev">This home has an EV</h4>
+<p>Default: <strong>Off</strong>.</p>
+<p>Enable vehicle monitoring and its dashboard cards. Leave off if you have no EV; EV readings, controls and calibration will not be required.</p>
+<p>Reference key: <code>has_ev</code>.</p>
+<h4 id="settings-this-home-has-a-stationary-battery">This home has a stationary battery</h4>
+<p>Default: <strong>Off</strong>.</p>
+<p>Enable battery monitoring and capacity estimates. Leave off if you have no home battery; battery sensors, reserve and operating controls will not be required.</p>
+<p>Reference key: <code>has_battery</code>.</p>
+<h4 id="settings-this-home-has-solar">This home has solar</h4>
+<p>Default: <strong>Off</strong>.</p>
+<p>Enable solar production, forecasts and their dashboard cards. Leave off for a home without panels; the planner then knows solar production is zero.</p>
+<p>Reference key: <code>has_solar</code>.</p>
+<h4 id="settings-let-nrg-control-ev-charging">Let NRG control EV charging</h4>
+<p>Default: <strong>Off</strong>.</p>
+<p>Optional. Enable after mapping your charging switch/current controls or HA command scripts. With this off, NRG monitors the car and leaves its charging to your existing system.</p>
+<p>Reference key: <code>ev_control</code>.</p>
+<h4 id="settings-let-nrg-control-the-home-battery">Let NRG control the home battery</h4>
+<p>Default: <strong>Off</strong>.</p>
+<p>Optional. Enable after mapping the battery's operating controls or command scripts. With this off, the battery remains monitored and NRG does not assume it can schedule its energy.</p>
+<p>Reference key: <code>battery_control</code>.</p>
+<h3 id="settings-operation">Operation</h3>
+<p>Choose whether schedules remain proposals or can operate enabled equipment.</p>
+<h4 id="settings-operating-mode">Operating mode</h4>
+<p>Default: <strong>Observation</strong>.</p>
+<p>Observation calculates without equipment commands. Control authorizes only the components you enabled for NRG control. Switching to Observation does not restore settings already saved in your equipment.</p>
+<p>Choices: <strong>Observation</strong>, <strong>Control</strong>.</p>
+<p>Reference key: <code>mode</code>.</p>
+<h3 id="settings-tariff">Tariff</h3>
+<p>Set your supply, delivery, and export pricing. For timed rates, use <a href="#pricing-editing-timed-periods-in-ha">Pricing periods</a>.</p>
+<h4 id="settings-supply-plan">Supply plan</h4>
+<p>Default: <strong>Flat supply</strong>.</p>
+<p>Choose your provider's supply pricing: a flat rate, your own timed periods, an external HA price sensor/forecast, or the optional ComEd hourly feed. Delivery is configured separately and added once.</p>
+<p>Choices: <strong>Flat supply</strong>, <strong>Time-of-use supply</strong>, <strong>External supply entity</strong>, <strong>Hourly ComEd</strong>.</p>
+<p>Reference key: <code>supply_plan</code>.</p>
+<h4 id="settings-flat-supply-rate">Flat supply rate</h4>
+<p>Default: <strong>Unset</strong>.</p>
+<p>Your contracted supply price, excluding delivery. Unset means unknown, not free. Enter an explicit zero only if your contract really has a zero supply rate.</p>
+<p>Accepted range: <strong>-100 to 100 ¢/kWh</strong>; adjustable in increments of <strong>0.001 ¢/kWh</strong>.</p>
+<p>Reference key: <code>flat_supply_cents</code>.</p>
+<h4 id="settings-supply-forecast-attribute">Supply forecast attribute</h4>
+<p>Default: <strong>forecast</strong>.</p>
+<p>For an external provider, name the attribute containing forecast intervals. Each interval needs start, end and price (or the documented aliases). Units are read from the row or price entity. An external current price alone does not invent future prices.</p>
+<p>Reference key: <code>external_supply_attribute</code>.</p>
+<h4 id="settings-delivery-plan">Delivery plan</h4>
+<p>Default: <strong>Flat delivery</strong>.</p>
+<p>Delivery can have its own flat rate, timed periods or external sensor. Its schedule need not match the supply schedule. Edit periods under Configure → Pricing periods.</p>
+<p>Choices: <strong>Flat delivery</strong>, <strong>Time-of-use delivery</strong>, <strong>External delivery entity</strong>.</p>
+<p>Reference key: <code>delivery_plan</code>.</p>
+<h4 id="settings-flat-delivery-rate">Flat delivery rate</h4>
+<p>Default: <strong>Unset</strong>.</p>
+<p>Your variable delivery/rider cost in cents per imported kWh. Include applicable variable riders, not fixed monthly fees. Unset means unknown; explicitly enter zero if no separate delivery charge applies.</p>
+<p>Accepted range: <strong>-100 to 100 ¢/kWh</strong>; adjustable in increments of <strong>0.001 ¢/kWh</strong>.</p>
+<p>Reference key: <code>delivery_cents</code>.</p>
+<h4 id="settings-delivery-forecast-attribute">Delivery forecast attribute</h4>
+<p>Default: <strong>forecast</strong>.</p>
+<p>Attribute containing external delivery-price intervals. Supply and delivery forecasts are independent. See the handbook's supported interval fields and units.</p>
+<p>Reference key: <code>external_delivery_attribute</code>.</p>
+<h4 id="settings-export-credit-basis">Export credit basis</h4>
+<p>Default: <strong>No credit</strong>.</p>
+<p>Configure how exported energy is credited; do not assume exports receive the import delivery rate. Credits may have billing restrictions not modeled here.</p>
+<p>Choices: <strong>Supply plus adder</strong>, <strong>Flat credit</strong>, <strong>No credit</strong>.</p>
+<p>Reference key: <code>export_rate</code>.</p>
+<h4 id="settings-export-credit-adder">Export credit adder</h4>
+<p>Default: <strong>Unset</strong>.</p>
+<p>Added to the selected supply price only for Supply plus adder exports. Enter your own export agreement's value, including an explicit zero if appropriate. Unset means unknown.</p>
+<p>Accepted range: <strong>-100 to 100 ¢/kWh</strong>; adjustable in increments of <strong>0.001 ¢/kWh</strong>.</p>
+<p>Reference key: <code>export_adder_cents</code>.</p>
+<h4 id="settings-flat-export-credit">Flat export credit</h4>
+<p>Default: <strong>Unset</strong>.</p>
+<p>Credit per exported kWh when Flat credit is selected. Independent of your buying rate. Enter your own value; unset means unknown.</p>
+<p>Accepted range: <strong>-100 to 100 ¢/kWh</strong>; adjustable in increments of <strong>0.001 ¢/kWh</strong>.</p>
+<p>Reference key: <code>flat_export_cents</code>.</p>
+<h4 id="settings-export-policy">Export policy</h4>
+<p>Default: <strong>Solar only</strong>.</p>
+<p>Solar only allows solar exports; Battery also allows stored energy exports; No exports requests neither. NRG sends this preference only when a matching control is configured. Otherwise set the same policy in your equipment. Permission alone does not force a sale.</p>
+<p>Choices: <strong>Solar only</strong>, <strong>Battery</strong>, <strong>No exports</strong>.</p>
+<p>Reference key: <code>export_policy</code>.</p>
+<h3 id="settings-solar">Solar</h3>
+<p>Only relevant when solar is enabled. These settings adjust predictions, not measured production.</p>
+<h4 id="settings-solar-installation-date">Solar installation date</h4>
+<p>Default: <strong>Unset</strong>.</p>
+<p>Used for panel age when a source has Apply age correction enabled. Leave unset until known; no age correction is invented. Measured solar is never reduced.</p>
+<p>Reference key: <code>solar_install_date</code>.</p>
+<h4 id="settings-solar-annual-degradation">Solar annual degradation</h4>
+<p>Default: <strong>0.7 %/year</strong>.</p>
+<p>Compounded yearly reduction in an unadjusted forecast: (1 − rate/100)^age. Sources already calibrated to present output should have age correction off.</p>
+<p>Accepted range: <strong>0 to 10 %/year</strong>; adjustable in increments of <strong>0.1 %/year</strong>.</p>
+<p>Reference key: <code>solar_degradation</code>.</p>
+<h4 id="settings-solar-forecast-calibration">Solar forecast calibration</h4>
+<p>Default: <strong>On</strong>.</p>
+<p>Compare the forecast saved before each daylight hour with what your solar meter later measured. After six well-measured daylight hours, NRG adjusts future forecasts by actual ÷ forecast, using up to 168 recent daylight hours. For example, consistently producing 8 kWh when 10 kWh was forecast gives about a 0.8 multiplier. The correction is limited to 0.5–1.5. It changes predictions, never measured production or panel settings.</p>
+<p>Reference key: <code>solar_learning</code>.</p>
+<h3 id="settings-battery">Battery</h3>
+<p>Only relevant when a home battery is enabled. Review the generic assumptions against your equipment.</p>
+<h4 id="settings-battery-capacity-at-installation">Battery capacity at installation</h4>
+<p>Default: <strong>10 kWh</strong>.</p>
+<p>Generic starting assumption: replace with your equipment's full-charge capacity before backup reserve. The age estimate reduces this number; reserve and conversion losses are applied separately.</p>
+<p>Accepted range: <strong>1 to 250 kWh</strong>; adjustable in increments of <strong>0.1 kWh</strong>.</p>
+<p>Reference key: <code>battery_capacity</code>.</p>
+<h4 id="settings-battery-installation-date">Battery installation date</h4>
+<p>Default: <strong>Unset</strong>.</p>
+<p>Baseline date for the capacity entered above. If capacity is a current measured value, use its measurement date. An unset date applies no age adjustment.</p>
+<p>Reference key: <code>battery_install_date</code>.</p>
+<h4 id="settings-battery-annual-degradation">Battery annual degradation</h4>
+<p>Default: <strong>2 %/year</strong>.</p>
+<p>Compounded yearly reduction of estimated full-charge capacity. Does not change measured SOC, power limits or efficiency, and is not a measured battery health result.</p>
+<p>Accepted range: <strong>0 to 15 %/year</strong>; adjustable in increments of <strong>0.1 %/year</strong>.</p>
+<p>Reference key: <code>battery_degradation</code>.</p>
+<h4 id="settings-backup-reserve">Backup reserve</h4>
+<p>Default: <strong>20 %</strong>.</p>
+<p>Minimum battery percentage kept out of discretionary use. NRG also sets the device's reserve if that control is mapped. Configured outage/protection sensors take priority.</p>
+<p>Accepted range: <strong>0 to 100 %</strong>; adjustable in increments of <strong>1 %</strong>.</p>
+<p>Reference key: <code>backup_reserve</code>.</p>
+<h4 id="settings-battery-round-trip-efficiency">Battery round-trip efficiency</h4>
+<p>Default: <strong>90 %</strong>.</p>
+<p>Estimated AC-to-storage-to-AC efficiency. Equal square-root losses are applied when charging and discharging.</p>
+<p>Accepted range: <strong>50 to 100 %</strong>; adjustable in increments of <strong>1 %</strong>.</p>
+<p>Reference key: <code>round_trip_efficiency</code>.</p>
+<h4 id="settings-modeled-battery-charging-power">Modeled battery charging power</h4>
+<p>Default: <strong>5 kW</strong>.</p>
+<p>Charging power used to estimate future battery energy. This setting does not directly set device watts. Use a conservative value supported by your equipment.</p>
+<p>Accepted range: <strong>0.5 to 30 kW</strong>; adjustable in increments of <strong>0.5 kW</strong>.</p>
+<p>Reference key: <code>battery_charge_kw</code>.</p>
+<h4 id="settings-modeled-battery-discharge-power">Modeled battery discharge power</h4>
+<p>Default: <strong>5 kW</strong>.</p>
+<p>Discharging power used in the energy forecast. Your equipment may deliver a different rate; compare the forecast with its meter readings.</p>
+<p>Accepted range: <strong>0.5 to 30 kW</strong>; adjustable in increments of <strong>0.5 kW</strong>.</p>
+<p>Reference key: <code>battery_discharge_kw</code>.</p>
+<h4 id="settings-solar-can-recharge-the-battery-while-held">Solar can recharge the battery while held</h4>
+<p>Default: <strong>On</strong>.</p>
+<p>Enable if the selected hold mode still accepts solar charging, as Tesla Backup normally does. Turn off if your inverter's standby mode prevents solar charging too. This changes the battery forecast to match the device's behavior.</p>
+<p>Reference key: <code>battery_solar_while_held</code>.</p>
+<h3 id="settings-ev">EV</h3>
+<p>Only relevant when an EV is enabled. Review charging limits and times for your own vehicle and routine.</p>
+<h4 id="settings-preserve-battery-during-ev-charging">Preserve battery during EV charging</h4>
+<p>Default: <strong>On</strong>.</p>
+<p>When NRG controls both devices, ask the home battery to hold its energy while the car charges. Commands can take time to reach the equipment, so the battery may briefly supply the car before the hold takes effect. With a monitored-only battery, set that behavior in its own controller.</p>
+<p>Reference key: <code>hold_battery_for_ev</code>.</p>
+<h4 id="settings-daily-ev-departure">Daily EV departure</h4>
+<p>Default: <strong>08:00:00</strong>.</p>
+<p>Generic starting time: enter your own local departure. A one-off departure takes precedence. Incomplete connected sessions remain overdue.</p>
+<p>Reference key: <code>departure_time</code>.</p>
+<h4 id="settings-normal-charging-window-starts">Normal charging window starts</h4>
+<p>Default: <strong>20:00:00</strong>.</p>
+<p>Start of normal daily charging availability. Review this generic window. It ends at departure; charge-now and deadline urgency can use time outside it.</p>
+<p>Reference key: <code>ev_start_time</code>.</p>
+<h4 id="settings-ev-completion-buffer">EV completion buffer</h4>
+<p>Default: <strong>45 min</strong>.</p>
+<p>Aim to finish this many minutes before departure. Use the buffer if needed rather than miss the actual departure.</p>
+<p>Accepted range: <strong>0 to 180 min</strong>; adjustable in increments of <strong>5 min</strong>.</p>
+<p>Reference key: <code>completion_buffer</code>.</p>
+<h4 id="settings-maximum-ev-charging-current">Maximum EV charging current</h4>
+<p>Default: <strong>16 A</strong>.</p>
+<p>Generic starting limit: enter a current supported by your charger and circuit. Also bounded by the control entity's maximum. Script adapters need the real supported limit here. NRG never raises the vehicle's selected charge limit.</p>
+<p>Accepted range: <strong>5 to 80 A</strong>; adjustable in increments of <strong>1 A</strong>.</p>
+<p>Reference key: <code>ev_max_amps</code>.</p>
+<h4 id="settings-minimum-stable-ev-current">Minimum stable EV current</h4>
+<p>Default: <strong>6 A</strong>.</p>
+<p>Smallest current used for solar-aware charging. Below this the car is paused. Must be no greater than your maximum current.</p>
+<p>Accepted range: <strong>5 to 32 A</strong>; adjustable in increments of <strong>1 A</strong>.</p>
+<p>Reference key: <code>ev_min_amps</code>.</p>
+<h4 id="settings-conservative-ev-power-at-maximum-current">Conservative EV power at maximum current</h4>
+<p>Default: <strong>3.2 kW</strong>.</p>
+<p>Generic starting estimate: enter your measured AC charging power at the configured maximum current. Covered wall-charger observations can calibrate it.</p>
+<p>Accepted range: <strong>0.5 to 25 kW</strong>; adjustable in increments of <strong>0.1 kW</strong>.</p>
+<p>Reference key: <code>ev_kw_at_max</code>.</p>
+<h4 id="settings-ev-ac-energy-per-percentage-point">EV AC energy per percentage point</h4>
+<p>Default: <strong>0.6 kWh/%</strong>.</p>
+<p>Generic starting estimate: replace with AC energy per vehicle SOC percentage point, including losses. Covered charging sessions can calibrate it; this is not an EV degradation model.</p>
+<p>Accepted range: <strong>0.1 to 3 kWh/%</strong>; adjustable in increments of <strong>0.01 kWh/%</strong>.</p>
+<p>Reference key: <code>ev_kwh_per_percent</code>.</p>
+<h4 id="settings-calibrate-ev-charging-estimates">Calibrate EV charging estimates</h4>
+<p>Default: <strong>On</strong>.</p>
+<p>Use observed AC energy and the car's percentage gain to estimate how much electricity charging needs. Sessions need at least 5 percentage points, 5 minutes and good meter coverage. NRG uses a conservative estimate from the last 12 sessions, and measured power per amp to improve charging-time estimates. Example: 9 kWh for a 10-point gain suggests 0.9 kWh per point. This estimates charging needs, not EV battery degradation. Off uses your fallback values.</p>
+<p>Reference key: <code>ev_learning</code>.</p>
+<h4 id="settings-allow-saved-vehicle-readings-while-plugged-in">Allow saved vehicle readings while plugged in</h4>
+<p>Default: <strong>Off</strong>.</p>
+<p>Some MQTT/vehicle feeds publish SOC, target and settings only when they change, so their saved values become old while the car sleeps. Enable to accept those available saved values while the home charger reports connected. Connection/protection checks and command readbacks still apply. Otherwise vehicle data needs recent reports; an asleep feed may need its own wake/refresh automation. Estimates can be less current when saved readings are allowed.</p>
+<p>Reference key: <code>ev_allow_saved_readings</code>.</p>
+<h3 id="settings-planning">Planning</h3>
+<p>Set household-demand estimates, reference-appliance advice, and optional planning preferences.</p>
+<h4 id="settings-learn-household-demand">Learn household demand</h4>
+<p>Default: <strong>On</strong>.</p>
+<p>Learn typical home use at each clock hour from up to 28 days of meter readings. If an EV is installed, subtract its separately measured charging so it is not counted twice. An hour needs at least 80% valid coverage. Recent observations count more; weekday/weekend patterns separate after enough samples. This predicts ordinary demand so the battery and price advice can plan around daily life. Missing hours use your fallback, not zero.</p>
+<p>Reference key: <code>house_learning</code>.</p>
+<h4 id="settings-fallback-house-demand-without-ev">Fallback house demand without EV</h4>
+<p>Default: <strong>1 kW</strong>.</p>
+<p>Used for clock hours without enough observations, or with learning disabled. Excludes the car to avoid counting it twice.</p>
+<p>Accepted range: <strong>0.1 to 30 kW</strong>; adjustable in increments of <strong>0.1 kW</strong>.</p>
+<p>Reference key: <code>house_kw</code>.</p>
+<h4 id="settings-flexible-appliance-energy">Flexible appliance energy</h4>
+<p>Default: <strong>1 kWh</strong>.</p>
+<p>Energy used for household run-now versus later advice. Advice never starts an appliance.</p>
+<p>Accepted range: <strong>0.1 to 30 kWh</strong>; adjustable in increments of <strong>0.1 kWh</strong>.</p>
+<p>Reference key: <code>flexible_load_kwh</code>.</p>
+<h4 id="settings-flexible-appliance-duration">Flexible appliance duration</h4>
+<p>Default: <strong>60 min</strong>.</p>
+<p>Contiguous running time for the reference appliance. Every suggested window must fit this whole duration.</p>
+<p>Accepted range: <strong>15 to 360 min</strong>; adjustable in increments of <strong>15 min</strong>.</p>
+<p>Reference key: <code>flexible_load_minutes</code>.</p>
+<h4 id="settings-minimum-worthwhile-plan-improvement">Minimum worthwhile plan improvement</h4>
+<p>Default: <strong>2 ¢</strong>.</p>
+<p>Prefer a stable existing feasible plan unless a replacement improves modeled horizon cost by at least this amount. Also used for generic household advice.</p>
+<p>Accepted range: <strong>0 to 500 ¢</strong>; adjustable in increments of <strong>1 ¢</strong>.</p>
+<p>Reference key: <code>minimum_saving_cents</code>.</p>
+<h4 id="settings-optional-battery-cycling-cost">Optional battery cycling cost</h4>
+<p>Default: <strong>0 ¢/kWh</strong>.</p>
+<p>Optional estimated wear cost per AC kWh discharged. Calendar degradation above does not establish a cycling cost; zero makes no invented wear charge.</p>
+<p>Accepted range: <strong>0 to 50 ¢/kWh</strong>; adjustable in increments of <strong>0.1 ¢/kWh</strong>.</p>
+<p>Reference key: <code>battery_wear_cents</code>.</p>
+<h4 id="settings-summer-peak-import-precaution">Summer peak-import precaution</h4>
+<p>Default: <strong>Off</strong>.</p>
+<p>Optional regional precaution: avoid discretionary grid battery charging and, if feasible, EV charging on June–September weekdays noon–7 p.m. Off until explicitly enabled. It is not a predicted dollar saving; departure and charge-now win.</p>
+<p>Reference key: <code>summer_guard</code>.</p>
+<h3 id="settings-notifications">Notifications</h3>
+<p>Advice messages are opt-in. Select existing notify services in Configure → Notifications.</p>
+<h4 id="settings-send-household-advice-notifications">Send household advice notifications</h4>
+<p>Default: <strong>Off</strong>.</p>
+<p>Opt in to stable, worthwhile wait-until recommendations. Choose notify services in Configure → Notifications. Notifications do not command equipment.</p>
+<p>Reference key: <code>notifications</code>.</p>
+<h4 id="settings-minimum-notification-benefit">Minimum notification benefit</h4>
+<p>Default: <strong>25 ¢</strong>.</p>
+<p>Notify only when delaying the reference appliance is expected to save at least this amount and the recommendation stays stable for two minutes.</p>
+<p>Accepted range: <strong>0 to 1000 ¢</strong>; adjustable in increments of <strong>1 ¢</strong>.</p>
+<p>Reference key: <code>notification_saving_cents</code>.</p>
+<h4 id="settings-notification-quiet-hours-start">Notification quiet hours start</h4>
+<p>Default: <strong>21:00:00</strong>.</p>
+<p>Local start of quiet hours. Advice remains available on the dashboard.</p>
+<p>Reference key: <code>quiet_start</code>.</p>
+<h4 id="settings-notification-quiet-hours-end">Notification quiet hours end</h4>
+<p>Default: <strong>08:00:00</strong>.</p>
+<p>Local end of quiet hours. Equal start/end disables the quiet-hours restriction.</p>
+<p>Reference key: <code>quiet_end</code>.</p>
+<h3 id="settings-meter-conventions">Meter conventions</h3>
+<p>Normalize the readings reported by your existing integrations.</p>
+<h4 id="settings-grid-meter-reports-export-as-positive">Grid meter reports export as positive</h4>
+<p>Default: <strong>Off</strong>.</p>
+<p>Enable when your provider reports positive export and negative import. NRG reverses that reading so its normalized grid power always means positive buying and negative selling.</p>
+<p>Reference key: <code>grid_power_inverted</code>.</p>
+<h4 id="settings-battery-meter-reports-charging-as-positive">Battery meter reports charging as positive</h4>
+<p>Default: <strong>Off</strong>.</p>
+<p>Enable when your provider reports positive charging and negative discharge. NRG reverses it so positive always means supplying the home in its own displays and model.</p>
+<p>Reference key: <code>battery_power_inverted</code>.</p>
+<h4 id="settings-home-meter-includes-ev-charging">Home meter includes EV charging</h4>
+<p>Default: <strong>On</strong>.</p>
+<p>Enable for a whole-home load meter that includes the car. Disable for a house-only circuit meter; NRG then adds separately measured EV power for the Home total while learning the house-only reading directly.</p>
+<p>Reference key: <code>home_includes_ev</code>.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="troubleshooting" aria-label="Troubleshooting &amp; support"><h2 id="troubleshooting-troubleshooting-and-support">Troubleshooting and support</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Troubleshooting &amp; support topics"><div class="toc">
+<ul>
+<li><a href="#troubleshooting-nrg-does-not-appear-in-add-integration">NRG does not appear in Add integration</a></li>
+<li><a href="#troubleshooting-the-integration-is-installed-but-no-nrg-dashboards-appear">The integration is installed, but no NRG dashboards appear</a></li>
+<li><a href="#troubleshooting-charts-say-custom-element-does-not-exist-or-are-blank">Charts say Custom element does not exist or are blank</a></li>
+<li><a href="#troubleshooting-electricity-price-is-unknown-too-high-or-100-times-wrong">Electricity price is unknown, too high, or 100 times wrong</a></li>
+<li><a href="#troubleshooting-advice-says-waiting-for-dependable-coverage">Advice says Waiting for dependable coverage</a></li>
+<li><a href="#troubleshooting-power-flows-are-missing-reversed-or-inconsistent">Power flows are missing, reversed, or inconsistent</a></li>
+<li><a href="#troubleshooting-the-plan-exists-but-my-car-or-battery-is-not-following-it">The plan exists, but my car or battery is not following it</a></li>
+<li><a href="#troubleshooting-my-sleeping-cars-readings-are-considered-old">My sleeping car's readings are considered old</a></li>
+<li><a href="#troubleshooting-ev-ready-time-is-late-or-there-is-a-departure-shortfall">EV ready time is late or there is a departure shortfall</a></li>
+<li><a href="#troubleshooting-the-battery-will-not-grid-charge-or-export-on-schedule">The battery will not grid-charge or export on schedule</a></li>
+<li><a href="#troubleshooting-solar-totals-look-doubled-or-a-source-is-unavailable">Solar totals look doubled or a source is unavailable</a></li>
+<li><a href="#troubleshooting-todays-cost-is-absent-surprisingly-low-or-different-from-ha-energy">Today's cost is absent, surprisingly low, or different from HA Energy</a></li>
+<li><a href="#troubleshooting-learning-or-notifications-do-not-seem-to-work">Learning or notifications do not seem to work</a></li>
+<li><a href="#troubleshooting-the-handbook-looks-old-after-an-update">The handbook looks old after an update</a></li>
+<li><a href="#troubleshooting-getting-help">Getting help</a></li>
+</ul>
+</div>
+</nav></details>
+<p>Start with the symptom below. <strong>Configure → …</strong> means <strong>Settings → Devices &amp;
+services → NRG Planner → Configure</strong>. The optional administrator dashboard is
+called <strong>NRG Planner settings</strong>.</p>
+<h3 id="troubleshooting-nrg-does-not-appear-in-add-integration">NRG does not appear in Add integration</h3>
+<ol>
+<li>Confirm that Home Assistant is 2026.10.2 or newer; this snapshot targets 2026.10.2.</li>
+<li>For a manual installation, check that <code>manifest.json</code> is directly inside your HA
+   configuration directory's <code>custom_components/nrg/</code> folder. A nested
+   <code>custom_components/nrg/nrg/</code> or a copy of the repository outside the HA
+   configuration directory is not the expected layout.</li>
+<li>Restart Home Assistant after copying the component, then look in <strong>Settings →
+   Devices &amp; services → Add integration</strong> for <strong>NRG Planner</strong>.</li>
+<li>If it is still absent, review the Home Assistant logs for a component-loading
+   error and include the relevant, reviewed error in a support report.</li>
+</ol>
+<p>HACS cannot install this private-review repository. Use the manual path while
+access is private; see <a href="#installation">installation</a>.</p>
+<h3 id="troubleshooting-the-integration-is-installed-but-no-nrg-dashboards-appear">The integration is installed, but no NRG dashboards appear</h3>
+<p>Dashboards are optional and are not registered automatically. Complete the
+<a href="#installation-optional-dashboards">dashboard package setup</a>, check the HA
+configuration, and restart. The <strong>NRG Planner settings</strong> view appears only for
+administrators. You can configure and use native entities without these views.</p>
+<h3 id="troubleshooting-charts-say-custom-element-does-not-exist-or-are-blank">Charts say Custom element does not exist or are blank</h3>
+<ul>
+<li>For <code>apexcharts-card</code> errors, install <strong>ApexCharts Card</strong> separately through HACS
+  and verify its module in <strong>Settings → Dashboards → Resources</strong>. The bundled
+  templates target version <strong>2.2.3</strong>. Reload the browser after resource changes.</li>
+<li>If the card loads but has no data, inspect NRG's buying price, pricing coverage,
+  and source status. Chart lines omit missing or expired plan data.</li>
+<li>An <strong>External supply/delivery</strong> current sensor alone cannot fill future hours.
+  Add a supported forecast or use your contracted flat/timed rates.</li>
+<li>If entity IDs were renamed, the bundled dashboard still refers to the initial
+  <code>nrg_*</code> IDs. Update the references in your own dashboard copy.</li>
+</ul>
+<h3 id="troubleshooting-electricity-price-is-unknown-too-high-or-100-times-wrong">Electricity price is unknown, too high, or 100 times wrong</h3>
+<p>Open <strong>Configure → Tariff</strong> and check supply and delivery separately.</p>
+<ul>
+<li>Both components need a valid rate for the combined buying price. Blank means
+  unknown. Enter zero explicitly if there is no separate delivery cost.</li>
+<li>If supply already includes delivery, do not add delivery again.</li>
+<li>Type rates in <strong>cents/kWh</strong>: a $0.12/kWh rate is <strong>12</strong>, not <strong>0.12</strong>, in a
+  cents field. External sensors must declare supported USD/kWh or cents/kWh units.</li>
+<li>For timed pricing, select the time-of-use plan as well as saving its periods.
+  Check uncovered hours, blank rates, starting weekdays, and the HA timezone.</li>
+<li>For external feeds, inspect the selected current/forecast entities, forecast
+  attribute, timestamps, interval ends, units, and freshness.</li>
+</ul>
+<p>Negative supply is not necessarily a negative total after delivery is added.
+See <a href="#pricing">pricing</a> for accepted interval fields and overnight rules.</p>
+<h3 id="troubleshooting-advice-says-waiting-for-dependable-coverage">Advice says Waiting for dependable coverage</h3>
+<p>NRG needs enough trustworthy information to compare a <strong>complete</strong> run of the
+reference task. Check price coverage first, then the forecasts and enabled
+equipment readings that apply to your home. A one-hour task cannot be compared
+using only one known 15-minute slot.</p>
+<p>Turn off components you do not have under <strong>Components</strong>. A disabled component
+contributes a known zero; an enabled component with missing readings is unknown.
+Use <strong>Refresh</strong> after correcting inputs. Tentative price estimates are not the
+same as dependable published or contracted coverage.</p>
+<h3 id="troubleshooting-power-flows-are-missing-reversed-or-inconsistent">Power flows are missing, reversed, or inconsistent</h3>
+<p>NRG's normalized readings mean <strong>positive grid = buying</strong> and <strong>positive battery =
+supplying the home</strong>. In <strong>Configure → Meter conventions</strong>, reverse the applicable
+reading only if your provider uses the opposite convention. Check whether the
+home meter includes EV charging so it is not added or subtracted twice.</p>
+<p>Review <strong>Details → Local measurement quality</strong> and the power-balance residual.
+Mismatched meters can pause learning. Map power entities in W or kW rather than
+energy counters in kWh for live power roles.</p>
+<p>The <strong>Sankey diagram has its own setup</strong>: configure actual power meters in Home
+Assistant's Energy dashboard. NRG's Mappings screen does not populate it. Missing
+meters are not replaced with forecast flows. See <a href="#homeowner-guide-current-power-flow-the-sankey-diagram">the homeowner guide</a>.</p>
+<h3 id="troubleshooting-the-plan-exists-but-my-car-or-battery-is-not-following-it">The plan exists, but my car or battery is not following it</h3>
+<p>Read <strong>Operation → Control status</strong> before checking the device.</p>
+<ol>
+<li><strong>Mode:</strong> Observation proposes only; select Control when you intend to hand over
+   operation.</li>
+<li><strong>Component permission:</strong> enable the relevant EV/battery control switch separately.</li>
+<li><strong>Inputs:</strong> confirm connection, charge percentage, selected EV target, required
+   controls, and their available feedback. A plan is not observed operation.</li>
+<li><strong>Protection:</strong> selected guard entities must report the expected clear states.
+   A missing selected guard blocks commands; it is not silently ignored.</li>
+<li><strong>Command compatibility:</strong> match your actual option/state names under <strong>Control
+   adapters</strong>. Read-only feedback needs a working command script if no direct
+   switch, number, or select can perform the action.</li>
+<li><strong>Ownership:</strong> check for a manufacturer's schedule or another automation
+   overwriting settings. Follow <a href="#operations-transfer-equipment-control">control handover</a>.</li>
+</ol>
+<p><strong>Writer authorized</strong> indicates mode and component permission, not that every
+device is ready. <strong>Protection guards</strong>, <strong>EV ready</strong>, and <strong>Battery ready</strong> identify
+additional checks. Commands and device response may take time; feedback should
+confirm settings. Do not map forced battery export to NRG's serve-home action.</p>
+<h3 id="troubleshooting-my-sleeping-cars-readings-are-considered-old">My sleeping car's readings are considered old</h3>
+<p>Some integrations publish vehicle values only when they change. First confirm the
+home-charger connection and that the readings are still appropriate. You can
+provide a wake/refresh automation through the existing integration. Alternatively,
+<strong>EV → Allow saved vehicle readings while plugged in</strong> accepts available retained
+SOC/target/settings while the home connection is reported. It starts off and
+allows less-current estimates; it does not bypass connection, protection, or
+command-feedback checks. See <a href="#integrations-provider-neutral-measurements">reading freshness</a>.</p>
+<h3 id="troubleshooting-ev-ready-time-is-late-or-there-is-a-departure-shortfall">EV ready time is late or there is a departure shortfall</h3>
+<p>Check the daily departure, any one-off override, vehicle target, current charge,
+maximum/stable current, modeled charging power, energy per percentage point, and
+actual connection. Generic defaults are not detected hardware specifications.</p>
+<p><strong>Charge now</strong> bypasses prices and the normal charging window when EV checks pass.
+It does not raise the vehicle target or ignore current/protection limits. Clear an
+outdated one-off departure using <strong>Clear one-off departure</strong>. An incomplete
+continuously connected session stays overdue instead of quietly moving to tomorrow.</p>
+<h3 id="troubleshooting-the-battery-will-not-grid-charge-or-export-on-schedule">The battery will not grid-charge or export on schedule</h3>
+<p>Grid charging requires a supported charge action. If charge and hold share the
+same device mode, a separate grid-charge permission switch is needed; otherwise a
+distinct charge-capable mode can work. Missing trustworthy price/solar inputs,
+reserve, device readiness, or an enabled summer precaution can also limit moves.</p>
+<p>NRG does not schedule forced battery exports. <strong>Battery</strong> export policy permits
+exports where a control exists; it does not request a timed sale. Without a mapped
+export control, configure that policy in the equipment's own app. See
+<a href="#integrations-direct-controls-and-option-names">control adapters</a>.</p>
+<h3 id="troubleshooting-solar-totals-look-doubled-or-a-source-is-unavailable">Solar totals look doubled or a source is unavailable</h3>
+<p>Add distinct physical arrays, but average alternatives covering the <strong>same</strong>
+panels. Do not add several sensors from one Forecast.Solar entry as separate
+independent forecasts. A whole-system forecast and a partial overlapping roof
+cannot be combined as separate coverage. Review each source's group and status.</p>
+<p>For a consistently low prediction, check whether both provider calibration and
+NRG age correction are reducing the same output. Turn age correction off for a
+provider already adjusted to current panel output. A missing daylight forecast
+stays unknown; nighttime can be known zero. See <a href="#integrations-solar-forecasts-and-alternatives">solar sources</a>.</p>
+<h3 id="troubleshooting-todays-cost-is-absent-surprisingly-low-or-different-from-ha-energy">Today's cost is absent, surprisingly low, or different from HA Energy</h3>
+<p>Check <strong>Today's cost coverage</strong> together with the net cost. Cost tracking needs
+sufficient grid/site power readings and contemporaneous prices. First days,
+missing readings, and downtime are partial. Price advice can still work without
+site metering.</p>
+<p>NRG integrates covered power samples; HA Energy can use lifetime energy counters.
+Their totals need not match. Fixed fees and unconfigured taxes are outside NRG's
+variable-cost ledger. Changing a rate does not retroactively reprice recorded
+intervals. See <a href="#accounting">accounting</a>.</p>
+<h3 id="troubleshooting-learning-or-notifications-do-not-seem-to-work">Learning or notifications do not seem to work</h3>
+<p><strong>Learning:</strong> check the relevant switch and measurement coverage. Household hours
+need 80% valid coverage. Solar needs six valid daylight comparisons. EV sessions
+need at least five percentage points, five minutes, and covered AC energy readings
+from an increasing lifetime counter. Until then, configured fallbacks are expected.
+<a href="#learning">Learning</a> explains each requirement. Reset only when you intend to
+discard learned profiles and comparisons.</p>
+<p><strong>Notifications:</strong> enable notifications and select existing notify services in
+<strong>Configure → Notifications</strong>. The feature sends stable wait-until advice only
+when its modeled benefit reaches your threshold and quiet hours permit it. A
+two-minute stability requirement prevents immediate messages; the default
+threshold is 25¢ for the reference task. No message is expected just because a
+price changed.</p>
+<h3 id="troubleshooting-the-handbook-looks-old-after-an-update">The handbook looks old after an update</h3>
+<p>Open it using a dashboard's handbook link; the generated link includes a content
+version to avoid an old cached copy. Reload the browser if needed. With a manual
+update, confirm the complete <code>custom_components/nrg/</code> directory was replaced,
+including <code>assets/guide.html</code> and the bundled dashboards.</p>
+<h3 id="troubleshooting-getting-help">Getting help</h3>
+<p>Use the <a href="https://github.com/dekay7/nrg-planner/issues">GitHub issue tracker</a> if you
+have repository access. During private review, contact the repository owner through
+the existing review channel if the tracker is unavailable. Maintainer:
+<a href="https://github.com/dekay7">@dekay7</a>.</p>
+<p>Include:</p>
+<ul>
+<li>Home Assistant and NRG versions, plus manual/HACS installation method. The NRG
+  version is in the integration's <code>manifest.json</code> and its diagnostics summary.</li>
+<li>What you expected, what happened, and the steps that reproduce it.</li>
+<li>Enabled components, Observation/Control mode, affected provider integration,
+  and relevant readiness/coverage status.</li>
+<li>For chart issues, browser and ApexCharts Card version.</li>
+<li>If useful, the standard <strong>Download diagnostics</strong> from NRG's integration entry.
+  It is a limited summary rather than a complete configuration dump.</li>
+</ul>
+<p>Review any logs, screenshots, entity exports, or attachments before sharing;
+they may show private local settings. Do not attach an HA backup or entire
+configuration directory. The <a href="#privacy-diagnostics-and-support">privacy guide</a>
+describes exactly what the standard diagnostic download includes and excludes.</p>
+<p>For update rollback, removal, or returning control to another system, follow
+<a href="#installation-updates-and-removal">installation</a> and <a href="#operations-recovery">recovery</a>.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="glossary" aria-label="Plain-language glossary"><h2 id="glossary-plain-language-glossary">Plain-language glossary</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Plain-language glossary topics"><div class="toc">
+<ul>
+<li><a href="#glossary-electricity-and-money">Electricity and money</a></li>
+<li><a href="#glossary-cars-solar-and-storage">Cars, solar, and storage</a></li>
+<li><a href="#glossary-home-assistant-and-planning">Home Assistant and planning</a></li>
+</ul>
+</div>
+</nav></details>
+<h3 id="glossary-electricity-and-money">Electricity and money</h3>
+<div class="table-scroll" role="region" aria-label="Plain-language glossary table 1" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Term</th>
+<th scope="col">What it means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Grid</strong></td>
+<td>The public electricity network. Import means buying from it; export means sending electricity back.</td>
+</tr>
+<tr>
+<td><strong>W / kW (power)</strong></td>
+<td>How fast electricity is being used or produced right now. 1,000 watts (W) = 1 kilowatt (kW).</td>
+</tr>
+<tr>
+<td><strong>kWh (energy)</strong></td>
+<td>An amount of electricity over time. A 2 kW appliance running for half an hour uses 1 kWh.</td>
+</tr>
+<tr>
+<td><strong>¢/kWh</strong></td>
+<td>Cents for one kWh. At 12¢/kWh, using 2 kWh costs 24¢. This is an example, not a default.</td>
+</tr>
+<tr>
+<td><strong>USD/kWh</strong></td>
+<td>Dollars for one kWh. $0.12/kWh and 12¢/kWh mean the same rate. NRG's rate-entry fields use cents; total costs use dollars.</td>
+</tr>
+<tr>
+<td><strong>Supply</strong></td>
+<td>The electricity itself, priced by your supplier.</td>
+</tr>
+<tr>
+<td><strong>Delivery</strong></td>
+<td>The variable per-kWh cost of bringing electricity to your home, including applicable variable riders. Fixed monthly fees are separate.</td>
+</tr>
+<tr>
+<td><strong>Tariff</strong></td>
+<td>Your electricity pricing rules: what you pay or receive, and when.</td>
+</tr>
+<tr>
+<td><strong>Flat rate</strong></td>
+<td>A per-kWh price that stays the same across the configured hours.</td>
+</tr>
+<tr>
+<td><strong>Time-of-use (TOU)</strong></td>
+<td>Different prices for configured clock periods or weekdays, such as peak and overnight.</td>
+</tr>
+<tr>
+<td><strong>Hourly / dynamic price</strong></td>
+<td>A changing price supplied by an external feed or supported adapter. A current observation does not guarantee a future rate.</td>
+</tr>
+<tr>
+<td><strong>Export credit</strong></td>
+<td>The value credited for electricity sent to the grid. It need not match what you pay to buy electricity or be payable as cash.</td>
+</tr>
+<tr>
+<td><strong>Export policy</strong></td>
+<td>Whether equipment should permit solar exports, battery exports, or neither, where a matching control exists. It does not define a credit or schedule a sale.</td>
+</tr>
+<tr>
+<td><strong>Net cost</strong></td>
+<td>Purchase cost minus export credit for the covered time. A negative number means modeled credits exceeded purchase cost during that time.</td>
+</tr>
+<tr>
+<td><strong>Opportunity cost</strong></td>
+<td>The benefit you give up by using energy one way rather than another, such as losing an export credit when you use solar at home.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="glossary-cars-solar-and-storage">Cars, solar, and storage</h3>
+<div class="table-scroll" role="region" aria-label="Plain-language glossary table 2" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Term</th>
+<th scope="col">What it means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>EV</strong></td>
+<td>Electric vehicle.</td>
+</tr>
+<tr>
+<td><strong>Stationary battery</strong></td>
+<td>A home battery, distinct from the battery in an EV.</td>
+</tr>
+<tr>
+<td><strong>SOC / state of charge</strong></td>
+<td>Battery percentage: how full a home or vehicle battery reports itself to be.</td>
+</tr>
+<tr>
+<td><strong>Capacity (kWh)</strong></td>
+<td>The amount of energy a full battery can hold. A configured or age-adjusted estimate is not a measured battery-health test.</td>
+</tr>
+<tr>
+<td><strong>Backup reserve</strong></td>
+<td>The battery percentage kept out of discretionary use so it remains available for backup.</td>
+</tr>
+<tr>
+<td><strong>A / amps (current)</strong></td>
+<td>A measure used to set EV charging speed. Use a current supported by the charger and circuit.</td>
+</tr>
+<tr>
+<td><strong>AC energy</strong></td>
+<td>Electricity measured on the home's alternating-current side, including charging losses rather than only the increase stored in a vehicle battery.</td>
+</tr>
+<tr>
+<td><strong>Round-trip efficiency</strong></td>
+<td>How much energy comes back after storage. A modeled 90% round trip means about 9 kWh returned from 10 kWh put in.</td>
+</tr>
+<tr>
+<td><strong>Degradation</strong></td>
+<td>Gradual reduction in capacity or production with age. NRG's configured annual assumptions adjust predictions, not actual meter readings.</td>
+</tr>
+<tr>
+<td><strong>Array / coverage group</strong></td>
+<td>Physical solar panels represented by a forecast. Separate roofs add together; alternative forecasts for the same panels are averaged.</td>
+</tr>
+<tr>
+<td><strong>Hold / serve / grid charge</strong></td>
+<td>Battery actions: preserve stored energy, supply the home's demand, or charge using grid electricity. They must match your device's actual modes.</td>
+</tr>
+<tr>
+<td><strong>Departure / completion buffer</strong></td>
+<td>When the car is needed, and how early NRG should aim to finish. The buffer can be used if necessary to meet the actual departure.</td>
+</tr>
+<tr>
+<td><strong>Shortfall</strong></td>
+<td>Energy the model cannot deliver to the selected EV target by departure under current assumptions.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="glossary-home-assistant-and-planning">Home Assistant and planning</h3>
+<div class="table-scroll" role="region" aria-label="Plain-language glossary table 3" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Term</th>
+<th scope="col">What it means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HA / Home Assistant</strong></td>
+<td>The platform hosting NRG and your equipment integrations.</td>
+</tr>
+<tr>
+<td><strong>Integration</strong></td>
+<td>Software that connects a device or service to Home Assistant. NRG is itself an integration.</td>
+</tr>
+<tr>
+<td><strong>Entity</strong></td>
+<td>One named measurement or control in HA, such as a power sensor, switch, or charge-limit number. Its identifier may look like <code>sensor.nrg_import_price</code>.</td>
+</tr>
+<tr>
+<td><strong>Mapping</strong></td>
+<td>Telling NRG which existing HA entity supplies a particular reading or control.</td>
+</tr>
+<tr>
+<td><strong>Adapter / script</strong></td>
+<td>A translation between NRG's request and the command your equipment supports. A script is an HA action sequence you supply when direct controls are insufficient.</td>
+</tr>
+<tr>
+<td><strong>Feedback / readback</strong></td>
+<td>A device's reported setting after a command. An accepted request is not proof that power changed immediately.</td>
+</tr>
+<tr>
+<td><strong>Guard / protection input</strong></td>
+<td>A selected reading that must be valid and in the expected state before commands are allowed, such as grid connection or external-controller priority.</td>
+</tr>
+<tr>
+<td><strong>Observation</strong></td>
+<td>Plans and advice without equipment commands.</td>
+</tr>
+<tr>
+<td><strong>Control</strong></td>
+<td>Operating mode permitting commands to separately enabled components when the required checks pass.</td>
+</tr>
+<tr>
+<td><strong>Forecast / model</strong></td>
+<td>A prediction of future prices, solar, demand, or equipment behavior. It can differ from what actually happens.</td>
+</tr>
+<tr>
+<td><strong>Horizon</strong></td>
+<td>The future period being compared. NRG's equipment plan looks 48 real hours ahead.</td>
+</tr>
+<tr>
+<td><strong>Reference appliance / flexible load</strong></td>
+<td>The energy and uninterrupted duration of the example task used for run-now-versus-later advice. It is not an automatically controlled appliance.</td>
+</tr>
+<tr>
+<td><strong>Coverage</strong></td>
+<td>How much time has usable readings and prices. Missing time is unknown, not zero usage or free electricity.</td>
+</tr>
+<tr>
+<td><strong>Calibration / learning</strong></td>
+<td>Improving predictions using valid local observations. It does not rewrite measurements.</td>
+</tr>
+<tr>
+<td><strong>HACS</strong></td>
+<td>Home Assistant Community Store, an optional way to install community integrations and dashboard cards. It is not required for manual installation of NRG itself.</td>
+</tr>
+<tr>
+<td><strong>YAML / package</strong></td>
+<td>A text configuration format and a grouped HA configuration file. The optional dashboard package registers NRG's bundled views.</td>
+</tr>
+<tr>
+<td><strong>Sankey</strong></td>
+<td>A flow diagram whose bands show the amount of power moving between sources and consumers. NRG's card uses HA Energy's configured live meters.</td>
+</tr>
+</tbody>
+</table></div>
+<p>For examples in context, see <a href="#pricing">pricing</a>, the
+<a href="#homeowner-guide">homeowner guide</a>, and <a href="#learning">learning</a>.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="privacy" aria-label="Privacy &amp; diagnostics"><h2 id="privacy-privacy">Privacy</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Privacy &amp; diagnostics topics"><div class="toc">
+<ul>
+<li><a href="#privacy-repository-contents">Repository contents</a></li>
+<li><a href="#privacy-runtime-data-stays-in-home-assistant">Runtime data stays in Home Assistant</a></li>
+<li><a href="#privacy-diagnostics-and-support">Diagnostics and support</a></li>
+<li><a href="#privacy-publication-protection">Publication protection</a></li>
+</ul>
+</div>
+</nav></details>
+<h3 id="privacy-repository-contents">Repository contents</h3>
+<p>This project contains reusable source, generic documentation, and invented test
+scenarios. It does not need bills, CSVs, photographs, usage exports, an existing
+HA configuration, or a household's historical data to build or test.</p>
+<p>Tariff inputs start unset. There is no embedded historical household price
+profile. Generic equipment assumptions are described as assumptions and must be
+reviewed for each installation. Documentation examples are illustrative.</p>
+<p>The public maintainer identity is the GitHub account <code>dekay7</code>. Project commit
+metadata should use that account's GitHub no-reply address, not a personal email.</p>
+<h3 id="privacy-runtime-data-stays-in-home-assistant">Runtime data stays in Home Assistant</h3>
+<p>NRG stores integration options and bounded learning/cost summaries through HA's
+storage APIs. That includes user-entered rates, source mappings, hourly summaries,
+EV-session estimates, and daily ledgers. These are private installation data, not
+repository assets. HA backups may contain them.</p>
+<p>NRG has no analytics, account registration, or telemetry-upload endpoint. The
+optional ComEd adapter requests public pricing. The optional Forecast.Solar adapter
+reads the selected integration's forecast service; that integration manages its
+own provider connection. Device-control scripts and selected notification services
+may use cloud services according to the user's existing integrations.</p>
+<h3 id="privacy-diagnostics-and-support">Diagnostics and support</h3>
+<p>The standard integration diagnostics download is an allowlisted summary containing
+the integration version, operating mode, component/control flags, source and sample
+counts, plan availability, and whether the current buying price is known.</p>
+<p>It excludes tariff values, tariff labels, equipment capacities, dates, departures,
+notification recipients, entity/entry IDs, source labels, free-text errors, plans,
+observations, and location data. It does not dump HA configuration or other
+integrations' credentials.</p>
+<p>Normal HA entities intentionally show configured rates and local planning details
+to authorized HA users. Screenshots, state exports, and HA logs can therefore
+contain private information even when the diagnostics summary does not. Review
+those yourself before attaching them to an issue.</p>
+<p>The local HTML handbook serves only bundled generic documentation, never user
+configuration or runtime state.</p>
+<h3 id="privacy-publication-protection">Publication protection</h3>
+<p><code>tools/check_privacy.py</code> checks source and, with <code>--history</code>, reachable Git history
+for disallowed files and common identifiers/secrets. It rejects files outside the
+reviewed project layout and non-brand binary assets. CI runs the same check.</p>
+<p>An optional, local-only deny file can add private indicators for an owner's review.
+Keep that file outside the repository. Reports identify paths and finding types,
+not matching secret values. Automated scans complement the owner's manual review;
+they cannot recognize every form of personal information.</p>
+<p>See <a href="#review">review and publication gates</a>.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="design" aria-label="How planning works"><h2 id="design-how-nrg-planner-makes-decisions">How NRG Planner makes decisions</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="How planning works topics"><div class="toc">
+<ul>
+<li><a href="#design-scope-and-objective">Scope and objective</a></li>
+<li><a href="#design-time-and-prices">Time and prices</a></li>
+<li><a href="#design-measurements-and-statistics">Measurements and statistics</a></li>
+<li><a href="#design-ev-candidates">EV candidates</a></li>
+<li><a href="#design-battery-search">Battery search</a></li>
+<li><a href="#design-household-advice-and-execution">Household advice and execution</a></li>
+</ul>
+</div>
+</nav></details>
+<h3 id="design-scope-and-objective">Scope and objective</h3>
 <p>NRG compares feasible plans to reduce purchases minus export credits, including
 storage losses, optional cycling cost and remaining stored-energy value. Ordinary
 household demand is forecast; applicable EV deadlines and backup reserve take priority.
@@ -774,7 +1965,7 @@ The calculation is pure Python. A separate guarded writer uses public HA service
 scheduled. An uncontrolled EV's already observed charging can be extrapolated to
 its known target as a background load; it does not produce EV command permission.
 A grid-only home needs neither battery nor EV data for price advice.</p>
-<h2 id="design-time-and-prices">Time and prices</h2>
+<h3 id="design-time-and-prices">Time and prices</h3>
 <p>The horizon covers 48 real hours, split into 15-minute intervals and exact tariff,
 departure, buffer and charging-window boundaries. Intervals carry UTC instants;
 contract times and weekdays use HA's timezone. Repeated DST clock hours receive
@@ -787,7 +1978,7 @@ Flat rates also start unset. The optional ComEd estimate uses only observations
 learned by the current installation; no historical profile is embedded.</p>
 <p>For daily departure on a DST change, the first occurrence of an ambiguous local
 time is used. A nonexistent spring time shifts forward by the DST jump.</p>
-<h2 id="design-measurements-and-statistics">Measurements and statistics</h2>
+<h3 id="design-measurements-and-statistics">Measurements and statistics</h3>
 <p>Known absent equipment contributes zero; missing enabled equipment is unknown.
 Complete applicable site meters can derive a missing home/grid reading from
 <code>solar + grid + battery = home</code>, with the calculated basis identified.</p>
@@ -810,8 +2001,8 @@ The upper 80th-percentile AC kWh/point sample from the last twelve valid session
 conservative about required energy. Lower-percentile observed power/amp estimates
 help avoid overpromising charging speed. It does not estimate EV degradation.
 The <a href="#learning">learning guide</a> explains all four controls with examples.</p>
-<h2 id="design-ev-candidates">EV candidates</h2>
-<pre><code class="language-text">AC energy needed = (selected limit − SOC) × estimated AC kWh per percentage point
+<h3 id="design-ev-candidates">EV candidates</h3>
+<pre tabindex="0" aria-label="Code example"><code class="language-text">AC energy needed = (selected limit − SOC) × estimated AC kWh per percentage point
 </code></pre>
 <p>When EV control is enabled, compare cheapest-grid, solar-aware, earliest and latest
 feasible schedules. Solar-aware charging values direct surplus at foregone export
@@ -824,7 +2015,7 @@ continuously connected session remains overdue rather than silently moving to to
 modeled improvement is below the selected threshold. Known-price charging periods
 are preferred over unpriced gaps before comparing cost. An estimate used internally
 for deadline calculations is not displayed as a known tariff or a free hour.</p>
-<h2 id="design-battery-search">Battery search</h2>
+<h3 id="design-battery-search">Battery search</h3>
 <p>For each EV candidate, search supported <strong>hold, serve the home, grid charge</strong> modes.
 No battery, monitoring-only battery, missing controls or invalid SOC yields no
 discretionary battery trajectory. No charge-capable mode/switch means grid charging
@@ -833,7 +2024,7 @@ is excluded rather than invented. Unknown current prices/solar permit hold only.
 also excludes serving the car from storage. The optional seasonal peak precaution
 is separate from tariff prices and starts off for non-ComEd configurations.</p>
 <p>For round-trip efficiency <code>r</code>:</p>
-<pre><code class="language-text">next stored energy = stored energy
+<pre tabindex="0" aria-label="Code example"><code class="language-text">next stored energy = stored energy
                    + AC charging energy × sqrt(r)
                    − AC delivered energy / sqrt(r)
 </code></pre>
@@ -854,7 +2045,7 @@ wear cost defaults to zero.</p>
 is allowed. The modeled serve mode supplies home demand; it must not be mapped to
 a forced export operation. Solar surplus exports when permitted/nonnegative,
 otherwise it is modeled as curtailed. Native response is checked separately.</p>
-<h2 id="design-household-advice-and-execution">Household advice and execution</h2>
+<h3 id="design-household-advice-and-execution">Household advice and execution</h3>
 <p>Replay the selected modes with the reference appliance starting now or at each
 15-minute boundary in the next day. Include its complete duration, foregone exports
 and end-of-horizon energy value. Only the contiguous trusted-price horizon competes.
@@ -873,8 +2064,16 @@ daily ledgers use HA Store, saved periodically and on shutdown. Bootstrap YAML n
 overwrites existing UI options. The optional dashboard package excludes large
 plan/source/observation entities from recorder. The power-flow Sankey card is
 Home Assistant's built-in live data view of the Energy dashboard configuration;
-ApexCharts is a separately installed optional chart dependency used for timelines.</p><p><a href="#top">Back to contents</a></p></section><section id="accounting"><h1 id="accounting-prices-costs-and-savings-estimates">Prices, costs and savings estimates</h1>
-<h2 id="accounting-supply-and-delivery">Supply and delivery</h2>
+ApexCharts is a separately installed optional chart dependency used for timelines.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="accounting" aria-label="Costs &amp; accounting"><h2 id="accounting-prices-costs-and-savings-estimates">Prices, costs and savings estimates</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Costs &amp; accounting topics"><div class="toc">
+<ul>
+<li><a href="#accounting-supply-and-delivery">Supply and delivery</a></li>
+<li><a href="#accounting-observed-ledger">Observed ledger</a></li>
+<li><a href="#accounting-different-money-figures">Different money figures</a></li>
+<li><a href="#accounting-built-in-ha-energy">Built-in HA Energy</a></li>
+</ul>
+</div>
+</nav></details>
+<h3 id="accounting-supply-and-delivery">Supply and delivery</h3>
 <p>Internal prices use USD/kWh. Rate inputs and buying-price graphs use cents/kWh,
 converted once. At each instant NRG independently evaluates supply and delivery,
 then adds them. Different schedules, overnight periods, weekdays, flat rates and
@@ -889,8 +2088,8 @@ cash-out and billing-period restrictions are not automatically reconstructed.</p
 <p>Fixed customer fees do not change which hour is cheaper. Capacity charges and
 unconfigured taxes are excluded. The optional seasonal precaution is not an
 invented per-kWh cost or a claimed capacity-dollar saving.</p>
-<h2 id="accounting-observed-ledger">Observed ledger</h2>
-<pre><code class="language-text">purchase cost = positive grid kW × hours × buying price at that time
+<h3 id="accounting-observed-ledger">Observed ledger</h3>
+<pre tabindex="0" aria-label="Code example"><code class="language-text">purchase cost = positive grid kW × hours × buying price at that time
 export credit = negative grid kW magnitude × hours × configured export credit
 net cost      = purchase cost − export credit
 </code></pre>
@@ -910,7 +2109,7 @@ Coverage is cost-covered hours divided by real elapsed local-day hours, includin
 DST. First days and outage days are partial. The ledger retains 62 days; learning
 reset preserves it. Daily energy figures cover observed intervals and can differ
 from the built-in Energy dashboard's lifetime-counter-based totals.</p>
-<h2 id="accounting-different-money-figures">Different money figures</h2>
+<h3 id="accounting-different-money-figures">Different money figures</h3>
 <ol>
 <li><strong>Observed net variable cost:</strong> grid meter readings and contemporaneous rates,
    with explicit coverage. Not a complete settled utility bill.</li>
@@ -922,119 +2121,122 @@ from the built-in Energy dashboard's lifetime-counter-based totals.</p>
 </ol>
 <p>No annual saving is claimed from software scenarios. Validate predicted versus
 observed operation and reconcile actual bills.</p>
-<h2 id="accounting-built-in-ha-energy">Built-in HA Energy</h2>
+<h3 id="accounting-built-in-ha-energy">Built-in HA Energy</h3>
 <p>Use <strong><code>sensor.nrg_import_price_usd</code></strong> as the buying-price entity if configuring HA
 Energy costs. It includes the selected supply and delivery methods; do not add
 delivery again. Its availability follows price coverage.</p>
 <p>Use <code>sensor.nrg_export_price_usd</code> for export compensation. Changing Energy's price
-sources is a separate supported UI action; NRG does not rewrite historical records.</p><p><a href="#top">Back to contents</a></p></section><section id="installation"><h1 id="installation-installation-and-updates">Installation and updates</h1>
-<h2 id="installation-private-review">Private review</h2>
-<p>HACS requires a public GitHub repository. While this repository remains private,
-download it using an authorized GitHub account and copy <code>custom_components/nrg/</code>
-into the HA configuration directory's <code>custom_components/nrg/</code>. Restart HA and
-add <strong>NRG Planner</strong> in Devices &amp; services. No SSH deployer or site file is needed.</p>
-<p>No Git history, tests, development tools, or repository data files belong in the
-installed component directory beyond the files already under <code>custom_components/nrg/</code>.</p>
-<h2 id="installation-hacs-after-publication">HACS after publication</h2>
-<p>Add <code>https://github.com/dekay7/nrg-planner</code> in HACS Custom repositories, category
-<strong>Integration</strong>. Download, restart HA, and add the integration through Devices &amp;
-services. Default-catalog approval is not required for this custom-repository path.</p>
-<p>All integration assets, dashboard definitions, and the generic handbook are inside
-<code>custom_components/nrg/</code> and are delivered together. HACS does not edit your
-configuration, enable device control, or register dashboard packages.</p>
-<h2 id="installation-optional-dashboards">Optional dashboards</h2>
-<p>The integration's native entities and setup forms work without dashboards.
-For the bundled homeowner and admin views:</p>
-<ol>
-<li>Install <strong>ApexCharts Card</strong> through HACS and verify its JavaScript module is
-   registered in <strong>Settings → Dashboards → Resources</strong>. NRG does not redistribute
-   a copy or download it automatically. The chart templates target ApexCharts
-   Card 2.2.3; recheck charts after frontend updates.</li>
-<li>Merge the following into <code>configuration.yaml</code>. If a <code>homeassistant</code> section
-   or <code>packages</code> key already exists, merge rather than creating duplicate keys:</li>
-</ol>
-<p><code>yaml
-   homeassistant:
-     packages:
-       nrg_planner: !include custom_components/nrg/dashboard-package.yaml</code></p>
-<p>For an existing <code>!include_dir_named packages</code> setup, instead add a file in
-   that directory containing:</p>
-<p><code>yaml
-   !include ../custom_components/nrg/dashboard-package.yaml</code></p>
-<ol>
-<li>Check HA configuration and restart. <strong>NRG Planner</strong> and <strong>NRG Planner settings</strong>
-   appear in the sidebar. The settings dashboard requires an admin account.</li>
-<li>Configure power meters in HA's built-in Energy dashboard for the live Sankey.
-   NRG does not overwrite Energy preferences or create substitute meter readings.</li>
-</ol>
-<p>The package includes recorder exclusions for large NRG diagnostic entities; merge
-them with any existing recorder configuration as needed. It does not contain
-tariffs, entity mappings for your hardware, or an automatically imported site file.</p>
-<p>Bundled dashboards reference the integration's initial <code>nrg_*</code> entity IDs. If you
-rename those IDs, use your own dashboard copy and update the references. Keep
-customizations outside the integration directory so component updates preserve them.</p>
-<p>The local handbook is served at <code>/nrg-planner/guide.html</code> when HA's HTTP integration
-is available. Its contents are generic and do not include saved configuration.</p>
-<h2 id="installation-updates-and-removal">Updates and removal</h2>
-<p>For manual updates, replace only the component directory with a reviewed newer
-copy and restart. HACS updates follow the same component boundary. Integration
-options, learning, and ledgers use HA storage, not files inside the component.</p>
-<p>Before removing NRG, release its control and establish the desired device baseline
-as described in <a href="#operations">operations</a>. Remove the integration through Devices
-&amp; services, remove its dashboard-package include if present, then remove its
-component through HACS or your manual file-management method. Check configuration
-before restarting. Use supported HA interfaces for stored configuration/history;
-do not manually edit HA's storage files.</p><p><a href="#top">Back to contents</a></p></section><section id="operations"><h1 id="operations-operation-handover-and-recovery">Operation, handover, and recovery</h1>
-<h2 id="operations-observation-and-control">Observation and Control</h2>
-<p><strong>Observation</strong> calculates plans without equipment commands. <strong>Control</strong> authorizes
-only components separately enabled for NRG control. Mapping entities does not
-implicitly enable commands. Notifications are opt-in and never operate appliances.</p>
-<p>Switching back to Observation stops new commands but does not restore settings
-already saved in equipment. Choose a desired physical baseline when transferring
-ownership, disabling control, or removing NRG.</p>
-<h2 id="operations-transfer-equipment-control">Transfer equipment control</h2>
-<ol>
-<li>Check component selections, rates, measurements, meter conventions, and modeled
-   assumptions in Observation. Missing rates are unknown, not free electricity.</li>
-<li>Match actual mode/state names and command/readback capabilities. Do not map a
-   forced-export mode to the logical "serve home" action.</li>
-<li>Record device settings needed for recovery: charging state/current/target and
-   applicable battery mode, reserve, export policy, and grid-charge permission.</li>
-<li>Disable competing controllers and scheduled command automations. Use the optional
-   external-controller-priority/protection mappings where suitable; NRG cannot
-   automatically discover every other controller.</li>
-<li>Enable the desired EV/battery control switches and select Control.</li>
-<li>Compare acknowledged commands with readback and measured device response.</li>
-</ol>
-<p>The equipment retains its own electrical protections. A service acknowledgment
-does not establish instantaneous power delivery or completion of a charge cycle.</p>
-<h2 id="operations-everyday-controls">Everyday controls</h2>
+sources is a separate supported UI action; NRG does not rewrite historical records.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="alternatives" aria-label="Other energy planners"><h2 id="alternatives-free-alternatives-and-intended-community-value">Free alternatives and intended community value</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Other energy planners topics"><div class="toc">
 <ul>
-<li><strong>Charge now</strong> bypasses prices and the normal charging window, but respects
-  connection, selected vehicle target, current limits, and mapped guards. It clears
-  on completion, disconnection, or restart.</li>
-<li><strong>One-off departure</strong> overrides the daily time. An incomplete connected session
-  stays overdue rather than silently moving to the following day.</li>
-<li><strong>Refresh</strong> reloads configured pricing/forecast inputs.</li>
-<li><strong>Reset learning</strong> removes learned profiles and calibration, preserving settings
-  and the measured-cost ledger.</li>
-<li><strong>Notifications</strong> require opt-in, selected notify services, stable advice, a
-  minimum modeled benefit, and non-quiet hours.</li>
+<li><a href="#alternatives-nrgs-intended-niche">NRG's intended niche</a></li>
+<li><a href="#alternatives-evidence-still-needed">Evidence still needed</a></li>
 </ul>
-<h2 id="operations-missing-data">Missing data</h2>
-<p>Selected guard inputs must remain available and clear. Unsupported operations
-are not scheduled. Missing current/forecast prices or solar coverage prevent
-discretionary battery moves. Locally learned price estimates remain tentative;
-there is no bundled historical household fallback.</p>
-<p>A missing or stale plan revokes charging grants where supported. Explicit
-charge-now can operate without price data when EV checks pass. Battery failures
-are reported independently of EV execution.</p>
-<h2 id="operations-recovery">Recovery</h2>
-<p>Use an HA backup and a previously reviewed component version when recovering from
-an update. Backups may contain private settings and measurements. Keep them out of
-issues and repositories.</p>
-<p>Release NRG control before enabling another controller. Restoring component files
-does not restore physical equipment settings or rewind saved options, learning,
-ledgers, or recorder history. Reestablish the desired device baseline explicitly.</p>
-<p>The standard integration diagnostics download is an intentionally limited support
-summary. See <a href="../PRIVACY.md">privacy</a> before sharing logs, screenshots, or state exports.</p><p><a href="#top">Back to contents</a></p></section></main></body></html>
+</div>
+</nav></details>
+<p>Home-energy planning already has capable free alternatives. NRG should be judged
+by useful operation and setup experience, not an unsupported claim of uniqueness.</p>
+<div class="table-scroll" role="region" aria-label="Other energy planners table 1" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Project</th>
+<th scope="col">Relevant overlap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://springfall2008.github.io/batpred/">Predbat</a></td>
+<td>Battery/solar forecasting, import/export pricing, and EV coordination across many inverters. Its current license permits free personal use; installation is a separate HA app/container.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/davidusb-geek/emhass">EMHASS</a></td>
+<td>MIT-licensed whole-home energy optimization, with solar, storage, and flexible loads. Installed as an HA app/container or Python module.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/jonasbkarlsson/ev_smart_charging">EV Smart Charging</a></td>
+<td>MIT-licensed, HACS-installable price-aware EV scheduling with completion deadlines.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/tmenguy/quiet-solar">Quiet Solar</a></td>
+<td>GPL-licensed native HA solar/load coordination. Its documented priority emphasizes solar self-consumption.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/evcc-io/evcc">evcc</a></td>
+<td>Broad EV/solar/energy management; some device integrations require a sponsorship token.</td>
+</tr>
+</tbody>
+</table></div>
+<p><a href="https://www.netzero.energy/pricing">Netzero</a> is another relevant Powerwall/EV and
+dynamic-pricing product, but its advanced automation features currently require
+a paid subscription after the trial. Pricing and licenses can change; consult
+the linked projects before choosing.</p>
+<h3 id="alternatives-nrgs-intended-niche">NRG's intended niche</h3>
+<p>A native HA integration with UI-configured, independent supply and delivery
+tariffs, separate export compensation, and coordinated optional EV/battery/solar
+planning through existing HA entities. The cost model values foregone exports and
+storage losses rather than assuming self-consumed solar is always free.</p>
+<p>The present scope is USD-denominated tariffs, an optional ComEd adapter, a
+Forecast.Solar adapter, one EV, and one modeled stationary-battery system. It does
+not schedule arbitrary appliances or force timed battery sales to the grid.</p>
+<h3 id="alternatives-evidence-still-needed">Evidence still needed</h3>
+<p>Software scenario tests do not establish actual household savings, broad device
+compatibility, or ease of installation. A useful beta should validate setup effort,
+plan comprehension, restart/update behavior, and measured execution across
+independently configured homes and tariff types. Financial claims need measured
+operation and appropriate bill reconciliation.</p>
+<p>The original private household data is neither required nor distributed for this
+validation. Test scenarios in this repository are invented.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="review" aria-label="Project review"><h2 id="review-private-review-and-publication-gates">Private review and publication gates</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Project review topics"><div class="toc">
+<ul>
+<li><a href="#review-what-to-review">What to review</a></li>
+<li><a href="#review-automated-checks">Automated checks</a></li>
+<li><a href="#review-before-an-eventual-public-release">Before an eventual public release</a></li>
+</ul>
+</div>
+</nav></details>
+<p>This repository is deliberately private. Keep it private until the owner has
+reviewed the candidate contents and explicitly chooses to publish it. Adding HACS
+metadata is preparation, not publication or default-catalog approval.</p>
+<h3 id="review-what-to-review">What to review</h3>
+<ul>
+<li><a href="#privacy">Privacy policy</a> and the exact tracked file list (<code>git ls-files</code>).</li>
+<li>Fresh Git history and author/committer metadata (<code>git log --format=fuller</code>).</li>
+<li>Unset tariff fields and the absence of a bundled historical price profile.</li>
+<li>Generic examples, tests, dashboard YAML, generated HTML, and translations.</li>
+<li>Bounded local learning and the allowlisted diagnostic download.</li>
+<li>Optional device controls and the documented installation/update behavior.</li>
+<li><a href="#alternatives">Alternatives</a> and the current limitations stated in the README.</li>
+</ul>
+<h3 id="review-automated-checks">Automated checks</h3>
+<pre tabindex="0" aria-label="Code example"><code class="language-sh">python -B tools/check_privacy.py --history
+python -B -m pytest -q
+python -B -m ruff check . --select F
+python -B tools/build_ui.py
+python -B tools/build_brand.py
+git diff --check
+git diff --exit-code
+</code></pre>
+<p>Builders should reproduce committed assets without changing them. Review untracked
+files too; <code>git diff</code> alone does not show those. Optional local-only private
+indicators can be passed to the privacy checker with <code>--deny-file PATH</code>; keep that
+file outside this repository.</p>
+<p>The GitHub workflow runs tests, asset reproducibility, privacy/history checks, and
+Hassfest while private. HACS repository validation is explicitly deferred while
+private because HACS requires public repositories. Its job runs after publication;
+skipped validation is not a passing HACS compatibility claim.</p>
+<h3 id="review-before-an-eventual-public-release">Before an eventual public release</h3>
+<ol>
+<li>Complete the owner's manual privacy/source review, including generated assets.</li>
+<li>Test a fresh HA installation, restart, update, removal, optional dashboard setup,
+   and appropriate equipment behavior on independently configured installations.</li>
+<li>Recheck history and release contents for identifiers, secrets, and data files.</li>
+<li>Update the private-review status text only after the owner decides to publish.</li>
+<li>Make the reviewed repository public only on the owner's explicit instruction.</li>
+<li>Pass HACS validation and Hassfest without ignored checks, then create a full
+   GitHub release. Submit to the default catalog separately if desired.</li>
+</ol>
+<p>No workflow automatically changes repository visibility, creates a release, or
+deploys to a household's Home Assistant instance.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section></main>
+</div>
+<footer>NRG Planner · Bundled with your integration · No scripts, external fonts, or external assets. <a href="#top">Back to top ↑</a></footer>
+</div>
+</body>
+</html>
