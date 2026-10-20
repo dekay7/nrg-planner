@@ -53,7 +53,7 @@ commit metadata use GitHub no-reply addresses.
 | --- | --- |
 | Automated suite | 129 tests pass, including native setup, option edits, reload/removal, command adapters, control guards, tariffs, forecasts, accounting, diagnostics, handbook HTTP boundaries, and executable chart code. |
 | Publication privacy | The project checker passes for the working tree, index, and all fetched branches, tags, and pull-request heads. Household-specific indicators appear only in the owner-approved commit names. Gitleaks finds no secrets in the working tree or reachable history. |
-| Hosted content | Repository description, issue/pull-request bodies, comments, and all 56 existing Actions run logs pass the identifier/secret checks. Generic GitHub runner/Dependabot paths and timestamp fragments were excluded from log privacy findings. No GitHub releases or Actions artifacts are present. |
+| Hosted content | During publication review, repository description, issue/pull-request bodies, comments, and all 56 existing Actions run logs passed the identifier/secret checks. Generic GitHub runner/Dependabot paths and timestamp fragments were excluded from log privacy findings. No GitHub releases or Actions artifacts were present at that point. |
 | Dependencies | `pip check` passes. **`pip-audit` fails: nine known advisories in two dependencies pinned by Home Assistant 2026.10.2.** See the open finding below. |
 | Static checks | Ruff's configured `F` rules, Bandit on integration code, Actionlint, and `git diff --check` pass. |
 | Bundled assets | The handbook and dashboards are regenerated from their sources; UI and brand builders reproduce their output deterministically. |
@@ -61,7 +61,7 @@ commit metadata use GitHub no-reply addresses.
 | Live checks | The owner reports that the live installation/lifecycle, browser/mobile dashboard, and physical equipment checks worked successfully. This is owner-reported validation on the owner's installation. |
 | Repository metadata | MIT license, repository description/topics, enabled issue tracker, integration manifest, HACS manifest, and bundled brand icon are present. |
 | Repository security | Dependabot alerts, automated security fixes, SHA-pinned Actions, and read-only default workflow permissions are enabled. No open Dependabot alerts were returned; this does not override the failing local/CI audit. |
-| HACS | Custom-repository installation instructions are provided. The owner deferred HACS setup and default-catalog submission; an end-to-end HACS installation is not claimed as tested. The existing public-repository validation job remains enabled. |
+| HACS | Public-repository validation at `5212fbf` passes. Custom-repository installation instructions are provided. The owner deferred HACS setup and default-catalog submission; an end-to-end HACS installation is not claimed as tested. |
 
 [GitHub validation for the publication-preparation commit](https://github.com/dekay7/nrg-planner/actions/runs/39514726446)
 records the passing tests/privacy and Hassfest jobs and the dependency-audit
@@ -100,6 +100,15 @@ integration using the [installation instructions](installation.md#hacs-custom-re
 Default-catalog inclusion and a versioned GitHub release are not prerequisites
 for this installation path.
 
+## Release baseline — 0.1.0
+
+The owner requested the initial numbered release and a release-based development
+workflow. Integration version `0.1.0` is published as GitHub Release `v0.1.0`.
+Normal HACS download choices hide the development branch; users following stable
+releases receive update offers for published stable releases, rather than routine
+commits. Existing branch installations can select a numbered release once through
+HACS Redownload. The upstream dependency findings above remain documented follow-up.
+
 ## Maintenance and release follow-up
 
 1. Track upstream HA dependency fixes and rerun the audit when the tested version
@@ -110,9 +119,9 @@ for this installation path.
    for the public repository.
 4. Review HACS validation results and record an actual custom-repository
    installation when HACS setup is performed. Default-catalog submission is optional.
-5. Create a versioned GitHub release when desired, with notes matching the
-   integration's version and verification evidence. HACS uses the default branch
-   until releases are available.
+5. Follow the [release workflow](https://github.com/dekay7/nrg-planner#releases) for
+   future versions. Publish only on explicit request, keep version values aligned,
+   and retain the tested commit behind every published tag.
 
 No workflow automatically changes repository visibility, creates a release, or
 deploys to a household's Home Assistant instance.

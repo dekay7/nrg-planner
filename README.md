@@ -41,7 +41,8 @@ and scheduled forced battery exports are not implemented. See
 
 ## Manual installation
 
-1. Download and extract this repository (**Code → Download ZIP** on GitHub).
+1. Download **Source code (zip)** from the
+   [latest release](https://github.com/dekay7/nrg-planner/releases/latest) and extract it.
 2. Copy only `custom_components/nrg/` to your HA configuration directory's
    `custom_components/nrg/` folder.
 3. Restart Home Assistant.
@@ -58,7 +59,7 @@ the optional dashboards. For the complete UI, follow
 1. Open **HACS** in Home Assistant, then **⋮ → Custom repositories**.
 2. Enter `https://github.com/dekay7/nrg-planner`, select type **Integration**, and
    choose **Add**.
-3. Find **NRG Planner** in HACS, open it, and choose **Download**.
+3. Find **NRG Planner** in HACS, open it, and download the latest stable release.
 4. Restart Home Assistant.
 5. Open **Settings → Devices & services → Add integration → NRG Planner** and
    follow the [quick start](docs/quick-start.md). Keep Observation selected initially.
@@ -66,8 +67,12 @@ the optional dashboards. For the complete UI, follow
 Default-catalog inclusion is a later submission; it is not required for users to
 install a public custom repository. HACS downloads the integration and its bundled
 assets, but does not edit your HA configuration or register dashboard packages.
-Check the [project review](docs/review.md) for
-HACS validation status. Without a GitHub release, HACS downloads the default branch.
+HACS offers published stable releases; routine development commits do not offer
+updates to users following releases. The default branch is hidden from normal
+HACS download choices. Existing users tracking `main` should select a numbered
+release through **HACS → NRG Planner → Redownload → version selector** once.
+See [updates](docs/installation.md#updates-and-removal) and the
+[project review](docs/review.md).
 
 ## Documentation
 
@@ -100,6 +105,38 @@ git diff --check
 Node.js is used for executable chart tests. Generated UI assets are committed so
 users need no build tools. The builders use only repository source and generic
 documentation, never a live HA instance or household data files.
+
+## Releases
+
+Use feature branches and pull requests into `main`. Run CI before merging and
+batch related improvements into deliberate releases. Pushes and merges do not
+automatically publish releases. Users following stable releases receive update
+offers only when a new stable GitHub Release is published; installation is their
+choice unless they configured update automation.
+
+Use patch versions for compatible fixes (`0.1.1`) and minor versions for features
+(`0.2.0`). Document breaking changes in minor releases while below `1.0`; after
+`1.0`, use a major version for breaking changes. Test larger changes with GitHub
+pre-releases such as `v0.2.0-beta.1`, which testers explicitly opt into. Draft
+releases are unpublished.
+
+When the owner requests a release:
+
+1. Update `custom_components/nrg/manifest.json` and `VERSION` in
+   `custom_components/nrg/const.py` to the same version. Update the README version
+   and documented minimum HA version/`hacs.json` when applicable.
+2. Rebuild generated assets using the development commands above. Test fresh
+   setup and upgrades from the previous release; preserve settings and learning.
+   Recheck live equipment behavior when controls or planning change.
+3. Verify tests/privacy, asset reproducibility, Hassfest, and HACS on the exact
+   candidate commit. Review dependency-audit results and record unresolved
+   upstream findings in [the review record](docs/review.md).
+4. Publish a GitHub Release tagged `v<version>` at that tested commit, such as
+   `v0.1.1` for integration version `0.1.1`. A tag alone is not a published release.
+   Include changes, compatibility/migration notes, and restart instructions.
+   GitHub's source archives are sufficient for the existing HACS layout.
+
+Keep published tags fixed. Correct a faulty release with a new patch version.
 
 ## License
 

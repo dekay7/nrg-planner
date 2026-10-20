@@ -123,6 +123,7 @@ def test_publication_gate_rejects_private_files_even_in_otherwise_valid_director
 
 
 def test_security_policy_and_dependabot_are_reviewed_publication_assets():
+    assert check_file("AGENTS.md", b"# Development\n") == []
     assert check_file("SECURITY.md", b"# Security policy\n") == []
     assert check_file(".github/dependabot.yml", b"version: 2\nupdates: []\n") == []
     assert check_file(".github/settings/private.yml", b"not publishable")

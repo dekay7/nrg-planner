@@ -294,8 +294,8 @@ existing file-management method, such as File editor, Studio Code Server, or a
 network share. Other installation types may keep it at a different path.</p>
 <h3 id="installation-manual-installation">Manual installation</h3>
 <ol>
-<li>Download and extract the repository. On GitHub, <strong>Code → Download ZIP</strong> provides
-   a copy of the selected branch.</li>
+<li>Open the <a href="https://github.com/dekay7/nrg-planner/releases/latest">latest GitHub release</a>,
+   download <strong>Source code (zip)</strong> under <strong>Assets</strong>, and extract it.</li>
 <li>Open your HA configuration directory. Create <code>custom_components</code> there if it
    does not exist.</li>
 <li>Copy the repository's <strong><code>custom_components/nrg/</code> folder</strong>, including all its
@@ -326,16 +326,18 @@ installed component directory beyond the files already under <code>custom_compon
 <li>Open <strong>HACS</strong>, then the <strong>⋮</strong> menu and <strong>Custom repositories</strong>.</li>
 <li>Paste <code>https://github.com/dekay7/nrg-planner</code> into the repository field.</li>
 <li>Select type <strong>Integration</strong> and choose <strong>Add</strong>.</li>
-<li>Search for <strong>NRG Planner</strong> in HACS, open its entry, and choose <strong>Download</strong>.</li>
+<li>Search for <strong>NRG Planner</strong> in HACS, open its entry, and download the latest
+   stable release.</li>
 <li>Restart Home Assistant.</li>
 <li>Open <strong>Settings → Devices &amp; services → Add integration</strong>, select <strong>NRG Planner</strong>,
    and follow the <a href="#quick-start">quick start</a>. Start in Observation and enter your
    own rates and equipment mappings.</li>
 </ol>
 <p>Default-catalog approval is not required for this custom-repository path.
-See the <a href="#review">project review</a> for current HACS validation status. When no
-GitHub releases exist, HACS uses the default branch; published releases provide
-versioned downloads.</p>
+See the <a href="#review">project review</a> for validation results. HACS uses published
+stable releases, with the development branch hidden from normal download choices.
+If you previously installed <code>main</code>, use <strong>HACS → NRG Planner → Redownload</strong> and
+select a numbered release in the version selector to follow releases.</p>
 <p>All integration assets, dashboard definitions, and the generic handbook are inside
 <code>custom_components/nrg/</code> and are delivered together. HACS does not edit your
 configuration, enable device control, or register dashboard packages.</p>
@@ -377,6 +379,13 @@ configuration. It includes troubleshooting, FAQs, a glossary, and privacy detail
 There are no scripts, external fonts, or external assets. Use browser Find to
 search and Print to save a PDF; reading a loaded copy needs no internet connection.</p>
 <h3 id="installation-updates-and-removal">Updates and removal</h3>
+<p>Routine development commits do not offer updates to users following stable
+releases. A published stable GitHub Release makes a new version available in HACS;
+install it when convenient unless you have configured automatic updates. Review
+the release notes for compatibility changes or migration steps, then restart HA
+after installing. Beta pre-releases are for testers who explicitly opt into them.
+To select an older release, use HACS <strong>Redownload</strong> and its version selector;
+check its compatibility with your current HA version and stored data first.</p>
 <p>For manual updates, replace only the component directory with a reviewed newer
 copy and restart. HACS updates follow the same component boundary. Integration
 options, learning, and ledgers use HA storage, not files inside the component.</p>
@@ -2266,6 +2275,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 </ul>
 </li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
+<li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
 </ul>
 </div>
@@ -2329,7 +2339,7 @@ commit metadata use GitHub no-reply addresses.</p>
 </tr>
 <tr>
 <td>Hosted content</td>
-<td>Repository description, issue/pull-request bodies, comments, and all 56 existing Actions run logs pass the identifier/secret checks. Generic GitHub runner/Dependabot paths and timestamp fragments were excluded from log privacy findings. No GitHub releases or Actions artifacts are present.</td>
+<td>During publication review, repository description, issue/pull-request bodies, comments, and all 56 existing Actions run logs passed the identifier/secret checks. Generic GitHub runner/Dependabot paths and timestamp fragments were excluded from log privacy findings. No GitHub releases or Actions artifacts were present at that point.</td>
 </tr>
 <tr>
 <td>Dependencies</td>
@@ -2361,7 +2371,7 @@ commit metadata use GitHub no-reply addresses.</p>
 </tr>
 <tr>
 <td>HACS</td>
-<td>Custom-repository installation instructions are provided. The owner deferred HACS setup and default-catalog submission; an end-to-end HACS installation is not claimed as tested. The existing public-repository validation job remains enabled.</td>
+<td>Public-repository validation at <code>5212fbf</code> passes. Custom-repository installation instructions are provided. The owner deferred HACS setup and default-catalog submission; an end-to-end HACS installation is not claimed as tested.</td>
 </tr>
 </tbody>
 </table></div>
@@ -2395,6 +2405,13 @@ outside the publication contents.</p>
 integration using the <a href="#installation-hacs-custom-repository">installation instructions</a>.
 Default-catalog inclusion and a versioned GitHub release are not prerequisites
 for this installation path.</p>
+<h3 id="review-release-baseline-010">Release baseline — 0.1.0</h3>
+<p>The owner requested the initial numbered release and a release-based development
+workflow. Integration version <code>0.1.0</code> is published as GitHub Release <code>v0.1.0</code>.
+Normal HACS download choices hide the development branch; users following stable
+releases receive update offers for published stable releases, rather than routine
+commits. Existing branch installations can select a numbered release once through
+HACS Redownload. The upstream dependency findings above remain documented follow-up.</p>
 <h3 id="review-maintenance-and-release-follow-up">Maintenance and release follow-up</h3>
 <ol>
 <li>Track upstream HA dependency fixes and rerun the audit when the tested version
@@ -2405,9 +2422,9 @@ for this installation path.</p>
    for the public repository.</li>
 <li>Review HACS validation results and record an actual custom-repository
    installation when HACS setup is performed. Default-catalog submission is optional.</li>
-<li>Create a versioned GitHub release when desired, with notes matching the
-   integration's version and verification evidence. HACS uses the default branch
-   until releases are available.</li>
+<li>Follow the <a href="https://github.com/dekay7/nrg-planner#releases">release workflow</a> for
+   future versions. Publish only on explicit request, keep version values aligned,
+   and retain the tested commit behind every published tag.</li>
 </ol>
 <p>No workflow automatically changes repository visibility, creates a release, or
 deploys to a household's Home Assistant instance.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section></main>

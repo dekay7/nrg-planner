@@ -11,7 +11,7 @@ else:
     from build_brand import icon
 
 ROOT = Path(__file__).resolve().parents[1]
-ROOT_FILES = {"README.md", "PRIVACY.md", "SECURITY.md", "LICENSE", ".gitignore", "hacs.json", "pytest.ini", "requirements-dev.txt"}
+ROOT_FILES = {"AGENTS.md", "README.md", "PRIVACY.md", "SECURITY.md", "LICENSE", ".gitignore", "hacs.json", "pytest.ini", "requirements-dev.txt"}
 SKIP_LOCAL = {".git", ".venv", "__pycache__", ".pytest_cache", ".ruff_cache"}
 BRAND = "custom_components/nrg/brand/icon.png"
 EMAIL = re.compile(r"[A-Za-z0-9_.+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")

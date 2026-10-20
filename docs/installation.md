@@ -14,8 +14,8 @@ network share. Other installation types may keep it at a different path.
 
 ## Manual installation
 
-1. Download and extract the repository. On GitHub, **Code → Download ZIP** provides
-   a copy of the selected branch.
+1. Open the [latest GitHub release](https://github.com/dekay7/nrg-planner/releases/latest),
+   download **Source code (zip)** under **Assets**, and extract it.
 2. Open your HA configuration directory. Create `custom_components` there if it
    does not exist.
 3. Copy the repository's **`custom_components/nrg/` folder**, including all its
@@ -50,16 +50,18 @@ With HACS already installed in Home Assistant:
 1. Open **HACS**, then the **⋮** menu and **Custom repositories**.
 2. Paste `https://github.com/dekay7/nrg-planner` into the repository field.
 3. Select type **Integration** and choose **Add**.
-4. Search for **NRG Planner** in HACS, open its entry, and choose **Download**.
+4. Search for **NRG Planner** in HACS, open its entry, and download the latest
+   stable release.
 5. Restart Home Assistant.
 6. Open **Settings → Devices & services → Add integration**, select **NRG Planner**,
    and follow the [quick start](quick-start.md). Start in Observation and enter your
    own rates and equipment mappings.
 
 Default-catalog approval is not required for this custom-repository path.
-See the [project review](review.md) for current HACS validation status. When no
-GitHub releases exist, HACS uses the default branch; published releases provide
-versioned downloads.
+See the [project review](review.md) for validation results. HACS uses published
+stable releases, with the development branch hidden from normal download choices.
+If you previously installed `main`, use **HACS → NRG Planner → Redownload** and
+select a numbered release in the version selector to follow releases.
 
 All integration assets, dashboard definitions, and the generic handbook are inside
 `custom_components/nrg/` and are delivered together. HACS does not edit your
@@ -111,6 +113,14 @@ There are no scripts, external fonts, or external assets. Use browser Find to
 search and Print to save a PDF; reading a loaded copy needs no internet connection.
 
 ## Updates and removal
+
+Routine development commits do not offer updates to users following stable
+releases. A published stable GitHub Release makes a new version available in HACS;
+install it when convenient unless you have configured automatic updates. Review
+the release notes for compatibility changes or migration steps, then restart HA
+after installing. Beta pre-releases are for testers who explicitly opt into them.
+To select an older release, use HACS **Redownload** and its version selector;
+check its compatibility with your current HA version and stored data first.
 
 For manual updates, replace only the component directory with a reviewed newer
 copy and restart. HACS updates follow the same component boundary. Integration
