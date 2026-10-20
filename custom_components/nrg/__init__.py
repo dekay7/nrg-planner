@@ -6,9 +6,12 @@ import probatio as vol
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_track_state_change_event, async_track_time_interval
+from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN, PLATFORMS, STATIC_URL
+from .config import RETIRED_SETTINGS
 from .runtime import NRGRuntime
 
 CONFIG_SCHEMA = vol.Schema({vol.Optional(DOMAIN): dict}, extra=vol.ALLOW_EXTRA)
@@ -30,6 +33,13 @@ async def async_setup(hass, config):
 
 
 async def async_setup_entry(hass, entry):
+    options = {key: value for key, value in entry.options.items() if key not in RETIRED_SETTINGS}
+    if options != entry.options:
+        hass.config_entries.async_update_entry(entry, options=options)
+    registry = er.async_get(hass)
+    for key in RETIRED_SETTINGS:
+        if entity_id := registry.async_get_entity_id("switch", DOMAIN, f"{entry.unique_id}_{key}"):
+            registry.async_remove(entity_id)
     runtime = NRGRuntime(hass, entry)
     entry.runtime_data = runtime
     await runtime.load()
@@ -98,3 +108,8 @@ async def async_unload_entry(hass, entry):
         await entry.runtime_data.close()
         return True
     return False
+
+
+async def async_remove_entry(hass, entry):
+    """Delete installation-specific data when the entry is permanently removed."""
+    await Store(hass, 1, f"{DOMAIN}.{entry.entry_id}").async_remove()

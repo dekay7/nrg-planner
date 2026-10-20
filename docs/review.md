@@ -38,6 +38,43 @@ Hassfest while private. HACS repository validation is explicitly deferred while
 private because HACS requires public repositories. Its job runs after publication;
 skipped validation is not a passing HACS compatibility claim.
 
+## Verification record — 2026-10-20
+
+Reviewed `main` at `7cef5ec` and the accompanying local removal-cleanup changes,
+using a fresh development environment with Python 3.14.8, Home Assistant
+2026.10.2, and Node.js 22.23.1.
+
+| Check | Result |
+| --- | --- |
+| Automated suite | 125 tests pass, including native setup, option edits, reload, command adapters, control guards, tariffs, forecasts, accounting, diagnostics, and executable chart code. |
+| Lifecycle checks added during review | Reload preserves learning and ledgers without resuming charge-now. Removing either a loaded or unloaded entry deletes NRG storage and entities. |
+| Handbook HTTP check | The bundled HTML is served correctly; configuration, storage, and parent-directory requests are rejected. |
+| Fresh dependencies | Installation and `pip check` pass; `pip-audit` reports no known vulnerabilities. |
+| Static checks | Ruff's configured `F` rules, Bandit on integration code, Actionlint, and `git diff --check` pass. |
+| Publication privacy | The project checker finds no issues across 180 working-tree, staged, and historical file revisions after fetching all remote branches and tags. Gitleaks finds no secrets in the working tree or the nine reachable commits. |
+| Bundled assets | UI and brand builders reproduce their output deterministically. |
+| Optional public pricing | Live ComEd requests return a valid 24-row forecast and a fresh, valid current-hour price response. |
+
+The review fixed retained private storage after integration removal and added
+regression coverage. Reloads and updates still retain installation data.
+
+[GitHub validation for the reviewed base commit](https://github.com/dekay7/nrg-planner/actions/runs/39473337612)
+passes tests/privacy, dependency auditing, reproducibility, and Hassfest. Local
+changes need the same CI checks after they are committed. All four open Dependabot
+updates also have passing tests/privacy and Hassfest checks. GitHub dependency
+alerts and automated security fixes are enabled; there are no open dependency
+vulnerability alerts at review time.
+
+**Remaining release evidence:** physical EV/battery behavior, a real HA restart
+and component-file update, and browser/mobile dashboard installation have not been
+verified by this automated review. HACS validation is skipped while private.
+Private vulnerability reporting could not be verified through the repository API,
+and branch protection/rulesets are unavailable on the current private-repository
+plan. Verify and configure those settings after publication as described below.
+The README and bundled handbook still accurately identify the project as a
+private-review snapshot. These results support the source review; they do not
+establish completion of every publication gate.
+
 ## Before an eventual public release
 
 1. Complete the owner's manual privacy/source review, including generated assets.

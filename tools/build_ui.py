@@ -219,7 +219,7 @@ def setting_card(key):
         "ev_allow_saved_readings": "Allow saved readings", "house_learning": "Learn house demand",
         "house_kw": "House demand", "flexible_load_kwh": "Energy",
         "flexible_load_minutes": "Duration", "minimum_saving_cents": "Improvement",
-        "battery_wear_cents": "Cycling cost", "summer_guard": "Summer precaution",
+        "battery_wear_cents": "Cycling cost",
         "notifications": "Send notifications", "notification_saving_cents": "Minimum benefit",
         "quiet_start": "Quiet hours start", "quiet_end": "Quiet hours end",
         "grid_power_inverted": "Reverse grid reading", "battery_power_inverted": "Reverse battery reading",
@@ -329,6 +329,13 @@ def timeline():
             "apex_config": {"chart": {"height": 300}, "legend":{"showForNullSeries":False}, "xaxis": {"labels": {"datetimeUTC": False}}}}
 
 
+def battery_forecast_note():
+    return conditional("has_battery", markdown("""{% set p = state_attr('sensor.nrg_plan','plan') or {} %}
+{% if not p %}Waiting for a fresh battery forecast.
+{% elif p.get('battery_forecast_available') == false %}**Battery line unavailable.** {{ p.get('battery_reason', 'Check the mapped battery inputs and protection guards.') }}
+{% else %}**Battery %** is the proposed NRG schedule, including in Observation. It is not a prediction of another controller's actual behavior.{% endif %}"""))
+
+
 def accuracy_chart():
     return {"type": "custom:apexcharts-card", "graph_span": "7d", "header": {"show": True, "title": "Solar forecast versus measured hours"},
             "series": [{"entity": "sensor.nrg_observations", "name": name, "unit": "kWh", "type": "line", "extend_to": False,
@@ -415,7 +422,7 @@ Solid forecast lines are a published outlook, not a settled bill. Dashed lines a
 
 The administrator can change the reference appliance, rates, schedules and reserve in Energy Settings.
 
-[Open the complete household handbook](/nrg-planner/guide.html)""")], [timeline(), grid([
+[Open the complete household handbook](/nrg-planner/guide.html)""")], [timeline(), battery_forecast_note(), grid([
         conditional("battery_control", metric("battery_action")), conditional("has_battery", metric("available_energy")),
         conditional("ev_control", metric("ev_shortfall")), conditional("has_solar", metric("source_health"))])]])]}
     config_link = {"type": "button", "name": "Open NRG Planner configuration", "show_icon": False,
@@ -440,7 +447,7 @@ The administrator can change the reference appliance, rates, schedules and reser
              "row": {"entity": "binary_sensor.nrg_ev_ready", "name": "EV ready"}},
             {"type": "conditional", "conditions": [{"entity": "binary_sensor.nrg_battery_control", "state": "on"}],
              "row": {"entity": "binary_sensor.nrg_battery_ready", "name": "Battery ready"}},
-        ]}], [heading("Price outlook"), price_chart()], [heading("Energy outlook"), timeline()]])]
+        ]}], [heading("Price outlook"), price_chart()], [heading("Energy outlook"), timeline(), battery_forecast_note()]])]
     # Sections collapse to one column on phones; grouping related settings into
     # their own sections keeps each group intact on mobile and pairs them on desktop.
     groups = {
@@ -457,7 +464,7 @@ The administrator can change the reference appliance, rates, schedules and reser
                ("Learning", ("ev_learning", "ev_allow_saved_readings"))),
         "planning": (("Household demand learning", ("house_learning", "house_kw")),
                      ("Flexible-load advice", ("flexible_load_kwh", "flexible_load_minutes", "minimum_saving_cents")),
-                     ("Precautions", ("battery_wear_cents", "summer_guard"))),
+                      ("Battery cycling", ("battery_wear_cents",))),
         "notifications": (("Opt-in and threshold", ("notifications", "notification_saving_cents")),
                           ("Quiet hours", ("quiet_start", "quiet_end"))),
     }
@@ -504,7 +511,7 @@ The administrator can change the reference appliance, rates, schedules and reser
         [heading("Learning observations"), metric("house_observations", "Covered house hours"), conditional("has_solar", metric("solar_error", "Solar forecast error")), conditional("has_ev", metric("ev_sessions", "EV charging sessions")),
          {"type": "vertical-stack", "cards": [markdown("### Reset learning\n\nResetting learning removes learned profiles and forecast errors, preserving the measured-cost ledger. No unobserved period is filled with zero use."),
           {"type": "entities", "show_header_toggle": False, "entities": [{"entity": "button.nrg_reset_learning", "name": "Reset learning"}]}]}]]))
-    admin_views.append(settings_view("Details", "details", [[heading("Energy and measurements"), timeline(), conditional("has_solar", accuracy_chart()),
+    admin_views.append(settings_view("Details", "details", [[heading("Energy and measurements"), timeline(), battery_forecast_note(), conditional("has_solar", accuracy_chart()),
         {"type": "history-graph", "hours_to_show": 24, "entities": ["sensor.nrg_solar_power", "sensor.nrg_house_power", "sensor.nrg_ev_power", "sensor.nrg_battery_power"]}], [
         heading("Plan comparison"), markdown("""### Why this battery action?
 {{ state_attr('sensor.nrg_battery_action','reason') }}
