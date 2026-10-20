@@ -10,8 +10,9 @@ Tariff inputs start unset. There is no embedded historical household price
 profile. Generic equipment assumptions are described as assumptions and must be
 reviewed for each installation. Documentation examples are illustrative.
 
-The public maintainer identity is the GitHub account `dekay7`. Project commit
-metadata should use that account's GitHub no-reply address, not a personal email.
+The maintainer's GitHub account is `dekay7`. Git history includes the maintainer's
+approved real-name attribution as well as that handle. Project commit metadata
+should use the account's GitHub no-reply address, not a personal email.
 
 ## Runtime data stays in Home Assistant
 
@@ -62,4 +63,4 @@ Keep that file outside the repository. Reports identify paths and finding types,
 not matching secret values. Automated scans complement the owner's manual review;
 they cannot recognize every form of personal information.
 
-See [review and publication gates](docs/review.md).
+See [project review and release readiness](docs/review.md).

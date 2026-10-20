@@ -3,7 +3,7 @@
 ## What to have ready
 
 Use a Home Assistant administrator account and Home Assistant **2026.10.2 or
-newer**; this snapshot targets 2026.10.2. NRG runs inside HA, so end users do not
+newer**; this version targets 2026.10.2. NRG runs inside HA, so end users do not
 need Python, Node.js, or build tools. Generated dashboards and the handbook are
 already included.
 
@@ -12,13 +12,10 @@ The **HA configuration directory** is the folder containing your
 existing file-management method, such as File editor, Studio Code Server, or a
 network share. Other installation types may keep it at a different path.
 
-## Private review
+## Manual installation
 
-HACS requires a public GitHub repository. While this repository remains private,
-install as follows:
-
-1. Download and extract the repository using an authorized GitHub account. On
-   GitHub, **Code → Download ZIP** provides a copy of the selected branch.
+1. Download and extract the repository. On GitHub, **Code → Download ZIP** provides
+   a copy of the selected branch.
 2. Open your HA configuration directory. Create `custom_components` there if it
    does not exist.
 3. Copy the repository's **`custom_components/nrg/` folder**, including all its
@@ -46,11 +43,14 @@ No SSH deployer or site file is needed. If NRG does not appear, see
 No Git history, tests, development tools, or repository data files belong in the
 installed component directory beyond the files already under `custom_components/nrg/`.
 
-## HACS after publication
+## HACS custom repository
 
 Add `https://github.com/dekay7/nrg-planner` in HACS Custom repositories, category
 **Integration**. Download, restart HA, and add the integration through Devices &
 services. Default-catalog approval is not required for this custom-repository path.
+See the [project review](review.md) for current HACS validation status. When no
+GitHub releases exist, HACS uses the default branch; published releases provide
+versioned downloads.
 
 All integration assets, dashboard definitions, and the generic handbook are inside
 `custom_components/nrg/` and are delivered together. HACS does not edit your

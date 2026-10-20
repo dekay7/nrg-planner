@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: '22'
       - run: pip install -r requirements-dev.txt
-      - run: python -B -m pip_audit --progress-spinner off
+      - run: python -B -m pip check
       - run: python -B tools/check_privacy.py --history
       - run: python -B -m ruff check . --select F
       - run: python -B -m pytest -q
@@ -35,6 +35,18 @@ jobs:
           git diff --exit-code
           test -z "$(git ls-files --others --exclude-standard)"
       - run: git diff --check
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - run: pip install -r requirements-dev.txt
+      - run: python -B -m pip check
+      - run: python -B -m pip_audit --progress-spinner off
   hassfest:
     runs-on: ubuntu-latest
     steps:

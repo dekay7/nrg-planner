@@ -3,10 +3,9 @@
 Home Assistant energy planning with independent supply and delivery tariffs,
 optional EV/battery/solar support, and controls mapped to existing HA entities.
 
-**Private review snapshot.** This repository is intentionally private while its
-owner reviews the source and privacy checks. It has not been submitted to HACS.
-HACS requires a public GitHub repository; use the manual installation below for
-private evaluation. Publication is a separate, deliberate step.
+**Early development · version 0.1.0.** See the
+[project review](docs/review.md) for current validation results and open release
+items. NRG Planner is not included in the default HACS catalog.
 
 ## What it does
 
@@ -28,7 +27,7 @@ are starting points to review, not detected hardware specifications.
 
 ## Requirements and scope
 
-- Home Assistant **2026.10.2 or newer**; this snapshot targets that version and
+- Home Assistant **2026.10.2 or newer**; this version targets that release and
   Python 3.14.
 - Existing integrations for the measurements and optional controls you select.
 - USD/kWh or cents/kWh pricing. Other currencies are not currently supported.
@@ -40,9 +39,9 @@ a utility bill or demonstrated savings. Demand charges, tax rules, credit banks,
 and scheduled forced battery exports are not implemented. See
 [the method](docs/design.md) and [accounting](docs/accounting.md).
 
-## Installation during private review
+## Manual installation
 
-1. Download this repository using an account authorized to access it.
+1. Download and extract this repository (**Code → Download ZIP** on GitHub).
 2. Copy only `custom_components/nrg/` to your HA configuration directory's
    `custom_components/nrg/` folder.
 3. Restart Home Assistant.
@@ -54,9 +53,7 @@ The integration works through native entities and its configuration forms withou
 the optional dashboards. For the complete UI, follow
 [dashboard installation](docs/installation.md#optional-dashboards).
 
-## HACS installation after publication
-
-Once the owner has explicitly made the repository public and validated it:
+## HACS custom-repository installation
 
 1. Add `https://github.com/dekay7/nrg-planner` to HACS **Custom repositories** as
    category **Integration**.
@@ -66,6 +63,8 @@ Once the owner has explicitly made the repository public and validated it:
 Default-catalog inclusion is a later submission; it is not required for users to
 install a public custom repository. HACS downloads the integration and its bundled
 assets, but does not edit your HA configuration or register dashboard packages.
+Check the [validation record](docs/review.md#verification-record--2026-10-20) for
+HACS validation status. Without a GitHub release, HACS downloads the default branch.
 
 ## Documentation
 
@@ -78,7 +77,7 @@ assets, but does not edit your HA configuration or register dashboard packages.
 - [Homeowner guide](docs/homeowner-guide.md) · [Operations](docs/operations.md)
 - [Troubleshooting and support](docs/troubleshooting.md) · [Common questions](docs/faq.md)
 - [Plain-language glossary](docs/glossary.md)
-- [Privacy](PRIVACY.md) · [Security reporting](SECURITY.md) · [Review and publication gates](docs/review.md)
+- [Privacy](PRIVACY.md) · [Security reporting](SECURITY.md) · [Project review and release readiness](docs/review.md)
 - [Free alternatives and intended community value](docs/alternatives.md)
 
 ## Development

@@ -1,19 +1,20 @@
-# Private review and publication gates
+# Project review and release readiness
 
-This repository is deliberately private. Keep it private until the owner has
-reviewed the candidate contents and explicitly chooses to publish it. Adding HACS
-metadata is preparation, not publication or default-catalog approval.
+This page records verification evidence, open findings, and the release process.
+HACS metadata describes the installation layout; passing HACS validation and
+default-catalog inclusion are separate results that must be verified.
 
 ## What to review
 
 - [Privacy policy](../PRIVACY.md) and the exact tracked file list (`git ls-files`).
 - [Security reporting policy](../SECURITY.md), repository security settings, and dependency-update automation.
-- Fresh Git history and author/committer metadata (`git log --format=fuller`).
+- All reachable Git history, including author/committer names and no-reply email addresses.
 - Unset tariff fields and the absence of a bundled historical price profile.
 - Generic examples, tests, dashboard YAML, generated HTML, and translations.
 - Bounded local learning and the allowlisted diagnostic download.
 - Optional device controls and the documented installation/update behavior.
 - [Alternatives](alternatives.md) and the current limitations stated in the README.
+- GitHub issues, pull requests, comments, releases, and uploaded artifacts as well as source files.
 
 ## Automated checks
 
@@ -21,6 +22,7 @@ metadata is preparation, not publication or default-catalog approval.
 python -B tools/check_privacy.py --history
 python -B -m pytest -q
 python -B -m ruff check . --select F
+python -B -m pip check
 python -B -m pip_audit --progress-spinner off
 python -B tools/build_ui.py
 python -B tools/build_brand.py
@@ -33,62 +35,81 @@ files too; `git diff` alone does not show those. Optional local-only private
 indicators can be passed to the privacy checker with `--deny-file PATH`; keep that
 file outside this repository.
 
-The GitHub workflow runs tests, asset reproducibility, privacy/history checks, and
-Hassfest while private. HACS repository validation is explicitly deferred while
-private because HACS requires public repositories. Its job runs after publication;
-skipped validation is not a passing HACS compatibility claim.
+The GitHub workflow runs tests, asset reproducibility, privacy/history checks,
+dependency auditing, and Hassfest. Dependency auditing is an independent job so
+that an advisory does not prevent tests and privacy checks from running; an audit
+finding still fails validation. HACS validation runs for public repositories,
+including on GitHub's visibility-change event. A skipped job is not a passing
+HACS result.
 
 ## Verification record — 2026-10-20
 
-Reviewed `main` at `7cef5ec` and the accompanying local removal-cleanup changes,
-using a fresh development environment with Python 3.14.8, Home Assistant
-2026.10.2, and Node.js 22.23.1.
+Reviewed `main` at `cfcc7a0` and the accompanying publication-preparation changes
+with Python 3.14.8, Home Assistant 2026.10.2, and Node.js 22.23.1. The owner approved
+retaining existing real-name commit attribution. Email addresses in reachable
+commit metadata use GitHub no-reply addresses.
 
 | Check | Result |
 | --- | --- |
-| Automated suite | 125 tests pass, including native setup, option edits, reload, command adapters, control guards, tariffs, forecasts, accounting, diagnostics, and executable chart code. |
-| Lifecycle checks added during review | Reload preserves learning and ledgers without resuming charge-now. Removing either a loaded or unloaded entry deletes NRG storage and entities. |
-| Handbook HTTP check | The bundled HTML is served correctly; configuration, storage, and parent-directory requests are rejected. |
-| Fresh dependencies | Installation and `pip check` pass; `pip-audit` reports no known vulnerabilities. |
+| Automated suite | 129 tests pass, including native setup, option edits, reload/removal, command adapters, control guards, tariffs, forecasts, accounting, diagnostics, handbook HTTP boundaries, and executable chart code. |
+| Publication privacy | The project checker passes for the working tree, index, and all fetched branches, tags, and pull-request heads. Household-specific indicators appear only in the owner-approved commit names. Gitleaks finds no secrets in the working tree or reachable history. |
+| Hosted content | Repository description, issue/pull-request bodies, comments, and all 56 existing Actions run logs pass the identifier/secret checks. Generic GitHub runner/Dependabot paths and timestamp fragments were excluded from log privacy findings. No GitHub releases or Actions artifacts are present. |
+| Dependencies | `pip check` passes. **`pip-audit` fails: nine known advisories in two dependencies pinned by Home Assistant 2026.10.2.** See the open finding below. |
 | Static checks | Ruff's configured `F` rules, Bandit on integration code, Actionlint, and `git diff --check` pass. |
-| Publication privacy | The project checker finds no issues across 180 working-tree, staged, and historical file revisions after fetching all remote branches and tags. Gitleaks finds no secrets in the working tree or the nine reachable commits. |
-| Bundled assets | UI and brand builders reproduce their output deterministically. |
-| Optional public pricing | Live ComEd requests return a valid 24-row forecast and a fresh, valid current-hour price response. |
+| Bundled assets | The handbook and dashboards are regenerated from their sources; UI and brand builders reproduce their output deterministically. |
+| GitHub CI for the reviewed base | Hassfest passes. The combined tests/privacy job fails at dependency auditing before its tests run. The preparation changes separate those jobs so both results remain visible. |
+| Repository metadata | MIT license, repository description/topics, enabled issue tracker, integration manifest, HACS manifest, and bundled brand icon are present. |
+| Repository security | Dependabot alerts, automated security fixes, SHA-pinned Actions, and read-only default workflow permissions are enabled. No open Dependabot alerts were returned; this does not override the failing local/CI audit. |
+| HACS and public security settings | HACS validation is pending a public repository. Private vulnerability reporting could not be verified through the API; branch protection/rulesets require public visibility on the current GitHub plan. |
 
-The review fixed retained private storage after integration removal and added
-regression coverage. Reloads and updates still retain installation data.
+[GitHub validation for the reviewed base commit](https://github.com/dekay7/nrg-planner/actions/runs/39510895873)
+records the dependency failure. Publication-preparation changes also require CI
+on their committed revision. This record does not claim that all checks pass.
 
-[GitHub validation for the reviewed base commit](https://github.com/dekay7/nrg-planner/actions/runs/39473337612)
-passes tests/privacy, dependency auditing, reproducibility, and Hassfest. Local
-changes need the same CI checks after they are committed. All four open Dependabot
-updates also have passing tests/privacy and Hassfest checks. GitHub dependency
-alerts and automated security fixes are enabled; there are no open dependency
-vulnerability alerts at review time.
+### Open dependency finding
 
-**Remaining release evidence:** physical EV/battery behavior, a real HA restart
-and component-file update, and browser/mobile dashboard installation have not been
-verified by this automated review. HACS validation is skipped while private.
-Private vulnerability reporting could not be verified through the repository API,
-and branch protection/rulesets are unavailable on the current private-repository
-plan. Verify and configure those settings after publication as described below.
-The README and bundled handbook still accurately identify the project as a
-private-review snapshot. These results support the source review; they do not
-establish completion of every publication gate.
+Home Assistant 2026.10.2 pins:
 
-## Before an eventual public release
+- **Pillow 12.3.0:** CVE-2026-112895, CVE-2026-112400, CVE-2026-112397,
+  CVE-2026-112896, CVE-2026-112897, CVE-2026-112395, CVE-2026-112404, and
+  CVE-2026-112899. The audit lists **13.0.0** as the fixed version.
+- **uv 0.12.23:** PYSEC-2026-4321. The audit lists **0.13.4** as the fixed version.
 
-1. Complete the owner's manual privacy/source review, including generated assets.
-2. Test a fresh HA installation, restart, update, removal, optional dashboard setup,
-   and appropriate equipment behavior on independently configured installations.
-3. Recheck history and release contents for identifiers, secrets, and data files.
-4. Update the private-review status text only after the owner decides to publish.
-5. Verify the configured Dependabot alerts/updates and SHA-pinned Actions.
-6. Make the reviewed repository public only on the owner's explicit instruction.
-7. Immediately enable GitHub private vulnerability reporting, configure required CI
-   checks on `main` (branch protection is unavailable on this private repository's
-   current GitHub plan), and verify those settings.
-8. Pass HACS validation and Hassfest without ignored checks, then create a full
-   GitHub release. Submit to the default catalog separately if desired.
+Home Assistant 2026.10.2 is the latest published stable HA version at review time.
+The integration declares no additional runtime dependencies, but its development
+environment installs HA's pinned packages, and the host HA installation manages
+its own runtime dependencies. These findings remain open: no advisories are
+ignored, and no incompatible overrides are added to HA's exact requirements.
+
+Before declaring validation complete, move the tested HA version to a compatible
+upstream release that resolves the findings, then rerun dependency resolution,
+the full suite, and the audit. Recheck the documented minimum HA version and
+`hacs.json` if the supported baseline changes.
+
+## Publication and release checklist
+
+1. Complete the owner's source/privacy review, including generated assets and
+   GitHub-hosted content. Real-name commit attribution was approved for this
+   publication review; do not add personal email addresses or household data.
+2. Commit and push the reviewed preparation changes. Resolve the dependency finding
+   above and require passing `tests-and-privacy`, `dependency-audit`, and `hassfest`
+   jobs on the exact candidate revision before declaring it ready.
+3. Record fresh HA installation, restart, component-file update, removal, optional
+   dashboard/browser/mobile setup, and appropriate physical EV/battery behavior.
+   These manual checks are not established by the automated suite; the earlier
+   review did not verify them on independently configured installations.
+4. Recheck all remote branches, tags, pull-request heads, and release contents for
+   identifiers, secrets, and data files. Make the reviewed repository public only
+   on the owner's instruction, after the unresolved findings are addressed.
+5. Enable GitHub private vulnerability reporting and configure `main` protection
+   as soon as public visibility makes those settings available. Require the
+   validation jobs, including `hacs` once it has run, and verify the settings.
+6. Check the visibility-triggered workflow and pass HACS validation without ignored
+   checks. Verify an actual HACS custom-repository installation before claiming
+   that installation path has been tested end to end.
+7. Create a versioned GitHub release with notes matching the integration's version
+   and verification evidence. HACS can use the default branch without a release;
+   default-catalog submission is a separate, optional step.
 
 No workflow automatically changes repository visibility, creates a release, or
 deploys to a household's Home Assistant instance.

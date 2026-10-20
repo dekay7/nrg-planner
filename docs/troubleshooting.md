@@ -6,7 +6,7 @@ called **NRG Planner settings**.
 
 ## NRG does not appear in Add integration
 
-1. Confirm that Home Assistant is 2026.10.2 or newer; this snapshot targets 2026.10.2.
+1. Confirm that Home Assistant is 2026.10.2 or newer; this version targets 2026.10.2.
 2. For a manual installation, check that `manifest.json` is directly inside your HA
    configuration directory's `custom_components/nrg/` folder. A nested
    `custom_components/nrg/nrg/` or a copy of the repository outside the HA
@@ -16,8 +16,10 @@ called **NRG Planner settings**.
 4. If it is still absent, review the Home Assistant logs for a component-loading
    error and include the relevant, reviewed error in a support report.
 
-HACS cannot install this private-review repository. Use the manual path while
-access is private; see [installation](installation.md).
+If NRG is missing from HACS search, add it as a **custom repository**, category
+**Integration**; it is not in the default catalog. See
+[installation](installation.md#hacs-custom-repository) and the
+[current validation results](review.md). Manual installation is also available.
 
 ## The integration is installed, but no NRG dashboards appear
 
@@ -207,9 +209,10 @@ including `assets/guide.html` and the bundled dashboards.
 
 ## Getting help
 
-Use the [GitHub issue tracker](https://github.com/dekay7/nrg-planner/issues) if you
-have repository access. During private review, contact the repository owner through
-the existing review channel if the tracker is unavailable. Maintainer:
+Use the [GitHub issue tracker](https://github.com/dekay7/nrg-planner/issues) for
+bugs, setup questions, and feature requests. Search existing issues before opening
+a new one. Report security vulnerabilities through the
+[private reporting process](../SECURITY.md#reporting-a-vulnerability). Maintainer:
 [@dekay7](https://github.com/dekay7).
 
 Include:

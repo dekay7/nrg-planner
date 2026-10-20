@@ -51,10 +51,10 @@ must still be reachable to open it. Its text is generic, not your live settings.
 - **USD pricing.** Rate inputs use cents per kilowatt-hour; other currencies are
   not currently supported.
 
-**Current availability:** this is a private-review snapshot. Authorized reviewers
-can install it manually. HACS installation becomes available after the owner
-publishes and validates the repository; it is not currently in the default HACS
-catalog. See [installation](installation.md) for the exact steps.
+**Installation options:** manual installation and a HACS custom-repository path
+are documented in [installation](installation.md). NRG Planner is in early
+development and is not included in the default HACS catalog. Check the
+[project review](review.md) for current validation results and open release items.
 
 ## What can it do for my home?
 

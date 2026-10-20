@@ -118,5 +118,6 @@ NRG is [MIT-licensed](https://github.com/dekay7/nrg-planner/blob/main/LICENSE).
 Home Assistant hardware, electricity, and third-party integrations or services
 may have their own costs. The maintainer is
 [@dekay7](https://github.com/dekay7). Follow [getting help](troubleshooting.md#getting-help)
-to prepare a useful report. This snapshot's repository access is limited to
-authorized reviewers until publication.
+to prepare a useful report for the
+[GitHub issue tracker](https://github.com/dekay7/nrg-planner/issues). Use the
+[security policy](../SECURITY.md) to report suspected vulnerabilities privately.
