@@ -375,7 +375,11 @@ as described in <a href="#operations">operations</a>. Remove the integration thr
 &amp; services, remove its dashboard-package include if present, then remove its
 component through HACS or your manual file-management method. Check configuration
 before restarting. Use supported HA interfaces for stored configuration/history;
-do not manually edit HA's storage files.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="quick-start" aria-label="Quick start"><h2 id="quick-start-quick-start">Quick start</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Quick start topics"><div class="toc">
+do not manually edit HA's storage files.</p>
+<p>Removing the integration through Devices &amp; services deletes its local learning,
+forecast caches, notification bookkeeping, and measured-cost ledger. Reloads and
+updates preserve these data. HA recorder history and existing backups follow HA's
+own retention settings.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="quick-start" aria-label="Quick start"><h2 id="quick-start-quick-start">Quick start</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Quick start topics"><div class="toc">
 <ul>
 <li><a href="#quick-start-1-install-and-select-equipment">1. Install and select equipment</a></li>
 <li><a href="#quick-start-2-enter-your-own-electricity-plan">2. Enter your own electricity plan</a></li>
@@ -1920,6 +1924,9 @@ metadata should use that account's GitHub no-reply address, not a personal email
 storage APIs. That includes user-entered rates, source mappings, hourly summaries,
 EV-session estimates, and daily ledgers. These are private installation data, not
 repository assets. HA backups may contain them.</p>
+<p>Removing the integration through Devices &amp; services deletes its own local storage.
+Reloads and updates preserve it. Existing HA backups and recorder history follow
+HA's separate retention settings.</p>
 <p>NRG has no analytics, account registration, or telemetry-upload endpoint. The
 optional ComEd adapter requests public pricing. The optional Forecast.Solar adapter
 reads the selected integration's forecast service; that integration manages its
@@ -2213,6 +2220,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 <ul>
 <li><a href="#review-what-to-review">What to review</a></li>
 <li><a href="#review-automated-checks">Automated checks</a></li>
+<li><a href="#review-verification-record-2026-10-20">Verification record — 2026-10-20</a></li>
 <li><a href="#review-before-an-eventual-public-release">Before an eventual public release</a></li>
 </ul>
 </div>
@@ -2249,6 +2257,69 @@ file outside this repository.</p>
 Hassfest while private. HACS repository validation is explicitly deferred while
 private because HACS requires public repositories. Its job runs after publication;
 skipped validation is not a passing HACS compatibility claim.</p>
+<h3 id="review-verification-record-2026-10-20">Verification record — 2026-10-20</h3>
+<p>Reviewed <code>main</code> at <code>7cef5ec</code> and the accompanying local removal-cleanup changes,
+using a fresh development environment with Python 3.14.8, Home Assistant
+2026.10.2, and Node.js 22.23.1.</p>
+<div class="table-scroll" role="region" aria-label="Project review table 1" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Check</th>
+<th scope="col">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Automated suite</td>
+<td>125 tests pass, including native setup, option edits, reload, command adapters, control guards, tariffs, forecasts, accounting, diagnostics, and executable chart code.</td>
+</tr>
+<tr>
+<td>Lifecycle checks added during review</td>
+<td>Reload preserves learning and ledgers without resuming charge-now. Removing either a loaded or unloaded entry deletes NRG storage and entities.</td>
+</tr>
+<tr>
+<td>Handbook HTTP check</td>
+<td>The bundled HTML is served correctly; configuration, storage, and parent-directory requests are rejected.</td>
+</tr>
+<tr>
+<td>Fresh dependencies</td>
+<td>Installation and <code>pip check</code> pass; <code>pip-audit</code> reports no known vulnerabilities.</td>
+</tr>
+<tr>
+<td>Static checks</td>
+<td>Ruff's configured <code>F</code> rules, Bandit on integration code, Actionlint, and <code>git diff --check</code> pass.</td>
+</tr>
+<tr>
+<td>Publication privacy</td>
+<td>The project checker finds no issues across 180 working-tree, staged, and historical file revisions after fetching all remote branches and tags. Gitleaks finds no secrets in the working tree or the nine reachable commits.</td>
+</tr>
+<tr>
+<td>Bundled assets</td>
+<td>UI and brand builders reproduce their output deterministically.</td>
+</tr>
+<tr>
+<td>Optional public pricing</td>
+<td>Live ComEd requests return a valid 24-row forecast and a fresh, valid current-hour price response.</td>
+</tr>
+</tbody>
+</table></div>
+<p>The review fixed retained private storage after integration removal and added
+regression coverage. Reloads and updates still retain installation data.</p>
+<p><a href="https://github.com/dekay7/nrg-planner/actions/runs/39473337612">GitHub validation for the reviewed base commit</a>
+passes tests/privacy, dependency auditing, reproducibility, and Hassfest. Local
+changes need the same CI checks after they are committed. All four open Dependabot
+updates also have passing tests/privacy and Hassfest checks. GitHub dependency
+alerts and automated security fixes are enabled; there are no open dependency
+vulnerability alerts at review time.</p>
+<p><strong>Remaining release evidence:</strong> physical EV/battery behavior, a real HA restart
+and component-file update, and browser/mobile dashboard installation have not been
+verified by this automated review. HACS validation is skipped while private.
+Private vulnerability reporting could not be verified through the repository API,
+and branch protection/rulesets are unavailable on the current private-repository
+plan. Verify and configure those settings after publication as described below.
+The README and bundled handbook still accurately identify the project as a
+private-review snapshot. These results support the source review; they do not
+establish completion of every publication gate.</p>
 <h3 id="review-before-an-eventual-public-release">Before an eventual public release</h3>
 <ol>
 <li>Complete the owner's manual privacy/source review, including generated assets.</li>

@@ -1,3 +1,5 @@
+import pytest
+
 from homeassistant.config_entries import ConfigEntryState
 
 
@@ -20,6 +22,56 @@ async def test_reload_keeps_ui_edits(hass, installed):
     await hass.async_block_till_done()
     assert hass.states.get("number.nrg_battery_capacity").state == "30.0"
     assert installed.runtime_data.config["mode"] == "Observation"
+
+
+async def test_reload_restores_learning_and_ledger_without_resuming_charge_now(hass, installed):
+    import time
+
+    runtime = installed.runtime_data
+    hour = int(time.time() // 3600) * 3600 - 3600
+    runtime.stats.hours = [{"start": hour, "house_kwh": 1.25, "solar_kwh": None, "solar_forecast": None}]
+    runtime.stats.ev_sessions = [{"kwh_per_percent": .7, "kw_per_amp": .23}]
+    runtime.stats.ledger = {"2026-10-19": {"import_cost": 1.5, "export_credit": .2, "coverage_hours": 1}}
+    runtime.charge_now = True
+
+    assert await hass.config_entries.async_reload(installed.entry_id)
+    await hass.async_block_till_done()
+
+    restored = installed.runtime_data
+    assert restored is not runtime
+    assert runtime._closing
+    assert restored.stats.hours == runtime.stats.hours
+    assert restored.stats.ev_sessions == runtime.stats.ev_sessions
+    assert restored.stats.ledger["2026-10-19"] == runtime.stats.ledger["2026-10-19"]
+    assert restored.stats.session is None
+    assert not restored.charge_now
+
+
+@pytest.mark.parametrize("unload_first", [False, True])
+async def test_removal_deletes_private_storage_and_entities(hass, unload_first):
+    from homeassistant.helpers.storage import Store
+    from homeassistant.setup import async_setup_component
+
+    assert await async_setup_component(hass, "nrg", {"nrg": {
+        "supply_plan": "Flat supply", "flat_supply_cents": 10, "delivery_cents": 4,
+    }})
+    await hass.async_block_till_done()
+    entry = next(iter(hass.config_entries.async_entries("nrg")))
+    runtime = entry.runtime_data
+    runtime.stats.ev_sessions = [{"kwh_per_percent": .7}]
+    await runtime.store.async_save(runtime.persisted())
+    assert await Store(hass, 1, f"nrg.{entry.entry_id}").async_load() is not None
+
+    if unload_first:
+        assert await hass.config_entries.async_unload(entry.entry_id)
+    result = await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert not result["require_restart"]
+    assert not hass.config_entries.async_entries("nrg")
+    assert hass.states.get("sensor.nrg_import_price") is None
+    assert runtime._closing
+    assert await Store(hass, 1, f"nrg.{entry.entry_id}").async_load() is None
 
 
 async def test_energy_dashboard_usd_prices_preserve_negative_export_and_unknown_rates(hass, installed):

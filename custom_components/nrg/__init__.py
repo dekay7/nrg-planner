@@ -7,6 +7,7 @@ from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import callback
 from homeassistant.helpers.event import async_track_state_change_event, async_track_time_interval
+from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN, PLATFORMS, STATIC_URL
 from .runtime import NRGRuntime
@@ -98,3 +99,8 @@ async def async_unload_entry(hass, entry):
         await entry.runtime_data.close()
         return True
     return False
+
+
+async def async_remove_entry(hass, entry):
+    """Delete installation-specific data when the entry is permanently removed."""
+    await Store(hass, 1, f"{DOMAIN}.{entry.entry_id}").async_remove()

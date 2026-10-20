@@ -515,7 +515,7 @@ views:
         The administrator can change the reference appliance, rates, schedules and reserve in Energy Settings.
 
 
-        [Open the complete household handbook](/nrg-planner/guide.html?v=5c852db5b500)'
+        [Open the complete household handbook](/nrg-planner/guide.html?v=72e1f022a818)'
       grid_options:
         columns: full
   - type: grid

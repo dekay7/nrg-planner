@@ -20,6 +20,10 @@ storage APIs. That includes user-entered rates, source mappings, hourly summarie
 EV-session estimates, and daily ledgers. These are private installation data, not
 repository assets. HA backups may contain them.
 
+Removing the integration through Devices & services deletes its own local storage.
+Reloads and updates preserve it. Existing HA backups and recorder history follow
+HA's separate retention settings.
+
 NRG has no analytics, account registration, or telemetry-upload endpoint. The
 optional ComEd adapter requests public pricing. The optional Forecast.Solar adapter
 reads the selected integration's forecast service; that integration manages its
