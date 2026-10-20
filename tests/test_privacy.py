@@ -187,6 +187,19 @@ def test_publication_gate_checks_annotated_tag_metadata(publication_repo):
     assert private_email not in repr(findings)
 
 
+def test_history_scan_handles_github_dependabot_release_notes_without_ignoring_secrets(publication_repo):
+    root, run = publication_repo
+    (root / "README.md").write_text("Generic Dependabot test project\n")
+    run("add", "README.md")
+    contact = "maintainer" + "@" + "package.invalid"
+    run("commit", "-m", f"Update package\n\nUpstream contact: {contact}\nPrivate marker: local-secret-marker",
+        GIT_AUTHOR_NAME="dependabot[bot]", GIT_AUTHOR_EMAIL="49699333+dependabot[bot]@users.noreply.github.com",
+        GIT_COMMITTER_NAME="GitHub", GIT_COMMITTER_EMAIL="noreply@github.com")
+    assert scan(root, history=True)[1] == []
+    assert any(label == "owner-supplied private indicator" for _, _, label in
+               scan(root, history=True, indicators=["local-secret-marker"])[1])
+
+
 def test_history_scan_rejects_incomplete_or_missing_history(publication_repo):
     root, run = publication_repo
     clone = root / "shallow"

@@ -54,15 +54,18 @@ def allowed_path(name):
             or path.parts == (".github", "dependabot.yml"))
 
 
-def check_text(text, indicators=()):
+def check_text(text, indicators=(), *, check_emails=True):
     findings = []
     for label, pattern in RULES.items():
         for match in pattern.finditer(text):
             findings.append((text.count("\n", 0, match.start()) + 1, label))
-    for match in EMAIL.finditer(text):
-        domain = match[0].rsplit("@", 1)[1].lower()
-        if domain != "users.noreply.github.com" and domain not in {"example.com", "example.org", "example.invalid"}:
-            findings.append((text.count("\n", 0, match.start()) + 1, "non-placeholder email address"))
+    if check_emails:
+        for match in EMAIL.finditer(text):
+            address = match[0].lower()
+            domain = address.rsplit("@", 1)[1]
+            if (domain not in {"users.noreply.github.com", "example.com", "example.org", "example.invalid"}
+                    and address != "noreply@github.com"):
+                findings.append((text.count("\n", 0, match.start()) + 1, "non-placeholder email address"))
     folded = text.casefold()
     for indicator in indicators:
         if indicator and (position := folded.find(indicator.casefold())) >= 0:
@@ -131,8 +134,17 @@ def scan(root, *, history=False, indicators=()):
             findings.append(("history", 0, "shallow Git history; fetch full history before publication"))
         commits = git(root, "rev-list", "--all").decode().splitlines()
         for commit in commits:
-            metadata = git(root, "show", "-s", "--format=%an%n%ae%n%cn%n%ce%n%B", commit).decode()
-            findings.extend((f"commit {commit[:12]} metadata", line, label) for line, label in check_text(metadata, indicators))
+            identity = git(root, "show", "-s", "--format=%an%n%ae%n%cn%n%ce", commit).decode()
+            fields = identity.splitlines()
+            dependabot = (len(fields) == 4 and fields[0].casefold() in {"dependabot", "dependabot[bot]"}
+                          and fields[2].casefold() == "github" and fields[3].casefold() == "noreply@github.com")
+            message = git(root, "show", "-s", "--format=%B", commit).decode()
+            findings.extend((f"commit {commit[:12]} metadata", line, label) for line, label in check_text(identity, indicators))
+            # Dependabot release notes quote upstream public contact addresses;
+            # keep secret/private-indicator checks, but don't misclassify those as
+            # the commit author's personal address.
+            findings.extend((f"commit {commit[:12]} message", line, label)
+                            for line, label in check_text(message, indicators, check_emails=not dependabot))
             for record in git(root, "ls-tree", "-rz", "--full-tree", commit).split(b"\0"):
                 if not record:
                     continue
