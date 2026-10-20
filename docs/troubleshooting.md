@@ -104,6 +104,27 @@ device is ready. **Protection guards**, **EV ready**, and **Battery ready** iden
 additional checks. Commands and device response may take time; feedback should
 confirm settings. Do not map forced battery export to NRG's serve-home action.
 
+## The modeled battery line is missing
+
+Observation mode supports the proposed battery trajectory. It does not need Control
+mode or permission to issue live commands.
+
+1. Enable the battery component and its planning/control permission under Components,
+   while keeping Observation selected for a command-free review.
+2. Check the explanation beneath **Modeled energy plan · next 48 hours** and the
+   **Battery plan** reason. Monitoring-only batteries have no NRG dispatch trajectory.
+3. Confirm that battery percentage and compatible mode-control feedback are available.
+4. Open **Operation → Protection guards → More info**. The `guard_issues` attribute
+   identifies each mapped input that is missing, unavailable, stale, or not in its
+   expected clear state. The planner's explanation includes the same blocker.
+5. If a chosen provider exposes an unavailable grid-services sensor, choose an
+   available equivalent for the same equipment in Mappings. Preserve the protection
+   check; do not substitute an unrelated always-off entity.
+
+Missing price/solar coverage restricts discretionary moves; a missing battery
+trajectory is separately explained by its planning inputs/readiness. A forecast is
+a proposal, not a prediction that the equipment's own controller will follow it.
+
 ## My sleeping car's readings are considered old
 
 Some integrations publish vehicle values only when they change. First confirm the
@@ -130,7 +151,7 @@ continuously connected session stays overdue instead of quietly moving to tomorr
 Grid charging requires a supported charge action. If charge and hold share the
 same device mode, a separate grid-charge permission switch is needed; otherwise a
 distinct charge-capable mode can work. Missing trustworthy price/solar inputs,
-reserve, device readiness, or an enabled summer precaution can also limit moves.
+reserve, and device readiness can also limit moves.
 
 NRG does not schedule forced battery exports. **Battery** export policy permits
 exports where a control exists; it does not request a timed sale. Without a mapped

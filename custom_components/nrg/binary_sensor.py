@@ -15,6 +15,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 class NRGReady(NRGEntity, BinarySensorEntity):
     @property
+    def extra_state_attributes(self):
+        if self.key in ("native_ready", "battery_ready", "ev_ready"):
+            return {"guard_issues": (self.coordinator.data or {}).get("snapshot", {}).get("guard_issues", [])}
+        return super().extra_state_attributes
+
+    @property
     def is_on(self):
         if self.key == "writer_authorized":
             return self.coordinator.controller.owned()

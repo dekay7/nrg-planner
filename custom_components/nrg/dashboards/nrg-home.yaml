@@ -515,7 +515,7 @@ views:
         The administrator can change the reference appliance, rates, schedules and reserve in Energy Settings.
 
 
-        [Open the complete household handbook](/nrg-planner/guide.html?v=5c852db5b500)'
+        [Open the complete household handbook](/nrg-planner/guide.html?v=abdde1cd0cb2)'
       grid_options:
         columns: full
   - type: grid
@@ -587,6 +587,23 @@ views:
         xaxis:
           labels:
             datetimeUTC: false
+      grid_options:
+        columns: full
+    - type: conditional
+      conditions:
+      - entity: binary_sensor.nrg_has_battery
+        state: 'on'
+      card:
+        type: markdown
+        content: '{% set p = state_attr(''sensor.nrg_plan'',''plan'') or {} %}
+
+          {% if not p %}Waiting for a fresh battery forecast.
+
+          {% elif p.get(''battery_forecast_available'') == false %}**Battery line unavailable.** {{ p.get(''battery_reason'',
+          ''Check the mapped battery inputs and protection guards.'') }}
+
+          {% else %}**Battery %** is the proposed NRG schedule, including in Observation. It is not a prediction
+          of another controller''s actual behavior.{% endif %}'
       grid_options:
         columns: full
     - type: grid
