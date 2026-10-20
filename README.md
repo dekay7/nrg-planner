@@ -55,15 +55,18 @@ the optional dashboards. For the complete UI, follow
 
 ## HACS custom-repository installation
 
-1. Add `https://github.com/dekay7/nrg-planner` to HACS **Custom repositories** as
-   category **Integration**.
-2. Download NRG Planner and restart HA.
-3. Add the integration in Devices & services and follow the quick start.
+1. Open **HACS** in Home Assistant, then **⋮ → Custom repositories**.
+2. Enter `https://github.com/dekay7/nrg-planner`, select type **Integration**, and
+   choose **Add**.
+3. Find **NRG Planner** in HACS, open it, and choose **Download**.
+4. Restart Home Assistant.
+5. Open **Settings → Devices & services → Add integration → NRG Planner** and
+   follow the [quick start](docs/quick-start.md). Keep Observation selected initially.
 
 Default-catalog inclusion is a later submission; it is not required for users to
 install a public custom repository. HACS downloads the integration and its bundled
 assets, but does not edit your HA configuration or register dashboard packages.
-Check the [validation record](docs/review.md#verification-record--2026-10-20) for
+Check the [project review](docs/review.md) for
 HACS validation status. Without a GitHub release, HACS downloads the default branch.
 
 ## Documentation

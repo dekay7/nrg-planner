@@ -18,7 +18,7 @@ views:
       content: 'Enable only the components this home has, and choose separately whether NRG may control them.
 
 
-        [Household handbook and settings reference](/nrg-planner/guide.html?v=cd0b8f85f89a)'
+        [Household handbook and settings reference](/nrg-planner/guide.html?v=2102d486101c)'
       grid_options:
         columns: full
         rows: auto

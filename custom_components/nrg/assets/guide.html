@@ -321,9 +321,18 @@ network share. Other installation types may keep it at a different path.</p>
 <p>No Git history, tests, development tools, or repository data files belong in the
 installed component directory beyond the files already under <code>custom_components/nrg/</code>.</p>
 <h3 id="installation-hacs-custom-repository">HACS custom repository</h3>
-<p>Add <code>https://github.com/dekay7/nrg-planner</code> in HACS Custom repositories, category
-<strong>Integration</strong>. Download, restart HA, and add the integration through Devices &amp;
-services. Default-catalog approval is not required for this custom-repository path.
+<p>With HACS already installed in Home Assistant:</p>
+<ol>
+<li>Open <strong>HACS</strong>, then the <strong>⋮</strong> menu and <strong>Custom repositories</strong>.</li>
+<li>Paste <code>https://github.com/dekay7/nrg-planner</code> into the repository field.</li>
+<li>Select type <strong>Integration</strong> and choose <strong>Add</strong>.</li>
+<li>Search for <strong>NRG Planner</strong> in HACS, open its entry, and choose <strong>Download</strong>.</li>
+<li>Restart Home Assistant.</li>
+<li>Open <strong>Settings → Devices &amp; services → Add integration</strong>, select <strong>NRG Planner</strong>,
+   and follow the <a href="#quick-start">quick start</a>. Start in Observation and enter your
+   own rates and equipment mappings.</li>
+</ol>
+<p>Default-catalog approval is not required for this custom-repository path.
 See the <a href="#review">project review</a> for current HACS validation status. When no
 GitHub releases exist, HACS uses the default branch; published releases provide
 versioned downloads.</p>
@@ -2256,7 +2265,8 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 <li><a href="#review-open-dependency-finding">Open dependency finding</a></li>
 </ul>
 </li>
-<li><a href="#review-publication-and-release-checklist">Publication and release checklist</a></li>
+<li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
+<li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
 </ul>
 </div>
 </nav></details>
@@ -2334,8 +2344,12 @@ commit metadata use GitHub no-reply addresses.</p>
 <td>The handbook and dashboards are regenerated from their sources; UI and brand builders reproduce their output deterministically.</td>
 </tr>
 <tr>
-<td>GitHub CI for the reviewed base</td>
-<td>Hassfest passes. The combined tests/privacy job fails at dependency auditing before its tests run. The preparation changes separate those jobs so both results remain visible.</td>
+<td>Publication-preparation CI</td>
+<td>At <code>c3c5122</code>, tests/privacy, asset reproducibility, and Hassfest pass. The independent dependency-audit job reports the upstream findings below.</td>
+</tr>
+<tr>
+<td>Live checks</td>
+<td>The owner reports that the live installation/lifecycle, browser/mobile dashboard, and physical equipment checks worked successfully. This is owner-reported validation on the owner's installation.</td>
 </tr>
 <tr>
 <td>Repository metadata</td>
@@ -2346,14 +2360,14 @@ commit metadata use GitHub no-reply addresses.</p>
 <td>Dependabot alerts, automated security fixes, SHA-pinned Actions, and read-only default workflow permissions are enabled. No open Dependabot alerts were returned; this does not override the failing local/CI audit.</td>
 </tr>
 <tr>
-<td>HACS and public security settings</td>
-<td>HACS validation is pending a public repository. Private vulnerability reporting could not be verified through the API; branch protection/rulesets require public visibility on the current GitHub plan.</td>
+<td>HACS</td>
+<td>Custom-repository installation instructions are provided. The owner deferred HACS setup and default-catalog submission; an end-to-end HACS installation is not claimed as tested. The existing public-repository validation job remains enabled.</td>
 </tr>
 </tbody>
 </table></div>
-<p><a href="https://github.com/dekay7/nrg-planner/actions/runs/39510895873">GitHub validation for the reviewed base commit</a>
-records the dependency failure. Publication-preparation changes also require CI
-on their committed revision. This record does not claim that all checks pass.</p>
+<p><a href="https://github.com/dekay7/nrg-planner/actions/runs/39514726446">GitHub validation for the publication-preparation commit</a>
+records the passing tests/privacy and Hassfest jobs and the dependency-audit
+failure. This record does not claim that all checks pass.</p>
 <h4 id="review-open-dependency-finding">Open dependency finding</h4>
 <p>Home Assistant 2026.10.2 pins:</p>
 <ul>
@@ -2367,34 +2381,33 @@ The integration declares no additional runtime dependencies, but its development
 environment installs HA's pinned packages, and the host HA installation manages
 its own runtime dependencies. These findings remain open: no advisories are
 ignored, and no incompatible overrides are added to HA's exact requirements.</p>
-<p>Before declaring validation complete, move the tested HA version to a compatible
-upstream release that resolves the findings, then rerun dependency resolution,
-the full suite, and the audit. Recheck the documented minimum HA version and
-<code>hacs.json</code> if the supported baseline changes.</p>
-<h3 id="review-publication-and-release-checklist">Publication and release checklist</h3>
+<p>When a compatible upstream HA release resolves these findings, update the tested
+version and rerun dependency resolution, the full suite, and the audit. Recheck
+the documented minimum HA version and <code>hacs.json</code> if the supported baseline changes.</p>
+<h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
+<p>The owner confirmed that the live checks worked and explicitly authorized public
+source publication. The Home Assistant-pinned dependency findings are accepted as
+upstream follow-up, rather than a blocker for publishing this repository. They
+remain visible in dependency auditing. Existing real-name commit attribution is
+approved for publication; personal email addresses and household data remain
+outside the publication contents.</p>
+<p>HACS setup is deferred. Users can add the public repository to HACS as a custom
+integration using the <a href="#installation-hacs-custom-repository">installation instructions</a>.
+Default-catalog inclusion and a versioned GitHub release are not prerequisites
+for this installation path.</p>
+<h3 id="review-maintenance-and-release-follow-up">Maintenance and release follow-up</h3>
 <ol>
-<li>Complete the owner's source/privacy review, including generated assets and
-   GitHub-hosted content. Real-name commit attribution was approved for this
-   publication review; do not add personal email addresses or household data.</li>
-<li>Commit and push the reviewed preparation changes. Resolve the dependency finding
-   above and require passing <code>tests-and-privacy</code>, <code>dependency-audit</code>, and <code>hassfest</code>
-   jobs on the exact candidate revision before declaring it ready.</li>
-<li>Record fresh HA installation, restart, component-file update, removal, optional
-   dashboard/browser/mobile setup, and appropriate physical EV/battery behavior.
-   These manual checks are not established by the automated suite; the earlier
-   review did not verify them on independently configured installations.</li>
-<li>Recheck all remote branches, tags, pull-request heads, and release contents for
-   identifiers, secrets, and data files. Make the reviewed repository public only
-   on the owner's instruction, after the unresolved findings are addressed.</li>
-<li>Enable GitHub private vulnerability reporting and configure <code>main</code> protection
-   as soon as public visibility makes those settings available. Require the
-   validation jobs, including <code>hacs</code> once it has run, and verify the settings.</li>
-<li>Check the visibility-triggered workflow and pass HACS validation without ignored
-   checks. Verify an actual HACS custom-repository installation before claiming
-   that installation path has been tested end to end.</li>
-<li>Create a versioned GitHub release with notes matching the integration's version
-   and verification evidence. HACS can use the default branch without a release;
-   default-catalog submission is a separate, optional step.</li>
+<li>Track upstream HA dependency fixes and rerun the audit when the tested version
+   changes. Continue running tests/privacy, reproducibility, and Hassfest on changes.</li>
+<li>Review source, generated assets, reachable history, and GitHub-hosted contents
+   for identifiers, secrets, and household data before future releases.</li>
+<li>Review GitHub private vulnerability reporting and <code>main</code> protection settings
+   for the public repository.</li>
+<li>Review HACS validation results and record an actual custom-repository
+   installation when HACS setup is performed. Default-catalog submission is optional.</li>
+<li>Create a versioned GitHub release when desired, with notes matching the
+   integration's version and verification evidence. HACS uses the default branch
+   until releases are available.</li>
 </ol>
 <p>No workflow automatically changes repository visibility, creates a release, or
 deploys to a household's Home Assistant instance.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section></main>

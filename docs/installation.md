@@ -45,9 +45,18 @@ installed component directory beyond the files already under `custom_components/
 
 ## HACS custom repository
 
-Add `https://github.com/dekay7/nrg-planner` in HACS Custom repositories, category
-**Integration**. Download, restart HA, and add the integration through Devices &
-services. Default-catalog approval is not required for this custom-repository path.
+With HACS already installed in Home Assistant:
+
+1. Open **HACS**, then the **⋮** menu and **Custom repositories**.
+2. Paste `https://github.com/dekay7/nrg-planner` into the repository field.
+3. Select type **Integration** and choose **Add**.
+4. Search for **NRG Planner** in HACS, open its entry, and choose **Download**.
+5. Restart Home Assistant.
+6. Open **Settings → Devices & services → Add integration**, select **NRG Planner**,
+   and follow the [quick start](quick-start.md). Start in Observation and enter your
+   own rates and equipment mappings.
+
+Default-catalog approval is not required for this custom-repository path.
 See the [project review](review.md) for current HACS validation status. When no
 GitHub releases exist, HACS uses the default branch; published releases provide
 versioned downloads.
