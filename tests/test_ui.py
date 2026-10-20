@@ -9,7 +9,7 @@ from urllib.parse import unquote, urlsplit
 import yaml
 
 from custom_components.nrg.const import SETTINGS
-from tools.build_ui import price_generator
+from tools.build_ui import price_generator, timeline
 
 ROOT = Path(__file__).resolve().parents[1]
 INTEGRATION = ROOT / "custom_components/nrg"
@@ -58,6 +58,28 @@ console.log(JSON.stringify({active,expired:run(entity,start,end)}));"""
     values = json.loads(result.stdout)
     assert values["active"][0][1] == -2
     assert values["expired"] == []
+
+
+def test_battery_chart_uses_observation_plan_but_does_not_invent_unready_soc():
+    from conftest import fixture, NOW, ZONE
+    from custom_components.nrg.planner import plan
+
+    config, prices, solar, telemetry, stats = fixture(mode="Observation")
+    telemetry["connected"] = False
+    ready = plan(NOW, config, ZONE, telemetry, stats, prices, solar, .15)
+    blocked = plan(NOW, config, ZONE, telemetry | {"battery_ready": False}, stats, prices, solar, .15)
+    battery = next(series for series in timeline()["series"] if series["yaxis_id"] == "soc")
+    script = """const fs=require('fs'), input=JSON.parse(fs.readFileSync(0,'utf8'));
+Date.now=()=>input.now*1000;
+const run=new Function('entity',input.code);
+console.log(JSON.stringify(input.plans.map(plan=>run({attributes:{plan}}))));"""
+    result = subprocess.run(["node", "-e", script], input=json.dumps({
+        "code": battery["data_generator"], "now": NOW, "plans": [ready, blocked],
+    }), text=True, capture_output=True, check=True)
+    ready_points, blocked_points = json.loads(result.stdout)
+    assert len(ready_points) == len(ready["slots"])
+    assert all(20 <= point[1] <= 100 for point in ready_points)
+    assert blocked_points == []
 
 
 def test_handbook_links_bypass_ha_month_long_static_cache_after_updates():

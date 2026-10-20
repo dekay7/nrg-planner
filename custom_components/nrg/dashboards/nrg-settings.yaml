@@ -18,7 +18,7 @@ views:
       content: 'Enable only the components this home has, and choose separately whether NRG may control them.
 
 
-        [Household handbook and settings reference](/nrg-planner/guide.html?v=5c852db5b500)'
+        [Household handbook and settings reference](/nrg-planner/guide.html?v=abdde1cd0cb2)'
       grid_options:
         columns: full
         rows: auto
@@ -409,6 +409,24 @@ views:
         xaxis:
           labels:
             datetimeUTC: false
+      grid_options:
+        columns: full
+        rows: auto
+    - type: conditional
+      conditions:
+      - entity: binary_sensor.nrg_has_battery
+        state: 'on'
+      card:
+        type: markdown
+        content: '{% set p = state_attr(''sensor.nrg_plan'',''plan'') or {} %}
+
+          {% if not p %}Waiting for a fresh battery forecast.
+
+          {% elif p.get(''battery_forecast_available'') == false %}**Battery line unavailable.** {{ p.get(''battery_reason'',
+          ''Check the mapped battery inputs and protection guards.'') }}
+
+          {% else %}**Battery %** is the proposed NRG schedule, including in Observation. It is not a prediction
+          of another controller''s actual behavior.{% endif %}'
       grid_options:
         columns: full
         rows: auto
@@ -1399,7 +1417,7 @@ views:
   - type: grid
     cards:
     - type: heading
-      heading: Precautions
+      heading: Battery cycling
       heading_style: title
       grid_options:
         columns: full
@@ -1416,23 +1434,6 @@ views:
         entities:
         - entity: number.nrg_battery_wear_cents
           name: Cycling cost
-        show_header_toggle: false
-      grid_options:
-        columns: full
-        rows: auto
-    - type: vertical-stack
-      cards:
-      - type: markdown
-        content: '### Summer peak-import precaution
-
-
-          Optional regional precaution: avoid discretionary grid battery charging and, if feasible, EV charging
-          on June–September weekdays noon–7 p.m. Off until explicitly enabled. It is not a predicted dollar saving;
-          departure and charge-now win.'
-      - type: entities
-        entities:
-        - entity: switch.nrg_summer_guard
-          name: Summer precaution
         show_header_toggle: false
       grid_options:
         columns: full
@@ -1989,6 +1990,24 @@ views:
         xaxis:
           labels:
             datetimeUTC: false
+      grid_options:
+        columns: full
+        rows: auto
+    - type: conditional
+      conditions:
+      - entity: binary_sensor.nrg_has_battery
+        state: 'on'
+      card:
+        type: markdown
+        content: '{% set p = state_attr(''sensor.nrg_plan'',''plan'') or {} %}
+
+          {% if not p %}Waiting for a fresh battery forecast.
+
+          {% elif p.get(''battery_forecast_available'') == false %}**Battery line unavailable.** {{ p.get(''battery_reason'',
+          ''Check the mapped battery inputs and protection guards.'') }}
+
+          {% else %}**Battery %** is the proposed NRG schedule, including in Observation. It is not a prediction
+          of another controller''s actual behavior.{% endif %}'
       grid_options:
         columns: full
         rows: auto

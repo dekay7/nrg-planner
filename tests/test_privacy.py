@@ -236,3 +236,27 @@ async def test_http_registration_exposes_only_generic_bundled_assets():
     directory = Path(paths[0].path)
     assert directory.name == "assets" and directory.parent.name == "nrg"
     assert {p.name for p in directory.iterdir()} == {"guide.html"}
+
+
+async def test_real_http_serves_handbook_but_not_configuration_or_parent_files(hass):
+    from aiohttp.test_utils import TestClient, TestServer
+    from homeassistant.components.http import HomeAssistantHTTP, SSL_MODERN
+    from homeassistant.components.http.cors import setup_cors
+    from custom_components.nrg import async_setup
+
+    server = HomeAssistantHTTP(hass, None, None, None, None, 0, [], SSL_MODERN)
+    setup_cors(server.app, [])
+    hass.http = server
+    assert await async_setup(hass, {})
+
+    async with TestClient(TestServer(server.app)) as client:
+        response = await client.get("/nrg-planner/guide.html?v=review")
+        assert response.status == 200
+        assert response.content_type == "text/html"
+        bundled = Path(__file__).resolve().parents[1] / "custom_components/nrg/assets/guide.html"
+        assert await response.read() == bundled.read_bytes()
+        assert "max-age" not in response.headers.get("Cache-Control", "")
+        for path in ("configuration.yaml", ".storage/core.config_entries", "manifest.json",
+                     "%2e%2e/manifest.json", "%2e%2e/%2e%2e/configuration.yaml"):
+            response = await client.get("/nrg-planner/" + path)
+            assert response.status in (403, 404)

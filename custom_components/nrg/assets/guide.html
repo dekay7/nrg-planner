@@ -375,7 +375,11 @@ as described in <a href="#operations">operations</a>. Remove the integration thr
 &amp; services, remove its dashboard-package include if present, then remove its
 component through HACS or your manual file-management method. Check configuration
 before restarting. Use supported HA interfaces for stored configuration/history;
-do not manually edit HA's storage files.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="quick-start" aria-label="Quick start"><h2 id="quick-start-quick-start">Quick start</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Quick start topics"><div class="toc">
+do not manually edit HA's storage files.</p>
+<p>Removing the integration through Devices &amp; services deletes its local learning,
+forecast caches, notification bookkeeping, and measured-cost ledger. Reloads and
+updates preserve these data. HA recorder history and existing backups follow HA's
+own retention settings.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="quick-start" aria-label="Quick start"><h2 id="quick-start-quick-start">Quick start</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Quick start topics"><div class="toc">
 <ul>
 <li><a href="#quick-start-1-install-and-select-equipment">1. Install and select equipment</a></li>
 <li><a href="#quick-start-2-enter-your-own-electricity-plan">2. Enter your own electricity plan</a></li>
@@ -459,6 +463,7 @@ the graphs, <a href="#faq">common questions</a> for typical decisions, or
 <li><a href="#homeowner-guide-the-recommendation">The recommendation</a></li>
 <li><a href="#homeowner-guide-current-power-flow-the-sankey-diagram">Current power flow: the Sankey diagram</a></li>
 <li><a href="#homeowner-guide-only-the-equipment-this-home-has">Only the equipment this home has</a></li>
+<li><a href="#homeowner-guide-modeled-energy-plan-the-battery-line">Modeled energy plan: the battery line</a></li>
 <li><a href="#homeowner-guide-net-energy-cost-today">Net energy cost today</a></li>
 </ul>
 </div>
@@ -511,6 +516,16 @@ capacity and reserve, rather than claiming a measured battery-health test.</p>
 <p>While Observation is selected, schedules are proposals. Devices may currently be
 following another controller. Monitoring-only equipment continues to use its own
 controls; NRG does not promise it will follow the modeled schedule.</p>
+<h3 id="homeowner-guide-modeled-energy-plan-the-battery-line">Modeled energy plan: the battery line</h3>
+<p>The <strong>Battery %</strong> line is the proposed NRG battery trajectory, not the measured
+percentage gauge. It works in <strong>Observation</strong> when battery planning/control is
+enabled and the battery inputs, compatible controls and selected protection guards
+are ready. Observation blocks commands, not this forecast.</p>
+<p>With monitoring-only equipment, unavailable battery data, or a missing/active
+selected guard, NRG omits the trajectory instead of inventing a flat percentage.
+The explanation below the chart names the blocker. <strong>Operation → Protection
+guards</strong> also exposes the affected entity and its expected state in More info.
+See <a href="#troubleshooting-the-modeled-battery-line-is-missing">battery-line troubleshooting</a>.</p>
 <h3 id="homeowner-guide-net-energy-cost-today">Net energy cost today</h3>
 <p>Purchases minus export credits are estimated from covered meter readings and the
 contemporaneous supply-plus-delivery rates. A negative total means modeled credits
@@ -1214,7 +1229,6 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <li><a href="#settings-flexible-appliance-duration">Flexible appliance duration</a></li>
 <li><a href="#settings-minimum-worthwhile-plan-improvement">Minimum worthwhile plan improvement</a></li>
 <li><a href="#settings-optional-battery-cycling-cost">Optional battery cycling cost</a></li>
-<li><a href="#settings-summer-peak-import-precaution">Summer peak-import precaution</a></li>
 </ul>
 </li>
 <li><a href="#settings-notifications">Notifications</a><ul>
@@ -1448,10 +1462,6 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <p>Optional estimated wear cost per AC kWh discharged. Calendar degradation above does not establish a cycling cost; zero makes no invented wear charge.</p>
 <p>Accepted range: <strong>0 to 50 ¢/kWh</strong>; adjustable in increments of <strong>0.1 ¢/kWh</strong>.</p>
 <p>Reference key: <code>battery_wear_cents</code>.</p>
-<h4 id="settings-summer-peak-import-precaution">Summer peak-import precaution</h4>
-<p>Default: <strong>Off</strong>.</p>
-<p>Optional regional precaution: avoid discretionary grid battery charging and, if feasible, EV charging on June–September weekdays noon–7 p.m. Off until explicitly enabled. It is not a predicted dollar saving; departure and charge-now win.</p>
-<p>Reference key: <code>summer_guard</code>.</p>
 <h3 id="settings-notifications">Notifications</h3>
 <p>Advice messages are opt-in. Select existing notify services in Configure → Notifications.</p>
 <h4 id="settings-send-household-advice-notifications">Send household advice notifications</h4>
@@ -1493,6 +1503,7 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <li><a href="#troubleshooting-advice-says-waiting-for-dependable-coverage">Advice says Waiting for dependable coverage</a></li>
 <li><a href="#troubleshooting-power-flows-are-missing-reversed-or-inconsistent">Power flows are missing, reversed, or inconsistent</a></li>
 <li><a href="#troubleshooting-the-plan-exists-but-my-car-or-battery-is-not-following-it">The plan exists, but my car or battery is not following it</a></li>
+<li><a href="#troubleshooting-the-modeled-battery-line-is-missing">The modeled battery line is missing</a></li>
 <li><a href="#troubleshooting-my-sleeping-cars-readings-are-considered-old">My sleeping car's readings are considered old</a></li>
 <li><a href="#troubleshooting-ev-ready-time-is-late-or-there-is-a-departure-shortfall">EV ready time is late or there is a departure shortfall</a></li>
 <li><a href="#troubleshooting-the-battery-will-not-grid-charge-or-export-on-schedule">The battery will not grid-charge or export on schedule</a></li>
@@ -1593,6 +1604,25 @@ meters are not replaced with forecast flows. See <a href="#homeowner-guide-curre
 device is ready. <strong>Protection guards</strong>, <strong>EV ready</strong>, and <strong>Battery ready</strong> identify
 additional checks. Commands and device response may take time; feedback should
 confirm settings. Do not map forced battery export to NRG's serve-home action.</p>
+<h3 id="troubleshooting-the-modeled-battery-line-is-missing">The modeled battery line is missing</h3>
+<p>Observation mode supports the proposed battery trajectory. It does not need Control
+mode or permission to issue live commands.</p>
+<ol>
+<li>Enable the battery component and its planning/control permission under Components,
+   while keeping Observation selected for a command-free review.</li>
+<li>Check the explanation beneath <strong>Modeled energy plan · next 48 hours</strong> and the
+   <strong>Battery plan</strong> reason. Monitoring-only batteries have no NRG dispatch trajectory.</li>
+<li>Confirm that battery percentage and compatible mode-control feedback are available.</li>
+<li>Open <strong>Operation → Protection guards → More info</strong>. The <code>guard_issues</code> attribute
+   identifies each mapped input that is missing, unavailable, stale, or not in its
+   expected clear state. The planner's explanation includes the same blocker.</li>
+<li>If a chosen provider exposes an unavailable grid-services sensor, choose an
+   available equivalent for the same equipment in Mappings. Preserve the protection
+   check; do not substitute an unrelated always-off entity.</li>
+</ol>
+<p>Missing price/solar coverage restricts discretionary moves; a missing battery
+trajectory is separately explained by its planning inputs/readiness. A forecast is
+a proposal, not a prediction that the equipment's own controller will follow it.</p>
 <h3 id="troubleshooting-my-sleeping-cars-readings-are-considered-old">My sleeping car's readings are considered old</h3>
 <p>Some integrations publish vehicle values only when they change. First confirm the
 home-charger connection and that the readings are still appropriate. You can
@@ -1613,7 +1643,7 @@ continuously connected session stays overdue instead of quietly moving to tomorr
 <p>Grid charging requires a supported charge action. If charge and hold share the
 same device mode, a separate grid-charge permission switch is needed; otherwise a
 distinct charge-capable mode can work. Missing trustworthy price/solar inputs,
-reserve, device readiness, or an enabled summer precaution can also limit moves.</p>
+reserve, and device readiness can also limit moves.</p>
 <p>NRG does not schedule forced battery exports. <strong>Battery</strong> export policy permits
 exports where a control exists; it does not request a timed sale. Without a mapped
 export control, configure that policy in the equipment's own app. See
@@ -1920,6 +1950,9 @@ metadata should use that account's GitHub no-reply address, not a personal email
 storage APIs. That includes user-entered rates, source mappings, hourly summaries,
 EV-session estimates, and daily ledgers. These are private installation data, not
 repository assets. HA backups may contain them.</p>
+<p>Removing the integration through Devices &amp; services deletes its own local storage.
+Reloads and updates preserve it. Existing HA backups and recorder history follow
+HA's separate retention settings.</p>
 <p>NRG has no analytics, account registration, or telemetry-upload endpoint. The
 optional ComEd adapter requests public pricing. The optional Forecast.Solar adapter
 reads the selected integration's forecast service; that integration manages its
@@ -2213,6 +2246,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 <ul>
 <li><a href="#review-what-to-review">What to review</a></li>
 <li><a href="#review-automated-checks">Automated checks</a></li>
+<li><a href="#review-verification-record-2026-10-20">Verification record — 2026-10-20</a></li>
 <li><a href="#review-before-an-eventual-public-release">Before an eventual public release</a></li>
 </ul>
 </div>
@@ -2249,6 +2283,69 @@ file outside this repository.</p>
 Hassfest while private. HACS repository validation is explicitly deferred while
 private because HACS requires public repositories. Its job runs after publication;
 skipped validation is not a passing HACS compatibility claim.</p>
+<h3 id="review-verification-record-2026-10-20">Verification record — 2026-10-20</h3>
+<p>Reviewed <code>main</code> at <code>7cef5ec</code> and the accompanying local removal-cleanup changes,
+using a fresh development environment with Python 3.14.8, Home Assistant
+2026.10.2, and Node.js 22.23.1.</p>
+<div class="table-scroll" role="region" aria-label="Project review table 1" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Check</th>
+<th scope="col">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Automated suite</td>
+<td>125 tests pass, including native setup, option edits, reload, command adapters, control guards, tariffs, forecasts, accounting, diagnostics, and executable chart code.</td>
+</tr>
+<tr>
+<td>Lifecycle checks added during review</td>
+<td>Reload preserves learning and ledgers without resuming charge-now. Removing either a loaded or unloaded entry deletes NRG storage and entities.</td>
+</tr>
+<tr>
+<td>Handbook HTTP check</td>
+<td>The bundled HTML is served correctly; configuration, storage, and parent-directory requests are rejected.</td>
+</tr>
+<tr>
+<td>Fresh dependencies</td>
+<td>Installation and <code>pip check</code> pass; <code>pip-audit</code> reports no known vulnerabilities.</td>
+</tr>
+<tr>
+<td>Static checks</td>
+<td>Ruff's configured <code>F</code> rules, Bandit on integration code, Actionlint, and <code>git diff --check</code> pass.</td>
+</tr>
+<tr>
+<td>Publication privacy</td>
+<td>The project checker finds no issues across 180 working-tree, staged, and historical file revisions after fetching all remote branches and tags. Gitleaks finds no secrets in the working tree or the nine reachable commits.</td>
+</tr>
+<tr>
+<td>Bundled assets</td>
+<td>UI and brand builders reproduce their output deterministically.</td>
+</tr>
+<tr>
+<td>Optional public pricing</td>
+<td>Live ComEd requests return a valid 24-row forecast and a fresh, valid current-hour price response.</td>
+</tr>
+</tbody>
+</table></div>
+<p>The review fixed retained private storage after integration removal and added
+regression coverage. Reloads and updates still retain installation data.</p>
+<p><a href="https://github.com/dekay7/nrg-planner/actions/runs/39473337612">GitHub validation for the reviewed base commit</a>
+passes tests/privacy, dependency auditing, reproducibility, and Hassfest. Local
+changes need the same CI checks after they are committed. All four open Dependabot
+updates also have passing tests/privacy and Hassfest checks. GitHub dependency
+alerts and automated security fixes are enabled; there are no open dependency
+vulnerability alerts at review time.</p>
+<p><strong>Remaining release evidence:</strong> physical EV/battery behavior, a real HA restart
+and component-file update, and browser/mobile dashboard installation have not been
+verified by this automated review. HACS validation is skipped while private.
+Private vulnerability reporting could not be verified through the repository API,
+and branch protection/rulesets are unavailable on the current private-repository
+plan. Verify and configure those settings after publication as described below.
+The README and bundled handbook still accurately identify the project as a
+private-review snapshot. These results support the source review; they do not
+establish completion of every publication gate.</p>
 <h3 id="review-before-an-eventual-public-release">Before an eventual public release</h3>
 <ol>
 <li>Complete the owner's manual privacy/source review, including generated assets.</li>

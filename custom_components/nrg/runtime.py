@@ -13,7 +13,7 @@ from homeassistant.helpers.sun import get_astral_event_date
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .config import effective_capacity, finite, settings, validate, cents_rate
-from .const import DOMAIN
+from .const import DOMAIN, MAPPINGS
 from .adapters import Adapters
 from .tariffs import usd_price, external_intervals
 from .control import Controller
@@ -155,7 +155,17 @@ class NRGRuntime(DataUpdateCoordinator):
         guard_roles = [("grid_connected", "on")]
         if config["has_battery"]:
             guard_roles += [("storm_watch", "off"), ("grid_services", "off"), ("grid_services_enabled", "off")]
-        native = all(is_state(key, value) for key, value in guard_roles if self.mappings.get(key))
+        guard_issues = []
+        for key, expected in guard_roles:
+            if not (entity_id := self.mappings.get(key)) or is_state(key, expected):
+                continue
+            raw = self.hass.states.get(entity_id)
+            actual = raw.state if raw else "missing"
+            if raw and actual not in ("unknown", "unavailable") and self.state(key) is None:
+                actual = "stale"
+            guard_issues.append({"role": key, "name": MAPPINGS[key][0].removesuffix(" (optional)"),
+                                 "entity_id": entity_id, "state": actual, "expected": expected})
+        native = not guard_issues
         battery_soc = self.numeric("battery_soc", unit="%", low=0, high=100) if config["has_battery"] else None
         ev_soc = self.numeric("ev_soc", vehicle_age, "%", 0, 100) if config["has_ev"] else None
         ev_limit = self.numeric("ev_limit", vehicle_age, "%", 0, 100) if config["has_ev"] else None
@@ -179,7 +189,8 @@ class NRGRuntime(DataUpdateCoordinator):
                 "ev_energy": self.numeric("ev_energy", 180, "kWh", 0),
                 "ev_amps": self.numeric("ev_measured_current", 180, "A", 0, 100)
                 or self.numeric("ev_current", control_age, "A", 0, 100),
-                "native_ready": native, "battery_ready": config["has_battery"] and config["battery_control"] and native and battery_soc is not None and battery_controls,
+                "native_ready": native, "guard_issues": guard_issues, "battery_controls_ready": battery_controls,
+                "battery_ready": config["has_battery"] and config["battery_control"] and native and battery_soc is not None and battery_controls,
                 "can_grid_charge": can_grid_charge, "can_set_export": adapters.can("battery_export", config["export_policy"]),
                 "local_connected": plugged, "ev_busy": ev_busy,
                 "home_basis": home_basis, "grid_basis": grid_basis,

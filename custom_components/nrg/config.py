@@ -5,6 +5,9 @@ from typing import Any
 
 from .const import DEFAULTS, SETTINGS, CONTROL_VALUES, COMMAND_SCRIPTS, OPTIONAL_RATES
 
+# Accepted only to clean saved options from older releases; never used for planning.
+RETIRED_SETTINGS = frozenset({"summer_guard"})
+
 
 def finite(value: Any, default=None):
     if isinstance(value, bool):
@@ -35,8 +38,8 @@ def settings(options: dict) -> dict:
 
 def validate(options: dict, today: date | None = None) -> dict:
     """Reject bad settings rather than silently clamping a user's inputs."""
-    result = dict(options)
-    for key, value in options.items():
+    result = {key: value for key, value in options.items() if key not in RETIRED_SETTINGS}
+    for key, value in result.items():
         if key not in SETTINGS:
             if key not in {"mappings", "solar_sources", "departure_override", "notification_targets", "supply_periods", "delivery_periods", "control_values", "command_scripts"}:
                 raise ValueError("Unknown NRG setting: " + key)
