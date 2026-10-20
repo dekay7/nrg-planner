@@ -17,7 +17,7 @@ class Controller:
         self.status = "Observation: no equipment commands"
 
     def owned(self):
-        return self.runtime.config["mode"] == "Control"
+        return not getattr(self.runtime, "_closing", False) and self.runtime.config["mode"] == "Control"
 
     def enabled(self, device):
         config = self.runtime.config
@@ -42,9 +42,15 @@ class Controller:
             known = known and int(getattr(self.runtime,"last_sample_at",time.time()) // 3600) == int(time.time() // 3600)
         return known
 
+    def ev_busy(self, snapshot, plan):
+        busy = snapshot["ev_busy"] is not False if "ev_busy" in snapshot else snapshot.get("ev_kw", 0) is None or snapshot.get("ev_kw", 0) > .2
+        return self.runtime.config["has_ev"] and (busy or plan.get("ev_amps", 0) > 0)
+
     async def set(self, key, action, revision, *, revoke=False):
         if not self.owned() or revision != self.runtime.revision:
             raise RuntimeError("Controller ownership or plan changed during command")
+        if not self.enabled("ev" if key.startswith("ev_") else "battery"):
+            raise RuntimeError("Equipment control is no longer enabled")
         snapshot = self.runtime.snapshot()
         if not snapshot["native_ready"]:
             raise RuntimeError("Yielding to a configured grid/protection/ownership guard")
@@ -60,6 +66,18 @@ class Controller:
             raise RuntimeError("The current interval no longer permits battery grid charging")
         if key == "battery_mode" and action in ("serve", "charge") and (active.get("battery_action") != action or not self.price_known_now()):
             raise RuntimeError("The current interval no longer permits that battery action")
+        if (key == "battery_grid_charge" and action == "on") or (key == "battery_mode" and action in ("serve", "charge")):
+            config = self.runtime.config
+            if not snapshot.get("battery_ready") or snapshot.get("battery_soc") is None:
+                raise RuntimeError("Battery control/feedback is no longer ready")
+            busy = self.ev_busy(snapshot, active)
+            if action in ("on", "charge"):
+                target = finite(active.get("battery_target_soc"))
+                if (busy or not snapshot.get("can_grid_charge", True) or target is None
+                        or snapshot["battery_soc"] >= target - .3):
+                    raise RuntimeError("Battery grid charging is no longer permitted by current readings")
+            elif snapshot["battery_soc"] <= config["backup_reserve"] + .3 or config["hold_battery_for_ev"] and busy:
+                raise RuntimeError("Battery discharge is no longer permitted by current readings")
         if self.adapters.matches(key, action):
             return
         await self.adapters.write(key, action)
@@ -96,17 +114,21 @@ class Controller:
                 self.status = "Yielding to a configured protection guard or missing guard reading"
                 return
             if not self.valid_plan(revision):
-                try:
-                    await self.revoke_battery(revision)
-                    if self.enabled("ev"):
-                        if self.runtime.charge_now:
+                for device in ("battery", "ev"):
+                    if not self.enabled(device):
+                        continue
+                    try:
+                        if device == "battery":
+                            await self.revoke_battery(revision)
+                        elif self.runtime.charge_now:
                             await self._ev(revision, self.runtime.snapshot())
                         else:
                             await self._stop_ev_if_home(revision, self.runtime.snapshot())
-                    self.status = "Charge-now request without price data" if self.runtime.charge_now else "Stale plan: previous charging requests revoked where supported"
-                except Exception as error:
-                    self.status = str(error)
-                    _LOGGER.warning("NRG stale-plan handling: %s", error)
+                    except Exception as error:
+                        errors.append(f"{device}: {error}")
+                        _LOGGER.warning("NRG stale-plan handling (%s): %s", device, error)
+                self.status = "; ".join(errors) if errors else (
+                    "Charge-now request without price data" if self.runtime.charge_now else "Stale plan: previous charging requests revoked where supported")
                 return
             for device, action in (("battery", self._battery), ("ev", self._ev)):
                 if not self.enabled(device):
@@ -125,8 +147,7 @@ class Controller:
         if not snapshot["battery_ready"]:
             await self.revoke_battery(revision)
             raise RuntimeError("Battery control/feedback is not ready")
-        busy = snapshot.get("ev_busy") if "ev_busy" in snapshot else snapshot.get("ev_kw", 0) is None or snapshot.get("ev_kw", 0) > .2
-        busy = config["has_ev"] and (busy or plan.get("ev_amps", 0) > 0)
+        busy = self.ev_busy(snapshot, plan)
         action = "hold" if config["has_ev"] and config["hold_battery_for_ev"] and busy else plan["battery_action"]
         if not self.price_known_now():
             action = "hold"

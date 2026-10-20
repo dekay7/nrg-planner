@@ -112,7 +112,7 @@ def test_handbook_has_accessible_navigation_and_complete_user_help():
     assert "#content" in page.links
     assert {"overview", "installation", "quick-start", "homeowner-guide", "operations",
             "faq", "pricing", "integrations", "learning", "settings", "troubleshooting",
-            "glossary", "privacy", "design", "accounting", "alternatives", "review"} <= set(page.ids)
+            "glossary", "privacy", "security", "design", "accounting", "alternatives", "review"} <= set(page.ids)
     assert page.tables
     assert all(table.get("role") == "region" and table.get("aria-label")
                and table.get("tabindex") == "0" for table in page.tables)

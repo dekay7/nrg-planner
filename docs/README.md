@@ -24,7 +24,7 @@ including **none of them**. Start with advice and add equipment as needed.
 | Fix missing readings, charts, or commands | [Troubleshooting](troubleshooting.md) |
 | Get a quick answer or translate an unfamiliar word | [Common questions](faq.md) · [Glossary](glossary.md) |
 | Understand learning, calculations, or cost figures | [Learning](learning.md) · [Planning method](design.md) · [Accounting](accounting.md) |
-| Check data use or get help | [Privacy](../PRIVACY.md) · [Support](troubleshooting.md#getting-help) |
+| Check data use, report a security issue, or get help | [Privacy](../PRIVACY.md) · [Security reporting](../SECURITY.md) · [Support](troubleshooting.md#getting-help) |
 | Compare projects or review publication readiness | [Alternatives](alternatives.md) · [Project review](review.md) |
 
 **Read inside Home Assistant:** open **Why? → Open the complete household handbook**

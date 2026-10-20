@@ -49,7 +49,9 @@ there is no bundled historical household fallback.
 
 A missing or stale plan revokes charging grants where supported. Explicit
 charge-now can operate without price data when EV checks pass. Battery failures
-are reported independently of EV execution.
+are reported independently of EV execution, including when revoking a stale plan.
+Battery readiness, charge target, reserve, and EV activity are rechecked before
+each charging/discharging request. Shutdown blocks new equipment requests.
 
 ## Recovery
 

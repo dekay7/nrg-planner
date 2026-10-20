@@ -122,6 +122,12 @@ def test_publication_gate_rejects_private_files_even_in_otherwise_valid_director
     assert check_file(name, b"invented contents")
 
 
+def test_security_policy_and_dependabot_are_reviewed_publication_assets():
+    assert check_file("SECURITY.md", b"# Security policy\n") == []
+    assert check_file(".github/dependabot.yml", b"version: 2\nupdates: []\n") == []
+    assert check_file(".github/settings/private.yml", b"not publishable")
+
+
 def test_publication_gate_detects_credentials_and_personal_metadata_without_values_in_report():
     credential = "ghp_" + "A" * 36
     email = "owner" + "@" + "mail.invalid"
@@ -130,7 +136,8 @@ def test_publication_gate_detects_credentials_and_personal_metadata_without_valu
     assert credential not in repr(findings) and email not in repr(findings)
 
 
-def test_publication_gate_finds_deleted_files_and_old_metadata_in_history(tmp_path):
+@pytest.fixture
+def publication_repo(tmp_path):
     env = os.environ | {"GIT_AUTHOR_NAME": "review-test", "GIT_COMMITTER_NAME": "review-test",
                         "GIT_AUTHOR_EMAIL": "test@users.noreply.github.com", "GIT_COMMITTER_EMAIL": "test@users.noreply.github.com"}
 
@@ -139,6 +146,13 @@ def test_publication_gate_finds_deleted_files_and_old_metadata_in_history(tmp_pa
 
     run("init", "-b", "main")
     (tmp_path / "README.md").write_text("Generic test project\n")
+    run("add", "README.md")
+    run("commit", "-m", "Generic initial snapshot")
+    return tmp_path, run
+
+
+def test_publication_gate_finds_deleted_files_and_old_metadata_in_history(publication_repo):
+    tmp_path, run = publication_repo
     (tmp_path / "old.csv").write_text("invented,private,data\n")
     run("add", "README.md", "old.csv")
     private_email = "old" + "@" + "mail.invalid"
@@ -149,6 +163,43 @@ def test_publication_gate_finds_deleted_files_and_old_metadata_in_history(tmp_pa
     findings = scan(tmp_path, history=True)[1]
     assert any(name == "history:old.csv" for name, _, _ in findings)
     assert any(label == "non-placeholder email address" for _, _, label in findings)
+
+
+def test_publication_gate_checks_staged_content_even_when_working_copy_is_clean(publication_repo):
+    root, run = publication_repo
+    private_email = "staged" + "@" + "mail.invalid"
+    (root / "README.md").write_text(private_email)
+    run("add", "README.md")
+    (root / "README.md").write_text("Generic test project\n")
+    findings = scan(root)[1]
+    assert any(name == "index:README.md" and label == "non-placeholder email address"
+               for name, _, label in findings)
+    assert private_email not in repr(findings)
+
+
+def test_publication_gate_checks_annotated_tag_metadata(publication_repo):
+    root, run = publication_repo
+    private_email = "tagger" + "@" + "mail.invalid"
+    run("tag", "-a", "review-test", "-m", "Generic tag", GIT_COMMITTER_EMAIL=private_email)
+    findings = scan(root, history=True)[1]
+    assert any(name.startswith("tag ") and label == "non-placeholder email address"
+               for name, _, label in findings)
+    assert private_email not in repr(findings)
+
+
+def test_history_scan_rejects_incomplete_or_missing_history(publication_repo):
+    root, run = publication_repo
+    clone = root / "shallow"
+    run("clone", "--depth=1", root.as_uri(), str(clone))
+    assert any(label == "shallow Git history; fetch full history before publication"
+               for _, _, label in scan(clone, history=True)[1])
+    archive = root / "archive"
+    archive.mkdir()
+    (archive / "README.md").write_text("Generic test project\n")
+    # An exported tree outside a repository cannot substantiate a history check.
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setenv("GIT_CEILING_DIRECTORIES", str(root))
+        assert any(label == "Git history unavailable" for _, _, label in scan(archive, history=True)[1])
 
 
 def test_dashboard_package_and_handbook_are_shipped_inside_integration():

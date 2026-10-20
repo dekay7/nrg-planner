@@ -40,7 +40,7 @@ blockquote{margin:20px 0;padding:4px 18px;border-left:3px solid var(--accent);ba
 <p class="reading-help">Find anything with your browser's <strong>Find in page</strong> (<kbd>Ctrl F</kbd> or <kbd>⌘ F</kbd>). Use <strong>Print → Save as PDF</strong> to keep a copy. This page contains generic guidance, not your live settings.</p>
 </header>
 <div class="layout">
-<aside class="contents" id="contents" tabindex="-1"><details open><summary>Contents</summary><nav aria-label="Handbook chapters"><div class="nav-group"><h2>Getting started</h2><ul><li><a href="#overview">Start here</a></li><li><a href="#installation">Installation &amp; updates</a></li><li><a href="#quick-start">Quick start</a></li></ul></div><div class="nav-group"><h2>Everyday use</h2><ul><li><a href="#homeowner-guide">Read the dashboard</a></li><li><a href="#operations">Operation &amp; handover</a></li><li><a href="#faq">Common questions</a></li></ul></div><div class="nav-group"><h2>Set up your home</h2><ul><li><a href="#pricing">Electricity pricing</a></li><li><a href="#integrations">Equipment &amp; adapters</a></li><li><a href="#learning">Learning explained</a></li><li><a href="#settings">Every setting</a></li></ul></div><div class="nav-group"><h2>Help &amp; reference</h2><ul><li><a href="#troubleshooting">Troubleshooting &amp; support</a></li><li><a href="#glossary">Plain-language glossary</a></li><li><a href="#privacy">Privacy &amp; diagnostics</a></li></ul></div><div class="nav-group"><h2>Deeper reading</h2><ul><li><a href="#design">How planning works</a></li><li><a href="#accounting">Costs &amp; accounting</a></li><li><a href="#alternatives">Other energy planners</a></li><li><a href="#review">Project review</a></li></ul></div></nav></details></aside>
+<aside class="contents" id="contents" tabindex="-1"><details open><summary>Contents</summary><nav aria-label="Handbook chapters"><div class="nav-group"><h2>Getting started</h2><ul><li><a href="#overview">Start here</a></li><li><a href="#installation">Installation &amp; updates</a></li><li><a href="#quick-start">Quick start</a></li></ul></div><div class="nav-group"><h2>Everyday use</h2><ul><li><a href="#homeowner-guide">Read the dashboard</a></li><li><a href="#operations">Operation &amp; handover</a></li><li><a href="#faq">Common questions</a></li></ul></div><div class="nav-group"><h2>Set up your home</h2><ul><li><a href="#pricing">Electricity pricing</a></li><li><a href="#integrations">Equipment &amp; adapters</a></li><li><a href="#learning">Learning explained</a></li><li><a href="#settings">Every setting</a></li></ul></div><div class="nav-group"><h2>Help &amp; reference</h2><ul><li><a href="#troubleshooting">Troubleshooting &amp; support</a></li><li><a href="#glossary">Plain-language glossary</a></li><li><a href="#privacy">Privacy &amp; diagnostics</a></li><li><a href="#security">Security reporting</a></li></ul></div><div class="nav-group"><h2>Deeper reading</h2><ul><li><a href="#design">How planning works</a></li><li><a href="#accounting">Costs &amp; accounting</a></li><li><a href="#alternatives">Other energy planners</a></li><li><a href="#review">Project review</a></li></ul></div></nav></details></aside>
 <main id="content" tabindex="-1"><section id="overview" aria-label="Start here"><h2 id="overview-nrg-planner-documentation">NRG Planner documentation</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Start here topics"><div class="toc">
 <ul>
 <li><a href="#overview-find-what-you-need">Find what you need</a></li>
@@ -111,8 +111,8 @@ including <strong>none of them</strong>. Start with advice and add equipment as 
 <td><a href="#learning">Learning</a> · <a href="#design">Planning method</a> · <a href="#accounting">Accounting</a></td>
 </tr>
 <tr>
-<td>Check data use or get help</td>
-<td><a href="#privacy">Privacy</a> · <a href="#troubleshooting-getting-help">Support</a></td>
+<td>Check data use, report a security issue, or get help</td>
+<td><a href="#privacy">Privacy</a> · <a href="#security">Security reporting</a> · <a href="#troubleshooting-getting-help">Support</a></td>
 </tr>
 <tr>
 <td>Compare projects or review publication readiness</td>
@@ -572,7 +572,9 @@ discretionary battery moves. Locally learned price estimates remain tentative;
 there is no bundled historical household fallback.</p>
 <p>A missing or stale plan revokes charging grants where supported. Explicit
 charge-now can operate without price data when EV checks pass. Battery failures
-are reported independently of EV execution.</p>
+are reported independently of EV execution, including when revoking a stale plan.
+Battery readiness, charge target, reserve, and EV activity are rechecked before
+each charging/discharging request. Shutdown blocks new equipment requests.</p>
 <h3 id="operations-recovery">Recovery</h3>
 <p>Use an HA backup and a previously reviewed component version when recovering from
 an update. Backups may contain private settings and measurements. Keep them out of
@@ -1938,14 +1940,37 @@ those yourself before attaching them to an issue.</p>
 <p>The local HTML handbook serves only bundled generic documentation, never user
 configuration or runtime state.</p>
 <h3 id="privacy-publication-protection">Publication protection</h3>
-<p><code>tools/check_privacy.py</code> checks source and, with <code>--history</code>, reachable Git history
-for disallowed files and common identifiers/secrets. It rejects files outside the
-reviewed project layout and non-brand binary assets. CI runs the same check.</p>
+<p><code>tools/check_privacy.py</code> checks working-tree and staged source and, with <code>--history</code>,
+reachable Git history, commit metadata, and annotated tag metadata for disallowed
+files and common identifiers/secrets. History checks fail on shallow clones or
+exported trees without Git history. It rejects files outside the reviewed project
+layout and non-brand binary assets. CI runs the same check.</p>
 <p>An optional, local-only deny file can add private indicators for an owner's review.
 Keep that file outside the repository. Reports identify paths and finding types,
 not matching secret values. Automated scans complement the owner's manual review;
 they cannot recognize every form of personal information.</p>
-<p>See <a href="#review">review and publication gates</a>.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="design" aria-label="How planning works"><h2 id="design-how-nrg-planner-makes-decisions">How NRG Planner makes decisions</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="How planning works topics"><div class="toc">
+<p>See <a href="#review">review and publication gates</a>.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="security" aria-label="Security reporting"><h2 id="security-security-policy">Security policy</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Security reporting topics"><div class="toc">
+<ul>
+<li><a href="#security-reporting-a-vulnerability">Reporting a vulnerability</a></li>
+<li><a href="#security-supported-versions">Supported versions</a></li>
+</ul>
+</div>
+</nav></details>
+<h3 id="security-reporting-a-vulnerability">Reporting a vulnerability</h3>
+<p>Please report suspected vulnerabilities privately. Use GitHub's <strong>Report a
+vulnerability</strong> option on the repository's Security page when it is available.
+If private vulnerability reporting is not enabled, open an issue containing only
+a request for a private reporting channel. Do not identify the affected feature or
+include exploit details, credentials, household configuration, or personal data in
+a public issue.</p>
+<p>Include the affected version or commit, the impact, and steps to reproduce using
+invented data. The maintainer will acknowledge and assess reports as availability
+permits; there is no guaranteed response or remediation timeframe or bug bounty.</p>
+<h3 id="security-supported-versions">Supported versions</h3>
+<p>Security fixes are made against the latest source on the default branch. Older
+versions may not receive fixes; update to a reviewed current release where possible.</p>
+<p>Please do not test against another person's Home Assistant installation, devices,
+accounts, or data.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="design" aria-label="How planning works"><h2 id="design-how-nrg-planner-makes-decisions">How NRG Planner makes decisions</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="How planning works topics"><div class="toc">
 <ul>
 <li><a href="#design-scope-and-objective">Scope and objective</a></li>
 <li><a href="#design-time-and-prices">Time and prices</a></li>
@@ -2198,6 +2223,7 @@ metadata is preparation, not publication or default-catalog approval.</p>
 <h3 id="review-what-to-review">What to review</h3>
 <ul>
 <li><a href="#privacy">Privacy policy</a> and the exact tracked file list (<code>git ls-files</code>).</li>
+<li><a href="#security">Security reporting policy</a>, repository security settings, and dependency-update automation.</li>
 <li>Fresh Git history and author/committer metadata (<code>git log --format=fuller</code>).</li>
 <li>Unset tariff fields and the absence of a bundled historical price profile.</li>
 <li>Generic examples, tests, dashboard YAML, generated HTML, and translations.</li>
@@ -2209,6 +2235,7 @@ metadata is preparation, not publication or default-catalog approval.</p>
 <pre tabindex="0" aria-label="Code example"><code class="language-sh">python -B tools/check_privacy.py --history
 python -B -m pytest -q
 python -B -m ruff check . --select F
+python -B -m pip_audit --progress-spinner off
 python -B tools/build_ui.py
 python -B tools/build_brand.py
 git diff --check
@@ -2229,7 +2256,11 @@ skipped validation is not a passing HACS compatibility claim.</p>
    and appropriate equipment behavior on independently configured installations.</li>
 <li>Recheck history and release contents for identifiers, secrets, and data files.</li>
 <li>Update the private-review status text only after the owner decides to publish.</li>
+<li>Verify the configured Dependabot alerts/updates and SHA-pinned Actions.</li>
 <li>Make the reviewed repository public only on the owner's explicit instruction.</li>
+<li>Immediately enable GitHub private vulnerability reporting, configure required CI
+   checks on <code>main</code> (branch protection is unavailable on this private repository's
+   current GitHub plan), and verify those settings.</li>
 <li>Pass HACS validation and Hassfest without ignored checks, then create a full
    GitHub release. Submit to the default catalog separately if desired.</li>
 </ol>

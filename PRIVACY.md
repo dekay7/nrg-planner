@@ -47,9 +47,11 @@ configuration or runtime state.
 
 ## Publication protection
 
-`tools/check_privacy.py` checks source and, with `--history`, reachable Git history
-for disallowed files and common identifiers/secrets. It rejects files outside the
-reviewed project layout and non-brand binary assets. CI runs the same check.
+`tools/check_privacy.py` checks working-tree and staged source and, with `--history`,
+reachable Git history, commit metadata, and annotated tag metadata for disallowed
+files and common identifiers/secrets. History checks fail on shallow clones or
+exported trees without Git history. It rejects files outside the reviewed project
+layout and non-brand binary assets. CI runs the same check.
 
 An optional, local-only deny file can add private indicators for an owner's review.
 Keep that file outside the repository. Reports identify paths and finding types,

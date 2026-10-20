@@ -7,6 +7,7 @@ metadata is preparation, not publication or default-catalog approval.
 ## What to review
 
 - [Privacy policy](../PRIVACY.md) and the exact tracked file list (`git ls-files`).
+- [Security reporting policy](../SECURITY.md), repository security settings, and dependency-update automation.
 - Fresh Git history and author/committer metadata (`git log --format=fuller`).
 - Unset tariff fields and the absence of a bundled historical price profile.
 - Generic examples, tests, dashboard YAML, generated HTML, and translations.
@@ -20,6 +21,7 @@ metadata is preparation, not publication or default-catalog approval.
 python -B tools/check_privacy.py --history
 python -B -m pytest -q
 python -B -m ruff check . --select F
+python -B -m pip_audit --progress-spinner off
 python -B tools/build_ui.py
 python -B tools/build_brand.py
 git diff --check
@@ -43,8 +45,12 @@ skipped validation is not a passing HACS compatibility claim.
    and appropriate equipment behavior on independently configured installations.
 3. Recheck history and release contents for identifiers, secrets, and data files.
 4. Update the private-review status text only after the owner decides to publish.
-5. Make the reviewed repository public only on the owner's explicit instruction.
-6. Pass HACS validation and Hassfest without ignored checks, then create a full
+5. Verify the configured Dependabot alerts/updates and SHA-pinned Actions.
+6. Make the reviewed repository public only on the owner's explicit instruction.
+7. Immediately enable GitHub private vulnerability reporting, configure required CI
+   checks on `main` (branch protection is unavailable on this private repository's
+   current GitHub plan), and verify those settings.
+8. Pass HACS validation and Hassfest without ignored checks, then create a full
    GitHub release. Submit to the default catalog separately if desired.
 
 No workflow automatically changes repository visibility, creates a release, or

@@ -51,6 +51,7 @@ def handbook():
         ("docs/troubleshooting.md", "troubleshooting", "Troubleshooting & support", "Help & reference"),
         ("docs/glossary.md", "glossary", "Plain-language glossary", "Help & reference"),
         ("PRIVACY.md", "privacy", "Privacy & diagnostics", "Help & reference"),
+        ("SECURITY.md", "security", "Security reporting", "Help & reference"),
         ("docs/design.md", "design", "How planning works", "Deeper reading"),
         ("docs/accounting.md", "accounting", "Costs & accounting", "Deeper reading"),
         ("docs/alternatives.md", "alternatives", "Other energy planners", "Deeper reading"),

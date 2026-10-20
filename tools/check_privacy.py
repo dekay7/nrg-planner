@@ -11,7 +11,7 @@ else:
     from build_brand import icon
 
 ROOT = Path(__file__).resolve().parents[1]
-ROOT_FILES = {"README.md", "PRIVACY.md", "LICENSE", ".gitignore", "hacs.json", "pytest.ini", "requirements-dev.txt"}
+ROOT_FILES = {"README.md", "PRIVACY.md", "SECURITY.md", "LICENSE", ".gitignore", "hacs.json", "pytest.ini", "requirements-dev.txt"}
 SKIP_LOCAL = {".git", ".venv", "__pycache__", ".pytest_cache", ".ruff_cache"}
 BRAND = "custom_components/nrg/brand/icon.png"
 EMAIL = re.compile(r"[A-Za-z0-9_.+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
@@ -50,7 +50,8 @@ def allowed_path(name):
         return path.suffix == ".md"
     if path.parts[0] in {"tests", "tools"}:
         return path.suffix == ".py"
-    return len(path.parts) == 3 and path.parts[:2] == (".github", "workflows") and path.suffix in {".yaml", ".yml"}
+    return (len(path.parts) == 3 and path.parts[:2] == (".github", "workflows") and path.suffix in {".yaml", ".yml"}
+            or path.parts == (".github", "dependabot.yml"))
 
 
 def check_text(text, indicators=()):
@@ -104,9 +105,31 @@ def scan(root, *, history=False, indicators=()):
             continue
         checked += 1
         findings.extend((name, line, label) for line, label in check_file(name, path.read_bytes(), indicators))
+    seen = set()
+    if repository:
+        # The index is the next commit's content, which may differ from disk.
+        for record in git(root, "ls-files", "--stage", "-z").split(b"\0"):
+            if not record:
+                continue
+            info, name = record.split(b"\t", 1)
+            mode, oid, stage = info.decode().split()
+            name = name.decode()
+            if stage != "0":
+                findings.append((f"index:{name}", 0, "unresolved merge in publication index"))
+                continue
+            if mode not in {"100644", "100755"}:
+                findings.append((f"index:{name}", 0, "non-regular tracked file"))
+                continue
+            seen.add((name, oid))
+            checked += 1
+            content = git(root, "cat-file", "blob", oid)
+            findings.extend((f"index:{name}", line, label) for line, label in check_file(name, content, indicators))
+    if history and not repository:
+        findings.append(("history", 0, "Git history unavailable"))
     if history and repository:
+        if git(root, "rev-parse", "--is-shallow-repository").strip() == b"true":
+            findings.append(("history", 0, "shallow Git history; fetch full history before publication"))
         commits = git(root, "rev-list", "--all").decode().splitlines()
-        seen = set()
         for commit in commits:
             metadata = git(root, "show", "-s", "--format=%an%n%ae%n%cn%n%ce%n%B", commit).decode()
             findings.extend((f"commit {commit[:12]} metadata", line, label) for line, label in check_text(metadata, indicators))
@@ -125,6 +148,17 @@ def scan(root, *, history=False, indicators=()):
                 checked += 1
                 content = git(root, "cat-file", "blob", oid)
                 findings.extend((f"history:{name}", line, label) for line, label in check_file(name, content, indicators))
+        tags = git(root, "for-each-ref", "--format=%(objecttype) %(objectname)", "refs/tags").decode().splitlines()
+        seen_tags = set()
+        for tag in tags:
+            kind, oid = tag.split()
+            while kind == "tag" and oid not in seen_tags:
+                seen_tags.add(oid)
+                metadata = git(root, "cat-file", "tag", oid).decode()
+                findings.extend((f"tag {oid[:12]} metadata", line, label) for line, label in check_text(metadata, indicators))
+                # Follow nested annotated tags as well as ordinary release tags.
+                oid = metadata.splitlines()[0].removeprefix("object ")
+                kind = git(root, "cat-file", "-t", oid).decode().strip()
     return checked, sorted(set(findings))
 
 

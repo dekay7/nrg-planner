@@ -203,3 +203,59 @@ async def test_executor_uses_current_interval_instead_of_first_slot(hass,monkeyp
     await writer.apply()
     assert float(hass.states.get(runtime.mappings["ev_current"]).state)==16
     assert any(service=="turn_on" for _,service,_ in calls)
+
+
+@pytest.mark.parametrize("changed", [
+    {"battery_ready": False, "battery_soc": None},
+    {"battery_soc": 80},
+    {"ev_busy": True},
+    {"ev_busy": None},
+    {"can_grid_charge": False},
+])
+async def test_force_charge_rechecks_readiness_after_an_earlier_command(hass, monkeypatch, changed):
+    writer, runtime, snapshot = controller(hass)
+    runtime.mappings.pop("battery_grid_charge")
+    runtime.config["control_values"]["battery_charge"] = "force_charge"
+    mode = runtime.mappings["battery_mode"]
+    hass.states.async_set(mode, "backup", {"options": ["backup", "self_consumption", "force_charge"]})
+    hass.states.async_set(runtime.mappings["battery_reserve"], 0, {"min": 0, "max": 100})
+    runtime.plan.update(battery_action="charge", battery_target_soc=80, ev_amps=0)
+    calls = services(hass, monkeypatch, lambda calls: snapshot.update(changed))
+    await writer.apply()
+    assert any(data["entity_id"] == runtime.mappings["battery_reserve"] for _, _, data in calls)
+    assert not any(data.get("option") == "force_charge" for _, _, data in calls)
+
+
+async def test_serve_rechecks_reserve_after_an_earlier_command(hass, monkeypatch):
+    writer, runtime, snapshot = controller(hass, has_ev=False)
+    runtime.plan.update(battery_action="serve", ev_amps=0)
+    calls = services(hass, monkeypatch, lambda calls: snapshot.update(battery_soc=0))
+    await writer.apply()
+    assert not any(data.get("option") == "self_consumption" for _, _, data in calls)
+
+
+async def test_stale_plan_stops_ev_even_when_battery_revocation_fails(hass, monkeypatch):
+    writer, runtime, _ = controller(hass)
+    runtime.plan["expires_at"] = 0
+    hass.states.async_set(runtime.mappings["ev_charge"], "on")
+    calls = services(hass, monkeypatch)
+    original = writer.adapters.write
+
+    async def write(key, action):
+        if key == "battery_grid_charge":
+            raise RuntimeError("Battery service unavailable")
+        await original(key, action)
+
+    monkeypatch.setattr(writer.adapters, "write", write)
+    await writer.apply()
+    assert any(service == "turn_off" and data["entity_id"] == runtime.mappings["ev_charge"]
+               for _, service, data in calls)
+    assert "Battery service unavailable" in writer.status
+
+
+async def test_shutdown_prevents_new_equipment_commands(hass, monkeypatch):
+    writer, runtime, _ = controller(hass)
+    runtime._closing = True
+    calls = services(hass, monkeypatch)
+    await writer.apply()
+    assert calls == []

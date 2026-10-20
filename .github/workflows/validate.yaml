@@ -24,6 +24,7 @@ jobs:
         with:
           node-version: '22'
       - run: pip install -r requirements-dev.txt
+      - run: python -B -m pip_audit --progress-spinner off
       - run: python -B tools/check_privacy.py --history
       - run: python -B -m ruff check . --select F
       - run: python -B -m pytest -q

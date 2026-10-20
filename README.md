@@ -78,7 +78,7 @@ assets, but does not edit your HA configuration or register dashboard packages.
 - [Homeowner guide](docs/homeowner-guide.md) · [Operations](docs/operations.md)
 - [Troubleshooting and support](docs/troubleshooting.md) · [Common questions](docs/faq.md)
 - [Plain-language glossary](docs/glossary.md)
-- [Privacy](PRIVACY.md) · [Review and publication gates](docs/review.md)
+- [Privacy](PRIVACY.md) · [Security reporting](SECURITY.md) · [Review and publication gates](docs/review.md)
 - [Free alternatives and intended community value](docs/alternatives.md)
 
 ## Development
@@ -89,6 +89,7 @@ python -m venv .venv
 .venv/bin/python -B tools/build_ui.py
 .venv/bin/python -B tools/build_brand.py
 .venv/bin/python -B -m pytest -q
+.venv/bin/python -B -m pip_audit --progress-spinner off
 .venv/bin/python -B -m ruff check . --select F
 .venv/bin/python -B tools/check_privacy.py --history
 git diff --check
