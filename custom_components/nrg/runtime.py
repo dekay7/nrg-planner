@@ -1,0 +1,430 @@
+"""Home Assistant boundary: sampling, cached forecasts, persistence and execution."""
+from datetime import datetime, timedelta, time as local_time
+import logging
+import time
+import json
+from zoneinfo import ZoneInfo
+
+from aiohttp import ClientError, ClientTimeout
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.storage import Store
+from homeassistant.helpers.sun import get_astral_event_date
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
+from .config import effective_capacity, finite, settings, validate, cents_rate
+from .const import DOMAIN
+from .adapters import Adapters
+from .tariffs import usd_price, external_intervals
+from .control import Controller
+from .forecast import aggregate_solar, parse_comed, price_at, solar_response, known_nights
+from .planner import plan
+from .statistics import Statistics
+
+_LOGGER = logging.getLogger(__name__)
+COMED = "https://hourlypricing.comed.com/rrtp/ServletFeed"
+
+
+class NRGRuntime(DataUpdateCoordinator):
+    def __init__(self, hass, entry):
+        super().__init__(hass, _LOGGER, config_entry=entry, name="NRG Planner", update_interval=timedelta(minutes=1))
+        self.entry = entry
+        self.store = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}")
+        self.stats = Statistics()
+        self.prices = []
+        self.solar_caches = {}
+        self.live_cache = None
+        self.plan = {}
+        self.revision = 0
+        self.last_fetch = 0
+        self.forecast_status = {}
+        self.charge_now = False
+        self.force_plan = True
+        self.current_price_known = False
+        self.live_export = None
+        self.controller = Controller(self)
+        self._closing = False
+        self.solar_signature = None
+        self.delivered = {}
+        self.pending_advice = None
+        self.last_save = time.time()
+        self.last_sample_at = 0
+
+    @property
+    def config(self):
+        return settings(dict(self.entry.options)) | {"departure_override": self.entry.options.get("departure_override")}
+
+    @property
+    def mappings(self):
+        return dict(self.entry.options.get("mappings", {}))
+
+    @property
+    def zone(self):
+        return ZoneInfo(self.hass.config.time_zone)
+
+    async def load(self):
+        saved = await self.store.async_load() or {}
+        self.stats = Statistics(saved.get("statistics"))
+        self.prices = saved.get("prices", [])
+        self.solar_caches = saved.get("solar", {})
+        self.solar_signature = saved.get("solar_signature")
+        self.delivered = saved.get("delivered", {})
+
+    def persisted(self):
+        return {"statistics": self.stats.export(), "prices": self.prices, "solar": self.solar_caches,
+                "solar_signature": self.solar_signature, "delivered": self.delivered}
+
+    async def close(self):
+        self._closing = True
+        await self.store.async_save(self.persisted())
+
+    async def update_options(self, changes):
+        options = validate(dict(self.entry.options) | changes, datetime.now(self.zone).date())
+        self.plan = {}  # Invalidate before publishing changed assumptions.
+        self.revision += 1
+        self.hass.config_entries.async_update_entry(self.entry, options=options)
+        self.force_plan = True
+        await self.async_request_refresh()
+
+    def state(self, key, age=180):
+        entity_id = self.mappings.get(key)
+        state = self.hass.states.get(entity_id) if entity_id else None
+        if state is None or state.state in ("unknown", "unavailable", ""):
+            return None
+        if not entity_id.startswith("input_") and age is not None and not 0 <= time.time() - state.last_reported.timestamp() <= age:
+            return None
+        return state
+
+    def numeric(self, key, age=180, unit=None, low=None, high=None):
+        state = self.state(key, age)
+        if state is None or (unit and state.attributes.get("unit_of_measurement") != unit):
+            return None
+        value = finite(state.state)
+        if value is None or (low is not None and value < low) or (high is not None and value > high):
+            return None
+        return value
+
+    def power(self, key):
+        state = self.state(key)
+        value = self.numeric(key)
+        if state is None or value is None or state.attributes.get("unit_of_measurement") not in ("W", "kW"):
+            return None
+        value /= 1000 if state.attributes["unit_of_measurement"] == "W" else 1
+        if key == "grid_power" and self.config["grid_power_inverted"] or key == "battery_power" and self.config["battery_power_inverted"]:
+            value = -value
+        if abs(value) > 250:
+            return None
+        if key == "solar_power":
+            return max(value, 0) if value >= -.05 else None
+        return value if key in ("grid_power", "battery_power") or value >= 0 else None
+
+    def snapshot(self):
+        config = self.config
+        adapters = Adapters(self)
+        def is_state(key, wanted, age=180):
+            state = self.state(key, age)
+            return state is not None and state.state == wanted
+        solar = self.power("solar_power") if config["has_solar"] else 0.0
+        battery = self.power("battery_power") if config["has_battery"] else 0.0
+        ev = self.power("ev_power") if config["has_ev"] else 0.0
+        plugged = (True if is_state("ev_connected", "on") else False if is_state("ev_connected", "off") else None) if config["has_ev"] else False
+        saved = config["ev_allow_saved_readings"] and plugged is True
+        vehicle_age, control_age = (None, None) if saved else (3600, 300)
+        charge_feedback = self.state("ev_charge", control_age)
+        ev_busy = ev > .2 if ev is not None else False if plugged is False else True if charge_feedback and adapters.matches("ev_charge", "on") else False if charge_feedback and adapters.matches("ev_charge", "off") else None
+        if config["has_ev"] and ev is None and ev_busy is False:
+            ev = 0.0
+        home, grid = self.power("home_power"), self.power("grid_power")
+        house_meter = home if not config["home_includes_ev"] else None
+        if house_meter is not None and config["has_ev"]:
+            home = house_meter + ev if ev is not None else None
+        home_basis = "meter"
+        if home is None and all(v is not None for v in (solar, grid, battery)):
+            home = max(solar + grid + battery, 0)
+            home_basis = "calculated from site meters"
+        grid_basis = "meter"
+        if grid is None and all(v is not None for v in (solar, home, battery)):
+            grid = home - solar - battery
+            grid_basis = "calculated from site meters"
+        balance = solar + grid + battery - home if all(v is not None for v in (solar, grid, battery, home)) else None
+        balance_ok = balance is None or abs(balance) <= max(.3, (home or 0) * .05)
+        ev_valid = ev is not None and (home is None or ev <= home + .2) and balance_ok
+        house_valid = house_meter is not None or home is not None and ev_valid
+        quality = ("Some home/site measurements are unavailable" if home is None or ev is None else
+                   "Meters disagree; inconsistent learning paused" if not balance_ok or not ev_valid else "Measurements consistent")
+        guard_roles = [("grid_connected", "on")]
+        if config["has_battery"]:
+            guard_roles += [("storm_watch", "off"), ("grid_services", "off"), ("grid_services_enabled", "off")]
+        native = all(is_state(key, value) for key, value in guard_roles if self.mappings.get(key))
+        battery_soc = self.numeric("battery_soc", unit="%", low=0, high=100) if config["has_battery"] else None
+        ev_soc = self.numeric("ev_soc", vehicle_age, "%", 0, 100) if config["has_ev"] else None
+        ev_limit = self.numeric("ev_limit", vehicle_age, "%", 0, 100) if config["has_ev"] else None
+        location = self.state("ev_location", vehicle_age)
+        home_location = not self.mappings.get("ev_location") or location is not None and location.state in ("home", "on")
+        connected = config["has_ev"] and plugged is True and home_location
+        current = self.state("ev_current", control_age)
+        current_min = finite(current.attributes.get("min"), config["ev_min_amps"]) if current else None
+        current_max = finite(current.attributes.get("max"), config["ev_max_amps"]) if current else None
+        ev_bounds = (current_min is not None and current_max is not None
+                     and current_min <= self.config["ev_max_amps"] and current_max >= self.config["ev_min_amps"])
+        battery_controls = self.state("battery_mode") is not None and adapters.can("battery_mode", "hold") and adapters.can("battery_mode", "serve")
+        grid_switch = self.state("battery_grid_charge") is not None and adapters.can("battery_grid_charge", "on") and adapters.can("battery_grid_charge", "off")
+        can_grid_charge = grid_switch or (config["control_values"]["battery_charge"] != config["control_values"]["battery_hold"] and adapters.can("battery_mode", "charge"))
+        ev_controls = adapters.can("ev_current", config["ev_max_amps"]) and charge_feedback is not None and adapters.can("ev_charge", "on") and adapters.can("ev_charge", "off")
+        return {"solar_kw": solar, "home_kw": home, "ev_kw": ev,
+                "house_kw": house_meter if house_meter is not None else max(home - ev, 0) if house_valid else None,
+                "grid_kw": grid, "battery_kw": battery, "balance_kw": balance,
+                "measurement_quality": quality, "ev_learning_valid": ev_valid,
+                "battery_soc": battery_soc, "ev_soc": ev_soc, "ev_limit": ev_limit,
+                "ev_energy": self.numeric("ev_energy", 180, "kWh", 0),
+                "ev_amps": self.numeric("ev_measured_current", 180, "A", 0, 100)
+                or self.numeric("ev_current", control_age, "A", 0, 100),
+                "native_ready": native, "battery_ready": config["has_battery"] and config["battery_control"] and native and battery_soc is not None and battery_controls,
+                "can_grid_charge": can_grid_charge, "can_set_export": adapters.can("battery_export", config["export_policy"]),
+                "local_connected": plugged, "ev_busy": ev_busy,
+                "home_basis": home_basis, "grid_basis": grid_basis,
+                "ev_data_basis": "Saved readings allowed while connected" if saved else "Recent reports required",
+                "connected": connected,
+                "ev_ready": config["has_ev"] and config["ev_control"] and native and connected and ev_soc is not None and ev_limit is not None
+                and current is not None and current.attributes.get("unit_of_measurement") == "A" and ev_bounds and ev_controls}
+
+    def live_supply(self):
+        if self.config["supply_plan"] == "Flat supply":
+            return cents_rate(self.config, "flat_supply_cents")
+        if self.mappings.get("live_supply"):
+            state = self.state("live_supply", 900)
+            value = finite(state.state) if state else None
+            unit = state.attributes.get("unit_of_measurement") if state else None
+            if value is not None and unit in ("¢/kWh", "c/kWh", "cents/kWh", "USD/kWh", "$/kWh"):
+                supply = value / 100 if unit in ("¢/kWh", "c/kWh", "cents/kWh") else value
+                return supply if -10 <= supply <= 5 else None
+            return None
+        if self.config["supply_plan"] == "Hourly ComEd" and self.live_cache and 0 <= time.time() - self.live_cache["time"] < 900:
+            return self.live_cache["supply"]
+        return None
+
+    def rate_context(self):
+        config = self.config | {"zone": self.zone}
+        delivery = self.state("live_delivery", 900)
+        config["_delivery_live"] = usd_price(delivery.state, delivery.attributes.get("unit_of_measurement")) if delivery else None
+        for component in ("supply", "delivery"):
+            key = component + "_forecast"
+            source = self.state(key, 36 * 3600) or self.state("live_" + component, 36 * 3600)
+            try:
+                config["_external_" + component] = external_intervals(source.attributes.get(config["external_" + component + "_attribute"], []), source.attributes.get("unit_of_measurement")) if source else []
+                self.forecast_status.pop("external_" + component, None)
+            except ValueError as error:
+                config["_external_" + component] = []
+                self.forecast_status["external_" + component] = str(error)
+        return config
+
+    async def get_text(self, url, params=None):
+        async with async_get_clientsession(self.hass).get(url, params=params, timeout=ClientTimeout(total=15)) as response:
+            response.raise_for_status()
+            return await response.text()
+
+    async def refresh_forecasts(self):
+        now = time.time()
+        if self.config["supply_plan"] == "Hourly ComEd":
+            merged = {r["start"]: r for r in self.prices if 0 <= now - r["fetched_at"] <= 36 * 3600}
+            errors = []
+            today = datetime.fromtimestamp(now, ZoneInfo("America/Chicago")).strftime("%Y%m%d")
+            try:
+                text = await self.get_text(COMED, {"type": "daynexttoday", "date": today})
+                merged.update({r["start"]: r for r in parse_comed(text, now)})
+            except (ClientError, TimeoutError, ValueError, TypeError) as error:
+                errors.append(f"Today: {error}")
+            try:
+                available = await self.get_text(COMED, {"type": "hasdaynexttomorrow"})
+                if available.strip().lower() == "true":
+                    text = await self.get_text(COMED, {"type": "daynexttomorrow"})
+                    merged.update({r["start"]: r for r in parse_comed(text, now)})
+            except (ClientError, TimeoutError, ValueError, TypeError) as error:
+                errors.append(f"Tomorrow: {error}")
+            self.prices = sorted(merged.values(), key=lambda r: r["start"])
+            self.forecast_status["comed"] = "; ".join(errors) if errors else "Published forecast loaded"
+        for source in self.entry.options.get("solar_sources", []) if self.config["has_solar"] else []:
+            key = source["config_entry_id"]
+            old = self.solar_caches.get(key, {})
+            try:
+                state = self.hass.states.get(source["entity_id"])
+                if state is None or state.state in ("unavailable", "unknown"):
+                    raise ValueError("Selected Forecast.Solar entity is unavailable")
+                response = await self.hass.services.async_call("forecast_solar", "get_forecast",
+                    {"config_entry": key, "resolution": "raw"}, blocking=True, return_response=True)
+                self.solar_caches[key] = solar_response(response, self.zone, now)
+            except (HomeAssistantError, ClientError, TimeoutError, ValueError, TypeError, KeyError) as error:
+                self.solar_caches[key] = old | {"error": str(error)}
+        self.last_fetch = now
+
+    async def _async_update_data(self):
+        if self._closing:
+            return self.data or {}
+        revision = self.revision
+        failed_source = self.config["has_solar"] and any(not self.solar_caches.get(s["config_entry_id"], {}).get("days")
+                            or self.solar_caches.get(s["config_entry_id"], {}).get("error")
+                            for s in self.entry.options.get("solar_sources", []))
+        if time.time() - self.last_fetch >= (300 if failed_source else 1800):
+            await self.refresh_forecasts()
+        if self.config["supply_plan"] == "Hourly ComEd" and not self.mappings.get("live_supply"):
+            if not self.live_cache or time.time() - self.live_cache["time"] > 300:
+                try:
+                    rows = json.loads(await self.get_text("https://hourlypricing.comed.com/api", {"type": "currenthouraverage"}))
+                    row = rows[0]
+                    stamp, cents = finite(row.get("millisUTC")), finite(row.get("price"))
+                    if stamp is None or cents is None or not 0 <= time.time() - stamp / 1000 < 900 or not -1000 <= cents <= 500:
+                        raise ValueError("Invalid or stale ComEd live price")
+                    self.live_cache = {"time": stamp / 1000, "supply": cents / 100}
+                except (ClientError, TimeoutError, ValueError, TypeError, KeyError, IndexError) as error:
+                    self.forecast_status["live_price"] = f"Live ComEd unavailable ({type(error).__name__})"
+        now = time.time()
+        config, snapshot, live = self.rate_context(), self.snapshot(), self.live_supply()
+        if config.get("departure_override"):
+            override = datetime.fromisoformat(config["departure_override"])
+            if override.tzinfo is None:
+                override = override.replace(tzinfo=self.zone)
+            reached = snapshot["ev_soc"] is not None and snapshot["ev_limit"] is not None and snapshot["ev_soc"] >= snapshot["ev_limit"]
+            if override.timestamp() <= now and (not snapshot["connected"] or reached):
+                self.hass.config_entries.async_update_entry(self.entry, options=dict(self.entry.options) | {"departure_override": None})
+                config["departure_override"] = None
+        # Never calibrate a changed forecast system against the previous system's
+        # residuals. Preserve measurements, house learning and the cost ledger.
+        signature = json.dumps({"sources": list(self.entry.options.get("solar_sources", [])),
+                                "enabled": config["has_solar"],
+                                "date": config["solar_install_date"], "rate": config["solar_degradation"],
+                                "measurement": self.mappings.get("solar_power")}, sort_keys=True)
+        if signature != self.solar_signature:
+            for hour in self.stats.hours:
+                hour["solar_forecast"] = None
+            self.stats.issued = {}
+            self.solar_signature = signature
+        current = price_at(now, now, config, self.prices, live, self.stats.price_prior)
+        previous_rate = (self.data or {}).get("price") or {}
+        if any(previous_rate.get(key) != current.get(key) for key in ("supply_period", "delivery_period")):
+            self.force_plan = True
+        self.current_price_known = current["price_known"]
+        self.last_sample_at = now
+        self.live_export = current["export_price"] if current["export_known"] else None
+        values = snapshot | {"supply": live if config["supply_plan"] == "Hourly ComEd" else None,
+                             "import_price": current["import_price"] if self.current_price_known else None,
+                             "export_price": self.live_export,
+                             "supply_price": current["supply_price"] if current["supply_source"] in ("flat","time_of_use","running_average","external_live","external_forecast") else None,
+                             "delivery_price": current["delivery_price"] if current["delivery_source"] in ("flat","time_of_use","external_live","external_forecast") else None,
+                             "_tariffs": {key:config[key] for key in ("supply_plan","delivery_plan","supply_periods","delivery_periods","export_rate","export_adder_cents","flat_export_cents")}}
+        if not snapshot["ev_learning_valid"]:
+            values["ev_kw"] = None
+        self.stats.observe(now, values, self.zone)
+        if config["has_solar"]:
+            raw_solar = self.with_nights(aggregate_solar(list(self.entry.options.get("solar_sources", [])), self.solar_caches, config, now, self.zone), now)
+        else:
+            hours = {str(hour): 0.0 for hour in range(int(now // 3600) * 3600, (int(now // 3600) + 49) * 3600, 3600)}
+            raw_solar = {"hours": hours, "known": {key: True for key in hours}, "partial": hours, "sources": [], "groups": 0}
+        self.stats.remember_forecast(raw_solar, now)
+        quality = self.stats.solar_quality()
+        solar = self.with_nights(aggregate_solar(list(self.entry.options.get("solar_sources", [])), self.solar_caches, config, now, self.zone,
+                                quality["factor"] if config["solar_learning"] else 1), now) if config["has_solar"] else raw_solar
+        if not snapshot["connected"] or (snapshot["ev_soc"] is not None and snapshot["ev_limit"] is not None and snapshot["ev_soc"] >= snapshot["ev_limit"]):
+            self.charge_now = False
+        current_control = self.state("ev_current", None if config["ev_allow_saved_readings"] and snapshot["local_connected"] else 300)
+        model_config = dict(config)
+        if current_control:
+            ceiling = finite(current_control.attributes.get("max"))
+            if ceiling is not None and 0 < ceiling < config["ev_max_amps"]:
+                model_config["ev_kw_at_max"] *= ceiling / config["ev_max_amps"]
+                model_config["ev_max_amps"] = ceiling
+        if self.force_plan or now - self.plan.get("generated_at", 0) >= 300:
+            self.force_plan = False
+            # Planner works on snapshots off the event loop. A changed configuration
+            # cannot publish an obsolete result when this worker completes.
+            # Use the same effective hardware ceiling for prediction and commands.
+            result = await self.hass.async_add_executor_job(plan, now, model_config, self.zone, snapshot, Statistics(self.stats.export()),
+                                                           list(self.prices), solar, live, self.plan, self.charge_now)
+            if revision == self.revision:
+                self.plan = result
+                self.revision += 1  # Revoke command chains using the previous plan.
+        day = datetime.fromtimestamp(now, self.zone).date().isoformat()
+        ledger = self.stats.ledger.get(day, {})
+        today_start = datetime.combine(datetime.fromtimestamp(now, self.zone).date(), datetime.min.time(), self.zone).timestamp()
+        coverage = ledger.get("coverage_hours", 0) / max((now - today_start) / 3600, 1e-9) * 100
+        data = {"snapshot": snapshot, "plan": self.plan, "solar": solar, "solar_quality": quality,
+                "observations": list(self.stats.hours),
+                "price": current if self.current_price_known else None, "price_components": current, "ledger": ledger,
+                "cost_coverage": min(coverage, 100), "forecast_status": dict(self.forecast_status),
+                "capacity": effective_capacity(config, datetime.fromtimestamp(now, self.zone).date()) if config["has_battery"] else None,
+                "components": {"ev": config["has_ev"], "battery": config["has_battery"], "solar": config["has_solar"],
+                               "ev_control": config["has_ev"] and config["ev_control"], "battery_control": config["has_battery"] and config["battery_control"]},
+                "house_observations": sum(h.get("house_kwh") is not None for h in self.stats.hours),
+                "ev_sessions": len(self.stats.ev_sessions), "controller": self.controller.status,
+                "ev_energy_estimate": self.stats.ev_estimate(config["ev_kwh_per_percent"]) if config["ev_learning"] else config["ev_kwh_per_percent"],
+                "ev_power_estimate": self.stats.ev_power(model_config["ev_kw_at_max"], model_config["ev_max_amps"]) if config["ev_learning"] else model_config["ev_kw_at_max"],
+                "mode": config["mode"], "charge_now": self.charge_now,
+                "departure_override": self.entry.options.get("departure_override")}
+        if now - self.last_save >= 300:
+            self.store.async_delay_save(self.persisted, 1)
+            self.last_save = now
+        await self.notify(now)
+        return data
+
+    def with_nights(self, forecast, now):
+        today = datetime.fromtimestamp(now, self.zone).date()
+        daylight = []
+        for offset in range(3):
+            day = today + timedelta(days=offset)
+            rising, setting = get_astral_event_date(self.hass, "sunrise", day), get_astral_event_date(self.hass, "sunset", day)
+            if rising is None or setting is None:
+                return forecast  # Polar/event calculation uncertainty: do not guess.
+            daylight.append((rising.timestamp(), setting.timestamp()))
+        first = datetime.combine(today, datetime.min.time(), self.zone).timestamp()
+        last = datetime.combine(today + timedelta(days=3), datetime.min.time(), self.zone).timestamp()
+        return known_nights(forecast, daylight, now, first, last)
+
+    async def notify(self, now):
+        config, advice = self.config, self.plan.get("household", {})
+        if (not config["notifications"] or self.plan.get("expires_at", 0) <= now or advice.get("category") != "wait"
+                or (advice.get("saving") or 0) * 100 < config["notification_saving_cents"]):
+            self.pending_advice = None
+            return
+        current = datetime.fromtimestamp(now, self.zone).time().replace(tzinfo=None)
+        start, end = local_time.fromisoformat(config["quiet_start"]), local_time.fromisoformat(config["quiet_end"])
+        quiet = start <= current < end if start < end else current >= start or current < end if start > end else False
+        if quiet:
+            return
+        key = str(advice["best_start"])
+        if not self.pending_advice or self.pending_advice[0] != key:
+            self.pending_advice = (key, now)
+            return
+        if now - self.pending_advice[1] < 120:
+            return
+        message = f"{advice['summary']}. Estimated benefit: {advice['saving'] * 100:.0f} cents for {config['flexible_load_kwh']:g} kWh. "
+        message += "Proposed schedule (Observation)." if config["mode"] == "Observation" else "Solar, battery and car outlook considered."
+        for target in self.entry.options.get("notification_targets", []):
+            if not isinstance(target, str) or not target.startswith("notify.") or self.delivered.get(target) == key:
+                continue
+            service = target.split(".", 1)[1]
+            if self.hass.services.has_service("notify", service):
+                try:
+                    await self.hass.services.async_call("notify", service, {"title": "Home energy", "message": message}, blocking=True)
+                    self.delivered[target] = key
+                    self.store.async_delay_save(self.persisted, 1)
+                except Exception as error:
+                    self.forecast_status["notification"] = f"Notification failed ({type(error).__name__})"
+                    _LOGGER.exception("NRG notification delivery failed")
+
+    async def refresh(self):
+        self.last_fetch = 0
+        self.force_plan = True
+        await self.async_request_refresh()
+
+    async def set_charge_now(self, enabled):
+        self.charge_now = enabled
+        self.force_plan = True
+        self.revision += 1
+        self.plan = {}
+        self.async_set_updated_data((self.data or {}) | {"charge_now": enabled, "plan": {}})
+        self.hass.async_create_task(self.async_request_refresh())
+        self.hass.async_create_task(self.controller.apply())
+
+    async def reset_learning(self):
+        self.stats = Statistics({"ledger": self.stats.ledger})
+        self.force_plan = True
+        await self.async_request_refresh()

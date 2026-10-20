@@ -1,0 +1,499 @@
+{
+  "title": "NRG Planner",
+  "config": {
+    "step": {
+      "user": {
+        "title": "What does this home have?",
+        "description": "Every component is optional. Choose what you have; monitoring and control can be enabled separately. NRG starts in Observation.",
+        "data": {
+          "has_ev": "This home has an EV",
+          "has_battery": "This home has a stationary battery",
+          "has_solar": "This home has solar",
+          "ev_control": "Let NRG control EV charging",
+          "battery_control": "Let NRG control the home battery"
+        },
+        "data_description": {
+          "has_ev": "Enable vehicle monitoring and its dashboard cards. Leave off if you have no EV; EV readings, controls and calibration will not be required.",
+          "has_battery": "Enable battery monitoring and capacity estimates. Leave off if you have no home battery; battery sensors, reserve and operating controls will not be required.",
+          "has_solar": "Enable solar production, forecasts and their dashboard cards. Leave off for a home without panels; the planner then knows solar production is zero.",
+          "ev_control": "Optional. Enable after mapping your charging switch/current controls or HA command scripts. With this off, NRG monitors the car and leaves its charging to your existing system.",
+          "battery_control": "Optional. Enable after mapping the battery's operating controls or command scripts. With this off, the battery remains monitored and NRG does not assume it can schedule its energy."
+        }
+      },
+      "tariff": {
+        "title": "Set up household pricing",
+        "description": "Enter your own utility's rates. Time-of-use periods and solar forecasts can be added under Configure after setup.",
+        "data": {
+          "supply_plan": "Supply plan",
+          "flat_supply_cents": "Flat supply rate",
+          "external_supply_attribute": "Supply forecast attribute",
+          "delivery_plan": "Delivery plan",
+          "delivery_cents": "Flat delivery rate",
+          "external_delivery_attribute": "Delivery forecast attribute",
+          "export_rate": "Export credit basis",
+          "export_adder_cents": "Export credit adder",
+          "flat_export_cents": "Flat export credit",
+          "export_policy": "Export policy"
+        },
+        "data_description": {
+          "supply_plan": "Choose your provider's supply pricing: a flat rate, your own timed periods, an external HA price sensor/forecast, or the optional ComEd hourly feed. Delivery is configured separately and added once.",
+          "flat_supply_cents": "Your contracted supply price, excluding delivery. Unset means unknown, not free. Enter an explicit zero only if your contract really has a zero supply rate.",
+          "external_supply_attribute": "For an external provider, name the attribute containing forecast intervals. Each interval needs start, end and price (or the documented aliases). Units are read from the row or price entity. An external current price alone does not invent future prices.",
+          "delivery_plan": "Delivery can have its own flat rate, timed periods or external sensor. Its schedule need not match the supply schedule. Edit periods under Configure → Pricing periods.",
+          "delivery_cents": "Your variable delivery/rider cost in cents per imported kWh. Include applicable variable riders, not fixed monthly fees. Unset means unknown; explicitly enter zero if no separate delivery charge applies.",
+          "external_delivery_attribute": "Attribute containing external delivery-price intervals. Supply and delivery forecasts are independent. See the handbook's supported interval fields and units.",
+          "export_rate": "Configure how exported energy is credited; do not assume exports receive the import delivery rate. Credits may have billing restrictions not modeled here.",
+          "export_adder_cents": "Added to the selected supply price only for Supply plus adder exports. Enter your own export agreement's value, including an explicit zero if appropriate. Unset means unknown.",
+          "flat_export_cents": "Credit per exported kWh when Flat credit is selected. Independent of your buying rate. Enter your own value; unset means unknown.",
+          "export_policy": "Solar only allows solar exports; Battery also allows stored energy exports; No exports requests neither. NRG sends this preference only when a matching control is configured. Otherwise set the same policy in your equipment. Permission alone does not force a sale."
+        }
+      },
+      "mappings": {
+        "title": "Measurements and controls",
+        "description": "Choose entities from any integration. Local readings are preferred when available. Only enabled components are shown. Read-only feedback can be paired with command scripts under Control adapters. {error}",
+        "data": {
+          "solar_power": "Actual solar power",
+          "home_power": "Whole-home power",
+          "grid_power": "Signed grid power",
+          "battery_power": "Signed battery power",
+          "battery_soc": "Battery charge",
+          "grid_connected": "Grid connected (optional)",
+          "ev_power": "EV charging power",
+          "ev_energy": "EV lifetime AC energy",
+          "ev_measured_current": "EV measured current",
+          "ev_connected": "EV plugged in",
+          "ev_location": "EV at home (optional)",
+          "ev_soc": "Vehicle charge",
+          "ev_limit": "Selected vehicle charge limit",
+          "ev_current": "EV current setting / feedback",
+          "ev_charge": "EV charging control / feedback",
+          "battery_mode": "Battery mode control / feedback",
+          "battery_export": "Export policy control / feedback (optional)",
+          "battery_reserve": "Battery reserve control / feedback (optional)",
+          "battery_grid_charge": "Grid-charge permission (optional)",
+          "storm_watch": "Protection event active (optional)",
+          "grid_services": "Grid services active (optional)",
+          "grid_services_enabled": "External controller priority (optional)",
+          "live_supply": "Current supply price (optional)",
+          "live_delivery": "Current delivery price (optional)",
+          "supply_forecast": "External supply forecast (optional)",
+          "delivery_forecast": "External delivery forecast (optional)"
+        },
+        "data_description": {
+          "solar_power": "Solar production from any integration, W or kW. Prefer a local meter when available.",
+          "home_power": "Total AC household demand including the EV, from any provider, W or kW.",
+          "grid_power": "Grid meter: positive import, negative export, W or kW.",
+          "battery_power": "Battery meter: positive discharge, negative charging, W or kW.",
+          "battery_soc": "Home battery percentage, independent of manufacturer or integration.",
+          "grid_connected": "Optional protection input: on while connected. If selected, missing/off prevents equipment commands.",
+          "ev_power": "AC charging power from a charger or vehicle integration. Local meters are preferred, not required.",
+          "ev_energy": "Increasing AC kWh counter for charging, not a resetting session counter. Optional; EV calibration needs it.",
+          "ev_measured_current": "Optional actual charging current in amperes. Otherwise the configured current-setting entity is used for power calibration.",
+          "ev_connected": "Plug/connection sensor from any provider. If it identifies this home's charger, location need not also be mapped.",
+          "ev_location": "Optional additional home check: home for a tracker/sensor or on for a binary sensor. Omit when the connection sensor already identifies the home charger.",
+          "ev_soc": "Vehicle battery percentage, e.g. TeslaMate, Teslemetry, Tessie or another EV integration.",
+          "ev_limit": "Selected target percentage. Read only: NRG never raises it.",
+          "ev_current": "Current setting in A. Number/input_number controls work directly. A read-only sensor needs an EV current script under Control adapters.",
+          "ev_charge": "Switches work directly. Read-only state feedback needs start/stop scripts. Set its charging/paused state values under Control adapters if they are not on/off.",
+          "battery_mode": "Select/input_select controls work directly. Read-only feedback needs a script adapter. Configure the device's actual hold/serve/charge option names.",
+          "battery_export": "Optional export-permission control. Configure option names under Control adapters. If omitted, set the policy in the device's own app.",
+          "battery_reserve": "Optional device backup-reserve setting. Read-only feedback can be paired with a script adapter.",
+          "battery_grid_charge": "Optional permission switch. A separate force-charge operating mode can be used instead; no grid-charge commands are invented for unsupported devices.",
+          "storm_watch": "Optional active protection event, e.g. Storm Watch or a manufacturer override. On or missing blocks commands when selected.",
+          "grid_services": "Optional utility/grid-services event. On or missing blocks commands when selected.",
+          "grid_services_enabled": "Optional ownership/protection flag: while on, an external controller has priority.",
+          "live_supply": "External supply-price sensor in cents/kWh or USD/kWh. Also usable instead of the live ComEd API in ComEd mode.",
+          "live_delivery": "External delivery-price sensor for External delivery entity mode.",
+          "supply_forecast": "Sensor with a list of price intervals in its configured forecast attribute. May be the same as the current-price sensor.",
+          "delivery_forecast": "Independent delivery-price interval list. Missing intervals remain unknown."
+        }
+      }
+    },
+    "error": {
+      "invalid_settings": "Check the settings shown above."
+    },
+    "abort": {
+      "already_configured": "This home already has an NRG planner.",
+      "invalid_bootstrap": "The bootstrap settings or source mappings are invalid."
+    }
+  },
+  "options": {
+    "step": {
+      "components": {
+        "title": "Components",
+        "description": "Changes persist across restarts. {error}",
+        "data": {
+          "has_ev": "This home has an EV",
+          "has_battery": "This home has a stationary battery",
+          "has_solar": "This home has solar",
+          "ev_control": "Let NRG control EV charging",
+          "battery_control": "Let NRG control the home battery"
+        },
+        "data_description": {
+          "has_ev": "Enable vehicle monitoring and its dashboard cards. Leave off if you have no EV; EV readings, controls and calibration will not be required.",
+          "has_battery": "Enable battery monitoring and capacity estimates. Leave off if you have no home battery; battery sensors, reserve and operating controls will not be required.",
+          "has_solar": "Enable solar production, forecasts and their dashboard cards. Leave off for a home without panels; the planner then knows solar production is zero.",
+          "ev_control": "Optional. Enable after mapping your charging switch/current controls or HA command scripts. With this off, NRG monitors the car and leaves its charging to your existing system.",
+          "battery_control": "Optional. Enable after mapping the battery's operating controls or command scripts. With this off, the battery remains monitored and NRG does not assume it can schedule its energy."
+        }
+      },
+      "operation": {
+        "title": "Operation",
+        "description": "Changes persist across restarts. {error}",
+        "data": {
+          "mode": "Operating mode"
+        },
+        "data_description": {
+          "mode": "Observation calculates without equipment commands. Control authorizes only the components you enabled for NRG control. Switching to Observation does not restore settings already saved in your equipment."
+        }
+      },
+      "tariff": {
+        "title": "Tariff",
+        "description": "Changes persist across restarts. {error}",
+        "data": {
+          "supply_plan": "Supply plan",
+          "flat_supply_cents": "Flat supply rate",
+          "external_supply_attribute": "Supply forecast attribute",
+          "delivery_plan": "Delivery plan",
+          "delivery_cents": "Flat delivery rate",
+          "external_delivery_attribute": "Delivery forecast attribute",
+          "export_rate": "Export credit basis",
+          "export_adder_cents": "Export credit adder",
+          "flat_export_cents": "Flat export credit",
+          "export_policy": "Export policy"
+        },
+        "data_description": {
+          "supply_plan": "Choose your provider's supply pricing: a flat rate, your own timed periods, an external HA price sensor/forecast, or the optional ComEd hourly feed. Delivery is configured separately and added once.",
+          "flat_supply_cents": "Your contracted supply price, excluding delivery. Unset means unknown, not free. Enter an explicit zero only if your contract really has a zero supply rate.",
+          "external_supply_attribute": "For an external provider, name the attribute containing forecast intervals. Each interval needs start, end and price (or the documented aliases). Units are read from the row or price entity. An external current price alone does not invent future prices.",
+          "delivery_plan": "Delivery can have its own flat rate, timed periods or external sensor. Its schedule need not match the supply schedule. Edit periods under Configure → Pricing periods.",
+          "delivery_cents": "Your variable delivery/rider cost in cents per imported kWh. Include applicable variable riders, not fixed monthly fees. Unset means unknown; explicitly enter zero if no separate delivery charge applies.",
+          "external_delivery_attribute": "Attribute containing external delivery-price intervals. Supply and delivery forecasts are independent. See the handbook's supported interval fields and units.",
+          "export_rate": "Configure how exported energy is credited; do not assume exports receive the import delivery rate. Credits may have billing restrictions not modeled here.",
+          "export_adder_cents": "Added to the selected supply price only for Supply plus adder exports. Enter your own export agreement's value, including an explicit zero if appropriate. Unset means unknown.",
+          "flat_export_cents": "Credit per exported kWh when Flat credit is selected. Independent of your buying rate. Enter your own value; unset means unknown.",
+          "export_policy": "Solar only allows solar exports; Battery also allows stored energy exports; No exports requests neither. NRG sends this preference only when a matching control is configured. Otherwise set the same policy in your equipment. Permission alone does not force a sale."
+        }
+      },
+      "solar": {
+        "title": "Solar",
+        "description": "Changes persist across restarts. {error}",
+        "data": {
+          "solar_install_date": "Solar installation date",
+          "solar_degradation": "Solar annual degradation",
+          "solar_learning": "Solar forecast calibration"
+        },
+        "data_description": {
+          "solar_install_date": "Used for panel age when a source has Apply age correction enabled. Leave unset until known; no age correction is invented. Measured solar is never reduced.",
+          "solar_degradation": "Compounded yearly reduction in an unadjusted forecast: (1 − rate/100)^age. Sources already calibrated to present output should have age correction off.",
+          "solar_learning": "Compare the forecast saved before each daylight hour with what your solar meter later measured. After six well-measured daylight hours, NRG adjusts future forecasts by actual ÷ forecast, using up to 168 recent daylight hours. For example, consistently producing 8 kWh when 10 kWh was forecast gives about a 0.8 multiplier. The correction is limited to 0.5–1.5. It changes predictions, never measured production or panel settings."
+        }
+      },
+      "battery": {
+        "title": "Battery",
+        "description": "Changes persist across restarts. {error}",
+        "data": {
+          "battery_capacity": "Battery capacity at installation",
+          "battery_install_date": "Battery installation date",
+          "battery_degradation": "Battery annual degradation",
+          "backup_reserve": "Backup reserve",
+          "round_trip_efficiency": "Battery round-trip efficiency",
+          "battery_charge_kw": "Modeled battery charging power",
+          "battery_discharge_kw": "Modeled battery discharge power",
+          "battery_solar_while_held": "Solar can recharge the battery while held"
+        },
+        "data_description": {
+          "battery_capacity": "Generic starting assumption: replace with your equipment's full-charge capacity before backup reserve. The age estimate reduces this number; reserve and conversion losses are applied separately.",
+          "battery_install_date": "Baseline date for the capacity entered above. If capacity is a current measured value, use its measurement date. An unset date applies no age adjustment.",
+          "battery_degradation": "Compounded yearly reduction of estimated full-charge capacity. Does not change measured SOC, power limits or efficiency, and is not a measured battery health result.",
+          "backup_reserve": "Minimum battery percentage kept out of discretionary use. NRG also sets the device's reserve if that control is mapped. Configured outage/protection sensors take priority.",
+          "round_trip_efficiency": "Estimated AC-to-storage-to-AC efficiency. Equal square-root losses are applied when charging and discharging.",
+          "battery_charge_kw": "Charging power used to estimate future battery energy. This setting does not directly set device watts. Use a conservative value supported by your equipment.",
+          "battery_discharge_kw": "Discharging power used in the energy forecast. Your equipment may deliver a different rate; compare the forecast with its meter readings.",
+          "battery_solar_while_held": "Enable if the selected hold mode still accepts solar charging, as Tesla Backup normally does. Turn off if your inverter's standby mode prevents solar charging too. This changes the battery forecast to match the device's behavior."
+        }
+      },
+      "ev": {
+        "title": "EV",
+        "description": "Changes persist across restarts. {error}",
+        "data": {
+          "hold_battery_for_ev": "Preserve battery during EV charging",
+          "departure_time": "Daily EV departure",
+          "ev_start_time": "Normal charging window starts",
+          "completion_buffer": "EV completion buffer",
+          "ev_max_amps": "Maximum EV charging current",
+          "ev_min_amps": "Minimum stable EV current",
+          "ev_kw_at_max": "Conservative EV power at maximum current",
+          "ev_kwh_per_percent": "EV AC energy per percentage point",
+          "ev_learning": "Calibrate EV charging estimates",
+          "ev_allow_saved_readings": "Allow saved vehicle readings while plugged in",
+          "departure_override": "One-off departure"
+        },
+        "data_description": {
+          "hold_battery_for_ev": "When NRG controls both devices, ask the home battery to hold its energy while the car charges. Commands can take time to reach the equipment, so the battery may briefly supply the car before the hold takes effect. With a monitored-only battery, set that behavior in its own controller.",
+          "departure_time": "Generic starting time: enter your own local departure. A one-off departure takes precedence. Incomplete connected sessions remain overdue.",
+          "ev_start_time": "Start of normal daily charging availability. Review this generic window. It ends at departure; charge-now and deadline urgency can use time outside it.",
+          "completion_buffer": "Aim to finish this many minutes before departure. Use the buffer if needed rather than miss the actual departure.",
+          "ev_max_amps": "Generic starting limit: enter a current supported by your charger and circuit. Also bounded by the control entity's maximum. Script adapters need the real supported limit here. NRG never raises the vehicle's selected charge limit.",
+          "ev_min_amps": "Smallest current used for solar-aware charging. Below this the car is paused. Must be no greater than your maximum current.",
+          "ev_kw_at_max": "Generic starting estimate: enter your measured AC charging power at the configured maximum current. Covered wall-charger observations can calibrate it.",
+          "ev_kwh_per_percent": "Generic starting estimate: replace with AC energy per vehicle SOC percentage point, including losses. Covered charging sessions can calibrate it; this is not an EV degradation model.",
+          "ev_learning": "Use observed AC energy and the car's percentage gain to estimate how much electricity charging needs. Sessions need at least 5 percentage points, 5 minutes and good meter coverage. NRG uses a conservative estimate from the last 12 sessions, and measured power per amp to improve charging-time estimates. Example: 9 kWh for a 10-point gain suggests 0.9 kWh per point. This estimates charging needs, not EV battery degradation. Off uses your fallback values.",
+          "ev_allow_saved_readings": "Some MQTT/vehicle feeds publish SOC, target and settings only when they change, so their saved values become old while the car sleeps. Enable to accept those available saved values while the home charger reports connected. Connection/protection checks and command readbacks still apply. Otherwise vehicle data needs recent reports; an asleep feed may need its own wake/refresh automation. Estimates can be less current when saved readings are allowed.",
+          "departure_override": "Optional local date and time, overriding the daily departure. Clear when no longer needed."
+        }
+      },
+      "planning": {
+        "title": "Planning",
+        "description": "Changes persist across restarts. {error}",
+        "data": {
+          "house_learning": "Learn household demand",
+          "house_kw": "Fallback house demand without EV",
+          "flexible_load_kwh": "Flexible appliance energy",
+          "flexible_load_minutes": "Flexible appliance duration",
+          "minimum_saving_cents": "Minimum worthwhile plan improvement",
+          "battery_wear_cents": "Optional battery cycling cost",
+          "summer_guard": "Summer peak-import precaution"
+        },
+        "data_description": {
+          "house_learning": "Learn typical home use at each clock hour from up to 28 days of meter readings. If an EV is installed, subtract its separately measured charging so it is not counted twice. An hour needs at least 80% valid coverage. Recent observations count more; weekday/weekend patterns separate after enough samples. This predicts ordinary demand so the battery and price advice can plan around daily life. Missing hours use your fallback, not zero.",
+          "house_kw": "Used for clock hours without enough observations, or with learning disabled. Excludes the car to avoid counting it twice.",
+          "flexible_load_kwh": "Energy used for household run-now versus later advice. Advice never starts an appliance.",
+          "flexible_load_minutes": "Contiguous running time for the reference appliance. Every suggested window must fit this whole duration.",
+          "minimum_saving_cents": "Prefer a stable existing feasible plan unless a replacement improves modeled horizon cost by at least this amount. Also used for generic household advice.",
+          "battery_wear_cents": "Optional estimated wear cost per AC kWh discharged. Calendar degradation above does not establish a cycling cost; zero makes no invented wear charge.",
+          "summer_guard": "Optional regional precaution: avoid discretionary grid battery charging and, if feasible, EV charging on June–September weekdays noon–7 p.m. Off until explicitly enabled. It is not a predicted dollar saving; departure and charge-now win."
+        }
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Changes persist across restarts. {error}",
+        "data": {
+          "notifications": "Send household advice notifications",
+          "notification_saving_cents": "Minimum notification benefit",
+          "quiet_start": "Notification quiet hours start",
+          "quiet_end": "Notification quiet hours end",
+          "notification_targets": "Notification services"
+        },
+        "data_description": {
+          "notifications": "Opt in to stable, worthwhile wait-until recommendations. Choose notify services in Configure → Notifications. Notifications do not command equipment.",
+          "notification_saving_cents": "Notify only when delaying the reference appliance is expected to save at least this amount and the recommendation stays stable for two minutes.",
+          "quiet_start": "Local start of quiet hours. Advice remains available on the dashboard.",
+          "quiet_end": "Local end of quiet hours. Equal start/end disables the quiet-hours restriction.",
+          "notification_targets": "Choose the existing notify services for household phones. No recipients are hard-coded."
+        }
+      },
+      "measurements": {
+        "title": "Measurements",
+        "description": "Changes persist across restarts. {error}",
+        "data": {
+          "grid_power_inverted": "Grid meter reports export as positive",
+          "battery_power_inverted": "Battery meter reports charging as positive",
+          "home_includes_ev": "Home meter includes EV charging"
+        },
+        "data_description": {
+          "grid_power_inverted": "Enable when your provider reports positive export and negative import. NRG reverses that reading so its normalized grid power always means positive buying and negative selling.",
+          "battery_power_inverted": "Enable when your provider reports positive charging and negative discharge. NRG reverses it so positive always means supplying the home in its own displays and model.",
+          "home_includes_ev": "Enable for a whole-home load meter that includes the car. Disable for a house-only circuit meter; NRG then adds separately measured EV power for the Home total while learning the house-only reading directly."
+        }
+      },
+      "mappings": {
+        "title": "Measurements and controls",
+        "description": "Choose entities from any integration. Local readings are preferred when available. Only enabled components are shown. Read-only feedback can be paired with command scripts under Control adapters. {error}",
+        "data": {
+          "solar_power": "Actual solar power",
+          "home_power": "Whole-home power",
+          "grid_power": "Signed grid power",
+          "battery_power": "Signed battery power",
+          "battery_soc": "Battery charge",
+          "grid_connected": "Grid connected (optional)",
+          "ev_power": "EV charging power",
+          "ev_energy": "EV lifetime AC energy",
+          "ev_measured_current": "EV measured current",
+          "ev_connected": "EV plugged in",
+          "ev_location": "EV at home (optional)",
+          "ev_soc": "Vehicle charge",
+          "ev_limit": "Selected vehicle charge limit",
+          "ev_current": "EV current setting / feedback",
+          "ev_charge": "EV charging control / feedback",
+          "battery_mode": "Battery mode control / feedback",
+          "battery_export": "Export policy control / feedback (optional)",
+          "battery_reserve": "Battery reserve control / feedback (optional)",
+          "battery_grid_charge": "Grid-charge permission (optional)",
+          "storm_watch": "Protection event active (optional)",
+          "grid_services": "Grid services active (optional)",
+          "grid_services_enabled": "External controller priority (optional)",
+          "live_supply": "Current supply price (optional)",
+          "live_delivery": "Current delivery price (optional)",
+          "supply_forecast": "External supply forecast (optional)",
+          "delivery_forecast": "External delivery forecast (optional)"
+        },
+        "data_description": {
+          "solar_power": "Solar production from any integration, W or kW. Prefer a local meter when available.",
+          "home_power": "Total AC household demand including the EV, from any provider, W or kW.",
+          "grid_power": "Grid meter: positive import, negative export, W or kW.",
+          "battery_power": "Battery meter: positive discharge, negative charging, W or kW.",
+          "battery_soc": "Home battery percentage, independent of manufacturer or integration.",
+          "grid_connected": "Optional protection input: on while connected. If selected, missing/off prevents equipment commands.",
+          "ev_power": "AC charging power from a charger or vehicle integration. Local meters are preferred, not required.",
+          "ev_energy": "Increasing AC kWh counter for charging, not a resetting session counter. Optional; EV calibration needs it.",
+          "ev_measured_current": "Optional actual charging current in amperes. Otherwise the configured current-setting entity is used for power calibration.",
+          "ev_connected": "Plug/connection sensor from any provider. If it identifies this home's charger, location need not also be mapped.",
+          "ev_location": "Optional additional home check: home for a tracker/sensor or on for a binary sensor. Omit when the connection sensor already identifies the home charger.",
+          "ev_soc": "Vehicle battery percentage, e.g. TeslaMate, Teslemetry, Tessie or another EV integration.",
+          "ev_limit": "Selected target percentage. Read only: NRG never raises it.",
+          "ev_current": "Current setting in A. Number/input_number controls work directly. A read-only sensor needs an EV current script under Control adapters.",
+          "ev_charge": "Switches work directly. Read-only state feedback needs start/stop scripts. Set its charging/paused state values under Control adapters if they are not on/off.",
+          "battery_mode": "Select/input_select controls work directly. Read-only feedback needs a script adapter. Configure the device's actual hold/serve/charge option names.",
+          "battery_export": "Optional export-permission control. Configure option names under Control adapters. If omitted, set the policy in the device's own app.",
+          "battery_reserve": "Optional device backup-reserve setting. Read-only feedback can be paired with a script adapter.",
+          "battery_grid_charge": "Optional permission switch. A separate force-charge operating mode can be used instead; no grid-charge commands are invented for unsupported devices.",
+          "storm_watch": "Optional active protection event, e.g. Storm Watch or a manufacturer override. On or missing blocks commands when selected.",
+          "grid_services": "Optional utility/grid-services event. On or missing blocks commands when selected.",
+          "grid_services_enabled": "Optional ownership/protection flag: while on, an external controller has priority.",
+          "live_supply": "External supply-price sensor in cents/kWh or USD/kWh. Also usable instead of the live ComEd API in ComEd mode.",
+          "live_delivery": "External delivery-price sensor for External delivery entity mode.",
+          "supply_forecast": "Sensor with a list of price intervals in its configured forecast attribute. May be the same as the current-price sensor.",
+          "delivery_forecast": "Independent delivery-price interval list. Missing intervals remain unknown."
+        }
+      },
+      "init": {
+        "title": "NRG Planner settings",
+        "menu_options": {
+          "components": "Components",
+          "operation": "Operation",
+          "tariff": "Tariff",
+          "pricing_periods": "Pricing Periods",
+          "solar": "Solar",
+          "battery": "Battery",
+          "ev": "EV",
+          "planning": "Planning",
+          "notifications": "Notifications",
+          "mappings": "Mappings",
+          "measurements": "Meter conventions",
+          "controls": "Control adapters",
+          "sources": "Sources"
+        }
+      },
+      "sources": {
+        "title": "Solar forecast sources",
+        "menu_options": {
+          "add_source": "Add forecast",
+          "edit_source": "Edit forecast",
+          "remove_source": "Remove forecast"
+        }
+      },
+      "edit_source": {
+        "title": "Edit Source",
+        "data": {
+          "entity_id": "Forecast source"
+        }
+      },
+      "remove_source": {
+        "title": "Remove Source",
+        "data": {
+          "entity_id": "Forecast source"
+        }
+      },
+      "source": {
+        "title": "Solar forecast source",
+        "description": "Distinct physical arrays add together. Alternative forecasts covering the same arrays are weighted averages. {error}",
+        "data": {
+          "entity_id": "Forecast.Solar entity",
+          "label": "Descriptive name",
+          "group": "Physical arrays covered",
+          "weight": "Alternative weight",
+          "apply_age": "Apply panel age correction"
+        },
+        "data_description": {
+          "entity_id": "Select any enabled sensor belonging to the desired Forecast.Solar entry; its whole time series is used once.",
+          "group": "Use south or west for separate roofs, south,west for one combined forecast. Alternatives must use identical physical coverage.",
+          "weight": "Used only when multiple forecasts describe the SAME physical panels. NRG takes a weighted average, not a sum. For 10 kWh at weight 1 and 14 kWh at weight 3, the result is (10×1 + 14×3) ÷ 4 = 13 kWh. Equal weights give a simple average. With one forecast the weight changes nothing. Different physical arrays are added after this averaging.",
+          "apply_age": "Turn off if this provider already uses a present-day, age-adjusted capacity."
+        }
+      },
+      "controls": {
+        "title": "Control adapters",
+        "description": "No particular integration is required. Match option/state names to your device. Compatible number/select/switch entities work directly; optionally choose scripts for other APIs, MQTT or automation. Every script receives value, action, target_soc, reserve_soc and export_policy and needs the mapped feedback entity to confirm the result. An EV telemetry-only integration such as TeslaMate still needs a separate command path to control charging. {error}",
+        "data": {
+          "battery_hold": "Battery Hold",
+          "battery_serve": "Battery Serve",
+          "battery_charge": "Battery Charge",
+          "export_solar": "Export Solar",
+          "export_battery": "Export Battery",
+          "export_none": "Export None",
+          "ev_on": "Ev On",
+          "ev_off": "Ev Off",
+          "grid_charge_on": "Grid Charge On",
+          "grid_charge_off": "Grid Charge Off",
+          "script_ev_current": "Ev Current script (optional)",
+          "script_ev_start": "Ev Start script (optional)",
+          "script_ev_stop": "Ev Stop script (optional)",
+          "script_battery_mode": "Battery Mode script (optional)",
+          "script_battery_export": "Battery Export script (optional)",
+          "script_battery_reserve": "Battery Reserve script (optional)",
+          "script_grid_charge_on": "Grid Charge On script (optional)",
+          "script_grid_charge_off": "Grid Charge Off script (optional)"
+        },
+        "data_description": {
+          "battery_hold": "Device option that preserves stored energy.",
+          "battery_serve": "Option that lets the battery supply home demand.",
+          "battery_charge": "Charging option. If it is the same as Hold, a separate grid-charge switch is required for grid charging. Without either, NRG does not schedule grid charging."
+        }
+      },
+      "pricing_periods": {
+        "title": "Choose a pricing component",
+        "description": "Supply and delivery have independent schedules. Configure your actual utility rates, then select Time-of-use for that component.",
+        "data": {
+          "component": "Schedule to edit"
+        }
+      },
+      "period_actions": {
+        "title": "Pricing periods",
+        "menu_options": {
+          "add_period": "Add a period",
+          "edit_period": "Edit a period",
+          "remove_period": "Remove a period",
+          "template_periods": "Start with the four-period example"
+        }
+      },
+      "edit_period": {
+        "title": "Edit Period",
+        "data": {
+          "period": "Pricing period"
+        }
+      },
+      "remove_period": {
+        "title": "Remove Period",
+        "data": {
+          "period": "Pricing period"
+        }
+      },
+      "period": {
+        "title": "Edit {component} pricing period",
+        "description": "{coverage}. Times use your Home Assistant timezone. Overnight periods belong to the weekday on which they start. Periods cannot overlap; missing hours/rates stay unknown. {error}",
+        "data": {
+          "label": "Period name",
+          "start": "Starts at",
+          "end": "Ends at",
+          "rate_cents": "Rate in cents per kWh",
+          "days": "Starting weekdays"
+        },
+        "data_description": {
+          "start": "Included in this period.",
+          "end": "Excluded; the next period starts here. End earlier than start means overnight. Equal start/end means 24 hours.",
+          "rate_cents": "Enter the rate for this component only. Supply + delivery is calculated automatically.",
+          "days": "Choose all days, weekdays, weekends or any other combination."
+        }
+      }
+    },
+    "error": {
+      "invalid_settings": "Check the settings shown above."
+    },
+    "abort": {
+      "no_sources": "Add a solar source first.",
+      "no_periods": "Add a pricing period or the four-period example first.",
+      "schedule_not_empty": "The example does not overwrite an existing schedule. Edit its existing periods instead."
+    }
+  }
+}

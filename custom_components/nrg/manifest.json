@@ -1,0 +1,13 @@
+{
+  "domain": "nrg",
+  "name": "NRG Planner",
+  "after_dependencies": ["http", "forecast_solar"],
+  "codeowners": ["@dekay7"],
+  "config_flow": true,
+  "documentation": "https://github.com/dekay7/nrg-planner/blob/main/docs/README.md",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/dekay7/nrg-planner/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

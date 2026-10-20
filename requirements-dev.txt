@@ -1,0 +1,7 @@
+# Tested HA runtime; the integration adds no third-party runtime requirements.
+homeassistant==2026.10.2
+pytest>=9.0,<10
+pytest-asyncio>=1.4,<2
+PyYAML>=6.0,<7
+Markdown>=3.7,<4
+ruff>=0.13,<1

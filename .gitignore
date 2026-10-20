@@ -1,0 +1,43 @@
+# Development environments and generated caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Private configuration, measurements, documents, and runtime state
+.env
+.env.*
+.session/
+.storage/
+private/
+local/
+backups/
+secrets.yaml
+secrets.yml
+*-site.yaml
+*-site.yml
+*.csv
+*.pdf
+*.jpg
+*.jpeg
+*.heic
+*.log
+*.db
+*.db-*
+*.sqlite*
+*.pem
+*.key
+*.p12
+*.zip
+*.tar
+*.gz
+*.bak
+
+# Historical/site-specific implementations are not part of this project
+prod/
+beta/
+research/
