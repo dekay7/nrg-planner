@@ -244,3 +244,74 @@ async def test_retained_vehicle_feeds_are_optional_and_still_need_home_connectio
     assert installed.runtime_data.snapshot()["ev_ready"]
     hass.states.async_set(mappings["ev_connected"],"off")
     assert not installed.runtime_data.snapshot()["ev_ready"]
+
+
+async def test_observation_battery_forecast_explains_unavailable_guard_and_recovers(hass, installed):
+    mappings = {"battery_soc": "sensor.example_battery_soc", "battery_mode": "select.example_battery_mode",
+                "grid_connected": "binary_sensor.example_grid", "grid_services": "binary_sensor.example_cloud_services"}
+    for entity, state, attributes in (
+        (mappings["battery_soc"], 60, {"unit_of_measurement": "%"}),
+        (mappings["battery_mode"], "self_consumption", {"options": ["backup", "self_consumption"]}),
+        (mappings["grid_connected"], "on", {}),
+        (mappings["grid_services"], "unavailable", {}),
+        ("binary_sensor.example_local_services", "off", {}),
+    ):
+        hass.states.async_set(entity, state, attributes)
+    runtime = installed.runtime_data
+    # A guard failure must remain the explanation even if tariff coverage is also incomplete.
+    await runtime.update_options({"has_battery": True, "battery_control": True, "mappings": mappings,
+                                  "delivery_cents": None})
+    await hass.async_block_till_done()
+    assert not runtime.plan["battery_forecast_available"]
+    assert all(slot["battery_soc"] is None for slot in runtime.plan["slots"])
+    assert "binary_sensor.example_cloud_services" in runtime.plan["battery_reason"]
+    assert "unavailable" in runtime.plan["battery_reason"]
+    assert hass.states.get("sensor.nrg_battery_action").state == "Waiting for battery inputs"
+    issues = hass.states.get("binary_sensor.nrg_native_ready").attributes["guard_issues"]
+    assert issues == [{"role": "grid_services", "name": "Grid services active",
+                       "entity_id": "binary_sensor.example_cloud_services", "state": "unavailable", "expected": "off"}]
+
+    await runtime.update_options({"mappings": mappings | {"grid_services": "binary_sensor.example_local_services"},
+                                  "delivery_cents": 4})
+    await hass.async_block_till_done()
+    # Finish a fresh sample after the options listener invalidates the old plan;
+    # consecutive UI edits can otherwise be waiting in HA's refresh debounce.
+    await runtime.async_refresh()
+    await hass.async_block_till_done()
+    assert runtime.plan["battery_forecast_available"]
+    assert all(isinstance(slot["battery_soc"], (int, float)) for slot in runtime.plan["slots"])
+    assert hass.states.get("binary_sensor.nrg_battery_ready").state == "on"
+    assert hass.states.get("binary_sensor.nrg_writer_authorized").state == "off"
+    assert runtime.config["mode"] == "Observation" and runtime.controller.last == {}
+
+
+async def test_retired_setting_and_renamed_switch_are_removed_on_reload(hass, installed):
+    from homeassistant.helpers import entity_registry as er
+    from custom_components.nrg.config import validate
+
+    legacy_options = {"summer_guard": True, "house_kw": 1.7}
+    assert validate(legacy_options) == {"house_kw": 1.7}
+    assert legacy_options["summer_guard"] is True
+
+    registry = er.async_get(hass)
+    retired = registry.async_get_or_create(
+        "switch", "nrg", f"{installed.unique_id}_summer_guard",
+        config_entry=installed, suggested_object_id="renamed_seasonal_policy",
+    )
+    hass.config_entries.async_update_entry(installed, options=dict(installed.options) | {"summer_guard": True})
+    await hass.async_block_till_done()
+    assert await hass.config_entries.async_reload(installed.entry_id)
+    await hass.async_block_till_done()
+
+    assert "summer_guard" not in installed.options
+    assert "summer_guard" not in installed.runtime_data.config
+    assert registry.async_get(retired.entity_id) is None
+    assert hass.states.get(retired.entity_id) is None
+    assert registry.async_get("switch.nrg_battery_control") is not None
+
+    flow = await hass.config_entries.options.async_init(installed.entry_id)
+    flow = await hass.config_entries.options.async_configure(flow["flow_id"], {"next_step_id": "planning"})
+    assert "summer_guard" not in {marker.schema for marker in flow["data_schema"].schema}
+    result = await hass.config_entries.options.async_configure(flow["flow_id"], {"house_kw": 1.7})
+    await hass.async_block_till_done()
+    assert result["type"] == "create_entry" and installed.options["house_kw"] == 1.7

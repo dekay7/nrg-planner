@@ -1,4 +1,5 @@
 from itertools import product
+from datetime import datetime
 import json
 
 import pytest
@@ -57,8 +58,7 @@ def test_unplugged_no_phantom_charging_and_missing_soc_no_phantom_reserve():
 
 def slot(**changes):
     return {"start": NOW, "end": NOW + 3600, "hours": 1, "house_kwh": 2, "solar_kwh": 0,
-            "import_price": .2, "export_price": .1, "price_known": True, "solar_known": True,
-            "peak_precaution": False, **changes}
+            "import_price": .2, "export_price": .1, "price_known": True, "solar_known": True, **changes}
 
 
 @pytest.mark.parametrize("policy", ["Solar only", "Battery", "No exports"])
@@ -106,3 +106,18 @@ def test_solar_current_adjustment_stays_above_minimum_and_meets_energy():
     assert amps == [13]
     assert sum(energy) == pytest.approx(2.9)
     assert shortfall == 0
+
+
+def test_cheap_summer_afternoon_can_charge_ev_and_refill_battery():
+    cfg, *_ = fixture(battery_capacity=5, backup_reserve=20, round_trip_efficiency=100,
+                      battery_charge_kw=1, battery_discharge_kw=1)
+    start = datetime(2026, 7, 6, 14, tzinfo=ZONE).timestamp()
+    rows = [slot(start=start, end=start + 3600, import_price=.01, house_kwh=0, ev_available=True),
+            slot(start=start + 3600, end=start + 7200, import_price=.5, house_kwh=1, ev_available=True)]
+
+    energy, _, shortfall = allocate(rows, 1, 1, start + 7200, cfg, "cheapest")
+    assert energy == [1, 0] and shortfall == 0
+
+    score, actions = battery_search(rows, [0, 0], 1, cfg, 5, 0, True)
+    assert [action["action"] for action in actions] == ["charge", "serve"]
+    assert score == pytest.approx(.01)
