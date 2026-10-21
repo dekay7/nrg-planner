@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any
 
 DOMAIN = "nrg"
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 STATIC_URL = "/nrg-planner"
 PLATFORMS = ["sensor", "binary_sensor", "number", "select", "switch", "date", "time", "datetime", "button", "text"]
 

@@ -3,7 +3,7 @@
 Home Assistant energy planning with independent supply and delivery tariffs,
 optional EV/battery/solar support, and controls mapped to existing HA entities.
 
-**Early development · version 0.1.0.** See the
+**Early development · version 0.2.0.** See the
 [project review](docs/review.md) for current validation results and open release
 items. NRG Planner is not included in the default HACS catalog.
 
