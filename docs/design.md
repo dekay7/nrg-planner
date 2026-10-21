@@ -57,7 +57,14 @@ EV calibration uses covered sessions with at least five SOC points and five minu
 The upper 80th-percentile AC kWh/point sample from the last twelve valid sessions is
 conservative about required energy. Lower-percentile observed power/amp estimates
 help avoid overpromising charging speed. It does not estimate EV degradation.
-The [learning guide](learning.md) explains all four controls with examples.
+Optional battery calibration uses closed SOC cycles to measure AC energy out/in
+without inferring capacity. Charging and discharging capability each need repeated,
+stable ten-minute opportunities with spare supply or unmet demand, independently
+measured site flows and mid-range SOC. Each parameter requires three observations;
+up to twelve within thirty days are used. One opt-in switch controls all three,
+with independent manual fallbacks. No forced calibration cycle or health estimate
+is made. All battery transitions and refill valuation use the same effective values.
+The [learning guide](learning.md) explains the controls and measurement limits.
 
 ## EV candidates
 
@@ -137,7 +144,8 @@ Commands may take time to reach equipment. A battery may briefly supply a car be
 the hold takes effect. Requests and readbacks do not guarantee instantaneous power;
 the equipment retains its own electrical protections.
 
-Settings are HA integration options. Compact hourly learning, dated caches and 62
+Settings are HA integration options. Compact hourly and battery-cycle/opportunity
+learning, dated caches and 62
 daily ledgers use HA Store, saved periodically and on shutdown. Bootstrap YAML never
 overwrites existing UI options. The optional dashboard package excludes large
 plan/source/observation entities from recorder. The power-flow Sankey card is

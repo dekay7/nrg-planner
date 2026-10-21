@@ -18,7 +18,8 @@ should use the account's GitHub no-reply address, not a personal email.
 
 NRG stores integration options and bounded learning/cost summaries through HA's
 storage APIs. That includes user-entered rates, source mappings, hourly summaries,
-EV-session estimates, and daily ledgers. These are private installation data, not
+EV-session estimates, compact battery-cycle/power-opportunity summaries, and daily
+ledgers. These are private installation data, not
 repository assets. HA backups may contain them.
 
 Removing the integration through Devices & services deletes its own local storage.

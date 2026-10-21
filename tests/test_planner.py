@@ -121,3 +121,23 @@ def test_cheap_summer_afternoon_can_charge_ev_and_refill_battery():
     score, actions = battery_search(rows, [0, 0], 1, cfg, 5, 0, True)
     assert [action["action"] for action in actions] == ["charge", "serve"]
     assert score == pytest.approx(.01)
+
+
+def test_battery_calibration_matches_explicit_model_for_transitions_and_terminal_value():
+    from custom_components.nrg.statistics import Statistics
+
+    cfg, prices, solar, car, stats = fixture(battery_learning=True)
+    saved = {"cycles": [{"charge_kwh": 5, "discharge_kwh": 4, "ended": NOW}] * 3,
+             "powers": {"charge": [{"kw": 2, "ended": NOW}] * 3,
+                        "discharge": [{"kw": 3, "ended": NOW}] * 3}}
+    stats.battery = Statistics({"battery": saved}).battery
+    expected_config = cfg | {"battery_learning": False, "round_trip_efficiency": 80,
+                             "battery_charge_kw": 2, "battery_discharge_kw": 3}
+    learned = plan(NOW, cfg, ZONE, car, stats, prices, solar, .15)
+    explicit = plan(NOW, expected_config, ZONE, car, Statistics(), prices, solar, .15)
+    assert learned == explicit
+    assert cfg["round_trip_efficiency"] == 90 and cfg["battery_charge_kw"] == 5
+    off = cfg | {"battery_learning": False}
+    assert plan(NOW, off, ZONE, car, stats, prices, solar, .15) == plan(NOW, off, ZONE, car, Statistics(), prices, solar, .15)
+    monitored = plan(NOW, cfg | {"battery_control": False}, ZONE, car, stats, prices, solar, .15)
+    assert all(row["battery_action"] == "hold" and row["battery_soc"] is None for row in monitored["slots"])

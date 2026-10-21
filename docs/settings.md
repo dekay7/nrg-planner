@@ -240,7 +240,7 @@ Reference key: `backup_reserve`.
 
 Default: **90 %**.
 
-Estimated AC-to-storage-to-AC efficiency. Equal square-root losses are applied when charging and discharging.
+Fallback AC-to-storage-to-AC efficiency when calibration is off or lacks enough cycles. Equal square-root losses are applied when charging and discharging. Learning never overwrites this value.
 
 Accepted range: **50 to 100 %**; adjustable in increments of **1 %**.
 
@@ -250,7 +250,7 @@ Reference key: `round_trip_efficiency`.
 
 Default: **5 kW**.
 
-Charging power used to estimate future battery energy. This setting does not directly set device watts. Use a conservative value supported by your equipment.
+Fallback charging power when calibration is off or lacks enough sustained charging opportunities. This is a model assumption, not a device watt setting or a ceiling on learned estimates. Use a conservative value supported by your equipment.
 
 Accepted range: **0.5 to 30 kW**; adjustable in increments of **0.5 kW**.
 
@@ -260,11 +260,19 @@ Reference key: `battery_charge_kw`.
 
 Default: **5 kW**.
 
-Discharging power used in the energy forecast. Your equipment may deliver a different rate; compare the forecast with its meter readings.
+Fallback discharging power when calibration is off or lacks enough sustained discharge opportunities. This is a model assumption, not a device watt setting or a ceiling on learned estimates. Compare the effective estimate in Details with your equipment.
 
 Accepted range: **0.5 to 30 kW**; adjustable in increments of **0.5 kW**.
 
 Reference key: `battery_discharge_kw`.
+
+### Calibrate battery estimates
+
+Default: **Off**.
+
+Opt in only with AC-side battery power and SOC measurements; DC battery-terminal meters are not supported. Passively calibrate round-trip efficiency after three covered cycles with at least a 30-point SOC excursion and return to the starting SOC. Charging and discharging power each need three sustained opportunities with spare supply or unmet demand, not ordinary low-load averages. Estimates use up to 12 recent observations per parameter within 30 days. Optional paired lifetime AC energy counters improve efficiency measurement; otherwise power is integrated. Manual values remain independent fallbacks. Learning sends no calibration commands and does not estimate capacity, degradation or battery health. Off stops battery learning and uses your manual values without deleting completed observations.
+
+Reference key: `battery_learning`.
 
 ### Solar can recharge the battery while held
 

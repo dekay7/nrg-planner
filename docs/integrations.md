@@ -16,7 +16,8 @@ different manufacturers' conventions.
 | Solar power | Actual AC solar production, W or kW. |
 | Whole-home power | Total home load including an EV, if present. |
 | Signed grid power | Positive import, negative export. |
-| Signed battery power | Positive discharge, negative charging. |
+| Signed battery power | AC-side power: positive discharge, negative charging. DC battery-terminal or combined hybrid-inverter power is not interchangeable. |
+| Battery lifetime AC charging/discharged energy | Optional paired increasing kWh counters at the same AC boundary as battery power. Never daily/session-resetting counters or stored DC energy. |
 | Battery / EV percentage | Charge percentage for the selected equipment. |
 | EV connected | Connection at the home charger. An additional location check is optional. |
 | EV target | Selected percentage, readable from a number, input_number or sensor. NRG never raises it. |
@@ -28,6 +29,12 @@ Prefer local meters when available. For a complete set of applicable site meters
 NRG can calculate a missing home/grid flow from the power balance; its basis is
 identified in component diagnostics. Absent solar/battery/EV is known zero. A missing
 reading for enabled equipment stays unknown.
+
+[Battery calibration](learning.md#calibrate-battery-estimates) is opt-in. Confirm
+AC-side measurement semantics using your equipment documentation before enabling it.
+Paired lifetime energy counters are preferred; with neither selected, covered
+battery power is integrated. Independent home/grid/solar meters are needed for
+power-opportunity detection, but efficiency learning does not require battery controls.
 
 Local powers have three-minute report checks; current price entities have fifteen
 minutes. Vehicle SOC/target/location checks allow one hour, and current feedback

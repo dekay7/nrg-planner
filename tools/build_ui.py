@@ -222,7 +222,7 @@ def setting_card(key):
         "solar_degradation": "Degradation", "solar_learning": "Calibrate forecasts",
         "battery_capacity": "Capacity", "battery_install_date": "Installation date",
         "battery_degradation": "Degradation", "round_trip_efficiency": "Efficiency",
-        "battery_charge_kw": "Charge power", "battery_discharge_kw": "Discharge",
+        "battery_charge_kw": "Charge power", "battery_discharge_kw": "Discharge", "battery_learning": "Calibrate battery",
         "battery_solar_while_held": "Solar charging while held", "hold_battery_for_ev": "Hold battery for EV",
         "departure_time": "Daily departure", "ev_start_time": "Charging starts",
         "completion_buffer": "Buffer", "ev_max_amps": "Maximum current",
@@ -470,7 +470,8 @@ The administrator can change the reference appliance, rates, schedules and reser
         "solar": (("Age correction", ("solar_install_date", "solar_degradation")), ("Forecast calibration", ("solar_learning",))),
         "battery": (("Capacity and age", ("battery_capacity", "battery_install_date", "battery_degradation")),
                     ("Reserve and efficiency", ("backup_reserve", "round_trip_efficiency")),
-                    ("Modeled power", ("battery_charge_kw", "battery_discharge_kw", "battery_solar_while_held"))),
+                    ("Modeled power", ("battery_charge_kw", "battery_discharge_kw", "battery_solar_while_held")),
+                    ("Learning", ("battery_learning",))),
         "ev": (("Schedule", ("departure_time", "ev_start_time", "completion_buffer", "hold_battery_for_ev")),
                ("Charging hardware", ("ev_max_amps", "ev_min_amps", "ev_kw_at_max", "ev_kwh_per_percent")),
                ("Learning", ("ev_learning", "ev_allow_saved_readings"))),
@@ -521,7 +522,8 @@ The administrator can change the reference appliance, rates, schedules and reser
 {% else %}No solar forecast sources configured. Add a source in Configure → Sources.
 {% endfor %}"""))], [heading("Meter conventions"), *(setting_card(key) for key in ("grid_power_inverted", "battery_power_inverted", "home_includes_ev"))],
         [heading("Learning observations"), metric("house_observations", "Covered house hours"), conditional("has_solar", metric("solar_error", "Solar forecast error")), conditional("has_ev", metric("ev_sessions", "EV charging sessions")),
-         {"type": "vertical-stack", "cards": [markdown("### Reset learning\n\nResetting learning removes learned profiles and forecast errors, preserving the measured-cost ledger. No unobserved period is filled with zero use."),
+         conditional("has_battery", status_card("battery_calibration", "Battery calibration")),
+         {"type": "vertical-stack", "cards": [markdown("### Reset learning\n\nResetting learning removes learned profiles, battery/EV estimates and forecast errors, preserving the measured-cost ledger. No unobserved period is filled with zero use."),
           {"type": "entities", "show_header_toggle": False, "entities": [{"entity": "button.nrg_reset_learning", "name": "Reset learning"}]}]}]]))
     admin_views.append(settings_view("Details", "details", [[heading("Energy and measurements"), timeline(), battery_forecast_note(), conditional("has_solar", accuracy_chart()),
         {"type": "history-graph", "hours_to_show": 24, "entities": ["sensor.nrg_solar_power", "sensor.nrg_house_power", "sensor.nrg_ev_power", "sensor.nrg_battery_power"]}], [
@@ -551,6 +553,8 @@ Includes remaining-energy value and any configured cycling cost. This is a model
         ], [heading("Costs and estimates"),
         *(metric(k) for k in ("import_cost_today", "export_credit_today", "net_cost_today", "cost_coverage")),
         conditional("has_ev", metric("ev_energy_estimate", "EV energy per SOC point")), conditional("has_ev", metric("ev_power_estimate", "EV power at max current")),
+        conditional("has_battery", status_card("battery_calibration", "Battery calibration")),
+        *(conditional("has_battery", metric(key)) for key in ("battery_efficiency_estimate", "battery_charge_estimate", "battery_discharge_estimate")),
         status_card("measurement_quality", "Local measurement quality"), metric("power_balance")]]))
     package = {"lovelace": {"dashboards": {
         "nrg-home": {"mode": "yaml", "title": "NRG Planner", "icon": "mdi:home-lightning-bolt", "show_in_sidebar": True, "require_admin": False, "filename": "custom_components/nrg/dashboards/nrg-home.yaml"},

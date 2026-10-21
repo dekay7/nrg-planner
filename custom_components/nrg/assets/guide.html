@@ -711,7 +711,10 @@ The bundled handbook needs no external assets. See <a href="#privacy">privacy</a
 <p>NRG uses the fallback assumptions until enough well-covered observations exist.
 Solar calibration starts after six valid daylight hours; EV calibration needs
 qualifying charging sessions; household learning builds from covered hours over
-time. Each switch can be turned off independently. <strong>Reset learning</strong> clears
+time. Optional battery calibration needs three covered, substantial closed-SOC cycles
+for efficiency and three sustained opportunities per power direction. It may take
+longer—or retain fallbacks—if normal operation does not provide those opportunities.
+It does not estimate battery health. Each switch can be turned off independently. <strong>Reset learning</strong> clears
 profiles and calibration while keeping settings and the measured-cost ledger.
 See <a href="#learning">learning</a> for the exact requirements.</p>
 <h3 id="faq-what-stays-saved-when-home-assistant-restarts">What stays saved when Home Assistant restarts?</h3>
@@ -911,7 +914,11 @@ different manufacturers' conventions.</p>
 </tr>
 <tr>
 <td>Signed battery power</td>
-<td>Positive discharge, negative charging.</td>
+<td>AC-side power: positive discharge, negative charging. DC battery-terminal or combined hybrid-inverter power is not interchangeable.</td>
+</tr>
+<tr>
+<td>Battery lifetime AC charging/discharged energy</td>
+<td>Optional paired increasing kWh counters at the same AC boundary as battery power. Never daily/session-resetting counters or stored DC energy.</td>
 </tr>
 <tr>
 <td>Battery / EV percentage</td>
@@ -943,6 +950,11 @@ different manufacturers' conventions.</p>
 NRG can calculate a missing home/grid flow from the power balance; its basis is
 identified in component diagnostics. Absent solar/battery/EV is known zero. A missing
 reading for enabled equipment stays unknown.</p>
+<p><a href="#learning-calibrate-battery-estimates">Battery calibration</a> is opt-in. Confirm
+AC-side measurement semantics using your equipment documentation before enabling it.
+Paired lifetime energy counters are preferred; with neither selected, covered
+battery power is integrated. Independent home/grid/solar meters are needed for
+power-opportunity detection, but efficiency learning does not require battery controls.</p>
 <p>Local powers have three-minute report checks; current price entities have fifteen
 minutes. Vehicle SOC/target/location checks allow one hour, and current feedback
 five minutes. Static HA input helpers keep their saved setting until changed.
@@ -1087,14 +1099,21 @@ measurement mismatch; do not assume one manufacturer's defaults apply to your ho
 <li><a href="#learning-solar-forecast-calibration">Solar forecast calibration</a></li>
 <li><a href="#learning-calibrate-ev-charging-estimates">Calibrate EV charging estimates</a></li>
 <li><a href="#learning-learn-household-demand">Learn household demand</a></li>
-<li><a href="#learning-future-battery-learning">Future battery learning</a></li>
+<li><a href="#learning-calibrate-battery-estimates">Calibrate battery estimates</a><ul>
+<li><a href="#learning-round-trip-efficiency">Round-trip efficiency</a></li>
+<li><a href="#learning-charging-and-discharging-power">Charging and discharging power</a></li>
+<li><a href="#learning-fallbacks-visibility-and-retention">Fallbacks, visibility and retention</a></li>
+</ul>
+</li>
 <li><a href="#learning-solar-alternative-weight">Solar alternative weight</a></li>
 <li><a href="#learning-resetting-or-disabling-learning">Resetting or disabling learning</a></li>
 </ul>
 </div>
 </nav></details>
 <p>These controls improve estimates from observed data. They never alter recorded
-meter values, appliance behavior, battery settings or a vehicle's selected limit.
+meter values, a vehicle's selected limit, or equipment power limits. They send no
+calibration commands. Improved predictions can affect the normal plan only within
+existing component/control permissions; Observation still sends no equipment commands.
 They work only for installed components with enough valid measurements.</p>
 <h3 id="learning-solar-forecast-calibration">Solar forecast calibration</h3>
 <p><strong>Purpose:</strong> correct a forecast that is consistently too optimistic or pessimistic
@@ -1148,13 +1167,82 @@ After three matching observations, weekdays/weekends can have their own profile.
 reserves more energy for those evenings. An unfamiliar hour still uses your fallback.
 It predicts patterns rather than identifying individual appliances or controlling
 comfort settings. Turning learning off uses your explicit house-demand estimate.</p>
-<h3 id="learning-future-battery-learning">Future battery learning</h3>
-<p>Not implemented yet: NRG could learn effective round-trip efficiency from well-covered
-charge/discharge cycles, comparing measured AC energy in and out when the battery
-returns near its starting SOC. It could also learn usable AC kWh per SOC percentage
-point from covered discharge intervals. Both estimates would require enough consistent
-observations; NRG would retain the configured efficiency and capacity assumptions as
-fallbacks until then.</p>
+<h3 id="learning-calibrate-battery-estimates">Calibrate battery estimates</h3>
+<p><strong>Purpose:</strong> improve effective round-trip efficiency and sustained charging/discharging
+power without estimating capacity, degradation or battery health.</p>
+<p>The single <strong>Calibrate battery estimates</strong> switch is <strong>off initially</strong>, preserving
+existing manual assumptions until you opt in. Enable it only with a battery's
+<strong>AC-side power</strong> and SOC readings. DC battery-terminal power, stored DC energy,
+and a hybrid inverter's combined solar/battery output are not interchangeable with
+an AC battery meter. Use equipment documentation to confirm the measurement boundary.
+NRG cannot identify AC versus DC from the sensor's unit alone. As with the manual
+power settings, calibration supports up to 30 kW in either direction.</p>
+<p>Learning is passive and works in Observation and with a monitoring-only battery.
+It never requests extra cycling, changes reserve or authorizes controls. Monitoring
+still does not forecast another controller's future battery schedule.</p>
+<h4 id="learning-round-trip-efficiency">Round-trip efficiency</h4>
+<p>NRG follows a covered charge/discharge or discharge/charge cycle until reported SOC
+returns to its starting point, with at least a <strong>30-percentage-point excursion</strong>:</p>
+<pre tabindex="0" aria-label="Code example"><code class="language-text">Round-trip efficiency = measured AC energy out ÷ measured AC energy in
+</code></pre>
+<p>For example, consuming 5 kWh and later delivering 4.4 kWh while returning to the
+starting SOC suggests <strong>88%</strong>. No configured capacity is used in that calculation.
+A cycle must last at least ten minutes, consume at least 0.5 kWh, finish within
+24 hours, and contain no more than two hours of idle time. Missing/invalid readings,
+gaps over 180 seconds, protection events and unexplained SOC changes discard the
+incomplete cycle. Values outside <strong>50–100%</strong> are rejected, not silently clamped.
+A crossing of the starting SOC is interpolated within the final observation interval.</p>
+<p>Optionally map <strong>both</strong> lifetime AC charging and discharged-energy counters, in kWh,
+at the same AC boundary as battery power. They must increase rather than reset
+at midnight or each session. With either selected, both are required throughout
+the cycle; missing readings, resets and implausible jumps discard the candidate.
+Without selected counters, NRG integrates the previous signed power sample.
+Minute-level sampling can miss rapid changes; counters are preferable when available.</p>
+<p>After at least <strong>three consistent cycles</strong>, the effective efficiency is total
+accepted energy out divided by total accepted energy in. Cycles more than five
+percentage points from the recent median are excluded. The planner retains its
+explicit assumption of equal square-root losses in each direction; round-trip
+observations cannot identify separate charge/discharge efficiencies.</p>
+<p>This is a field estimate under observed operating conditions, not a laboratory
+rating. Rounded/recalibrated SOC and unmetered auxiliaries limit accuracy. Metered
+standby consumption within a qualifying cycle is included; the bounded idle time
+avoids treating arbitrary multi-day storage losses as conversion losses.</p>
+<h4 id="learning-charging-and-discharging-power">Charging and discharging power</h4>
+<p>Ordinary low-load readings do <strong>not</strong> establish the battery's power capability.
+Power learning requires independent, consistent home, grid and applicable solar
+meters; calculated home/grid readings cannot establish a qualifying opportunity.
+SOC must be between the larger of <strong>10% / reserve + 5 points</strong> and <strong>85%</strong>.</p>
+<ul>
+<li>Charging needs at least 0.5 kW of battery charging and either at least 0.5 kW of
+  solar export remaining, or grid import with fresh feedback confirming a distinct
+  force-charge mode. Grid-charge permission alone is not proof of forced charging.</li>
+<li>Discharging needs at least 0.5 kW of battery output while the site still imports
+  at least 0.5 kW: evidence of unmet household demand.</li>
+<li>Each opportunity needs a <strong>ten-minute block</strong> whose highest power is no more
+  than 10% above its lowest. Brief spikes, short events and low-demand averages
+  cannot create a higher capability estimate.</li>
+</ul>
+<p>Each continuous opportunity contributes only one completed summary: its highest
+stable ten-minute power floor. After <strong>three opportunities per direction</strong>, their
+median becomes that direction's effective modeled power. This estimates demonstrated
+sustained operating capability, not a guaranteed hardware maximum. Temporary device
+limits and environmental conditions can still change future output.</p>
+<h4 id="learning-fallbacks-visibility-and-retention">Fallbacks, visibility and retention</h4>
+<p>Each of the three estimates becomes usable independently. NRG retains up to the
+last <strong>12 completed observations per parameter</strong>, using only those within <strong>30 days</strong>.
+A missing or expired estimate uses its own configured fallback. Manual power values
+are fallbacks, not ceilings on learned values; calibration never writes device watts.</p>
+<p><strong>Details</strong> shows effective efficiency, charge/discharge power and <strong>Battery
+calibration</strong> status. Open an estimate for its source (<code>configured</code> or <code>learned</code>),
+sample count and last observation. The calibration entity explains collection status.</p>
+<p>Switching calibration off stops collection and uses manual values without deleting
+completed summaries. Restarts preserve completed learning but discard unfinished
+cycles and opportunities. Changing measurement mappings, sign conventions or charge-mode
+interpretation clears battery calibration only. Manual capacity/age changes do not
+alter measured efficiency. After replacing hardware behind unchanged entity IDs,
+use <strong>Reset learning</strong> before collecting a new baseline.</p>
+<p><strong>Capacity, installation age, annual degradation and optional cycling cost remain
+manual assumptions. No battery state-of-health result is inferred.</strong></p>
 <h3 id="learning-solar-alternative-weight">Solar alternative weight</h3>
 <p><strong>Purpose:</strong> combine multiple estimates for the <strong>same physical panels</strong> without
 counting their electricity twice.</p>
@@ -1191,8 +1279,8 @@ A separate west roof forecast of 5 kWh would make the total 18 kWh. Weights are
 explicit user choices; the whole-system solar calibration is a separate operation.</p>
 <h3 id="learning-resetting-or-disabling-learning">Resetting or disabling learning</h3>
 <p>Each learning switch can be turned off independently. Reset learning clears the
-learned profiles, EV sessions and forecast comparisons, while retaining the measured
-cost ledger. Installation dates, manual assumptions, tariff periods and entity
+learned profiles, battery observations, EV sessions and forecast comparisons, while
+retaining the measured cost ledger. Installation dates, manual assumptions, tariff periods and entity
 selections remain saved. Disabled/nonexistent components need no calibration setup.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="settings" aria-label="Every setting"><h2 id="settings-settings-reference">Settings reference</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Every setting topics"><div class="toc">
 <ul>
 <li><a href="#settings-components">Components</a><ul>
@@ -1234,6 +1322,7 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <li><a href="#settings-battery-round-trip-efficiency">Battery round-trip efficiency</a></li>
 <li><a href="#settings-modeled-battery-charging-power">Modeled battery charging power</a></li>
 <li><a href="#settings-modeled-battery-discharge-power">Modeled battery discharge power</a></li>
+<li><a href="#settings-calibrate-battery-estimates">Calibrate battery estimates</a></li>
 <li><a href="#settings-solar-can-recharge-the-battery-while-held">Solar can recharge the battery while held</a></li>
 </ul>
 </li>
@@ -1395,19 +1484,23 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <p>Reference key: <code>backup_reserve</code>.</p>
 <h4 id="settings-battery-round-trip-efficiency">Battery round-trip efficiency</h4>
 <p>Default: <strong>90 %</strong>.</p>
-<p>Estimated AC-to-storage-to-AC efficiency. Equal square-root losses are applied when charging and discharging.</p>
+<p>Fallback AC-to-storage-to-AC efficiency when calibration is off or lacks enough cycles. Equal square-root losses are applied when charging and discharging. Learning never overwrites this value.</p>
 <p>Accepted range: <strong>50 to 100 %</strong>; adjustable in increments of <strong>1 %</strong>.</p>
 <p>Reference key: <code>round_trip_efficiency</code>.</p>
 <h4 id="settings-modeled-battery-charging-power">Modeled battery charging power</h4>
 <p>Default: <strong>5 kW</strong>.</p>
-<p>Charging power used to estimate future battery energy. This setting does not directly set device watts. Use a conservative value supported by your equipment.</p>
+<p>Fallback charging power when calibration is off or lacks enough sustained charging opportunities. This is a model assumption, not a device watt setting or a ceiling on learned estimates. Use a conservative value supported by your equipment.</p>
 <p>Accepted range: <strong>0.5 to 30 kW</strong>; adjustable in increments of <strong>0.5 kW</strong>.</p>
 <p>Reference key: <code>battery_charge_kw</code>.</p>
 <h4 id="settings-modeled-battery-discharge-power">Modeled battery discharge power</h4>
 <p>Default: <strong>5 kW</strong>.</p>
-<p>Discharging power used in the energy forecast. Your equipment may deliver a different rate; compare the forecast with its meter readings.</p>
+<p>Fallback discharging power when calibration is off or lacks enough sustained discharge opportunities. This is a model assumption, not a device watt setting or a ceiling on learned estimates. Compare the effective estimate in Details with your equipment.</p>
 <p>Accepted range: <strong>0.5 to 30 kW</strong>; adjustable in increments of <strong>0.5 kW</strong>.</p>
 <p>Reference key: <code>battery_discharge_kw</code>.</p>
+<h4 id="settings-calibrate-battery-estimates">Calibrate battery estimates</h4>
+<p>Default: <strong>Off</strong>.</p>
+<p>Opt in only with AC-side battery power and SOC measurements; DC battery-terminal meters are not supported. Passively calibrate round-trip efficiency after three covered cycles with at least a 30-point SOC excursion and return to the starting SOC. Charging and discharging power each need three sustained opportunities with spare supply or unmet demand, not ordinary low-load averages. Estimates use up to 12 recent observations per parameter within 30 days. Optional paired lifetime AC energy counters improve efficiency measurement; otherwise power is integrated. Manual values remain independent fallbacks. Learning sends no calibration commands and does not estimate capacity, degradation or battery health. Off stops battery learning and uses your manual values without deleting completed observations.</p>
+<p>Reference key: <code>battery_learning</code>.</p>
 <h4 id="settings-solar-can-recharge-the-battery-while-held">Solar can recharge the battery while held</h4>
 <p>Default: <strong>On</strong>.</p>
 <p>Enable if the selected hold mode still accepts solar charging, as Tesla Backup normally does. Turn off if your inverter's standby mode prevents solar charging too. This changes the battery forecast to match the device's behavior.</p>
@@ -1980,7 +2073,8 @@ should use the account's GitHub no-reply address, not a personal email.</p>
 <h3 id="privacy-runtime-data-stays-in-home-assistant">Runtime data stays in Home Assistant</h3>
 <p>NRG stores integration options and bounded learning/cost summaries through HA's
 storage APIs. That includes user-entered rates, source mappings, hourly summaries,
-EV-session estimates, and daily ledgers. These are private installation data, not
+EV-session estimates, compact battery-cycle/power-opportunity summaries, and daily
+ledgers. These are private installation data, not
 repository assets. HA backups may contain them.</p>
 <p>Removing the integration through Devices &amp; services deletes its own local storage.
 Reloads and updates preserve it. Existing HA backups and recorder history follow
@@ -2090,7 +2184,14 @@ the evaluated hour; later forecast improvements are not used as hindsight.</p>
 The upper 80th-percentile AC kWh/point sample from the last twelve valid sessions is
 conservative about required energy. Lower-percentile observed power/amp estimates
 help avoid overpromising charging speed. It does not estimate EV degradation.
-The <a href="#learning">learning guide</a> explains all four controls with examples.</p>
+Optional battery calibration uses closed SOC cycles to measure AC energy out/in
+without inferring capacity. Charging and discharging capability each need repeated,
+stable ten-minute opportunities with spare supply or unmet demand, independently
+measured site flows and mid-range SOC. Each parameter requires three observations;
+up to twelve within thirty days are used. One opt-in switch controls all three,
+with independent manual fallbacks. No forced calibration cycle or health estimate
+is made. All battery transitions and refill valuation use the same effective values.
+The <a href="#learning">learning guide</a> explains the controls and measurement limits.</p>
 <h3 id="design-ev-candidates">EV candidates</h3>
 <pre tabindex="0" aria-label="Code example"><code class="language-text">AC energy needed = (selected limit − SOC) × estimated AC kWh per percentage point
 </code></pre>
@@ -2149,7 +2250,8 @@ itself suppress independent EV checks.</p>
 <p>Commands may take time to reach equipment. A battery may briefly supply a car before
 the hold takes effect. Requests and readbacks do not guarantee instantaneous power;
 the equipment retains its own electrical protections.</p>
-<p>Settings are HA integration options. Compact hourly learning, dated caches and 62
+<p>Settings are HA integration options. Compact hourly and battery-cycle/opportunity
+learning, dated caches and 62
 daily ledgers use HA Store, saved periodically and on shutdown. Bootstrap YAML never
 overwrites existing UI options. The optional dashboard package excludes large
 plan/source/observation entities from recorder. The power-flow Sankey card is

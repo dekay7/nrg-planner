@@ -40,6 +40,10 @@ METRICS = {
     "ev_sessions": ("Calibrated charging sessions", None, None),
     "ev_energy_estimate": ("Effective EV energy per percentage point", "kWh/%", None),
     "ev_power_estimate": ("Effective EV power at maximum current", "kW", SensorDeviceClass.POWER),
+    "battery_efficiency_estimate": ("Effective battery round-trip efficiency", "%", None),
+    "battery_charge_estimate": ("Effective battery charging power", "kW", SensorDeviceClass.POWER),
+    "battery_discharge_estimate": ("Effective battery discharging power", "kW", SensorDeviceClass.POWER),
+    "battery_calibration": ("Battery calibration", None, None),
     "solar_error": ("Solar forecast mean absolute error", "kWh", None),
     "advice": ("Household advice", None, None),
     "battery_action": ("Planned battery action", None, None),
@@ -101,6 +105,14 @@ class NRGSensor(NRGEntity, SensorEntity):
             return data.get("capacity", 0) * max(soc - self.coordinator.config["backup_reserve"], 0) / 100 if soc is not None else None
         if key in ("capacity", "cost_coverage", "house_observations", "ev_sessions", "ev_energy_estimate", "ev_power_estimate"):
             return data.get(key)
+        if key == "battery_calibration":
+            return data.get(key, {}).get("status")
+        if key in ("battery_efficiency_estimate", "battery_charge_estimate", "battery_discharge_estimate"):
+            if not self.coordinator.config["has_battery"]:
+                return None
+            parameter = {"battery_efficiency_estimate": "round_trip_efficiency",
+                         "battery_charge_estimate": "battery_charge_kw", "battery_discharge_estimate": "battery_discharge_kw"}[key]
+            return data.get("battery_calibration", {}).get("estimates", {}).get(parameter, {}).get("effective")
         if key == "solar_error":
             return data.get("solar_quality", {}).get("mae_kwh")
         if key == "net_cost_today":
@@ -199,6 +211,12 @@ class NRGSensor(NRGEntity, SensorEntity):
         if "cost" in self.key or "credit" in self.key:
             return {"basis": "Measured grid power × contemporaneous running-price estimate, supply + delivery; excludes fixed charges and unconfigured taxes.",
                     "coverage_hours": data.get("ledger", {}).get("coverage_hours", 0)}
+        if self.key == "battery_calibration":
+            return data.get("battery_calibration", {})
+        if self.key in ("battery_efficiency_estimate", "battery_charge_estimate", "battery_discharge_estimate"):
+            parameter = {"battery_efficiency_estimate": "round_trip_efficiency",
+                         "battery_charge_estimate": "battery_charge_kw", "battery_discharge_estimate": "battery_discharge_kw"}[self.key]
+            return data.get("battery_calibration", {}).get("estimates", {}).get(parameter, {})
         if self.key == "capacity":
             return {"basis": "Age model, not measured battery state of health", "install_date": self.coordinator.config["battery_install_date"]}
         return None

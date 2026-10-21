@@ -6,6 +6,7 @@ the integration interval: the unobserved gap is never learned or billed as zero.
 from datetime import datetime, timedelta
 from statistics import mean, median
 
+from .battery_learning import BatteryLearning
 from .config import export_price
 from .tariffs import boundaries, period_at
 
@@ -15,6 +16,7 @@ class Statistics:
         saved = saved or {}
         self.hours = saved.get("hours", [])[-24 * 28:]
         self.ev_sessions = saved.get("ev_sessions", [])[-12:]
+        self.battery = BatteryLearning(saved.get("battery"))
         self.issued = saved.get("issued", {})
         self.ledger = saved.get("ledger", {})
         self.previous = None
@@ -22,7 +24,7 @@ class Statistics:
         self.session = None
 
     def export(self) -> dict:
-        return {"hours": self.hours, "ev_sessions": self.ev_sessions,
+        return {"hours": self.hours, "ev_sessions": self.ev_sessions, "battery": self.battery.export(),
                 "issued": self.issued, "ledger": self.ledger}
 
     def demand(self, stamp: float, zone, fallback: float, enabled: bool) -> tuple[float, int]:

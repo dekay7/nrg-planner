@@ -181,10 +181,25 @@ class NRGRuntime(DataUpdateCoordinator):
         grid_switch = self.state("battery_grid_charge") is not None and adapters.can("battery_grid_charge", "on") and adapters.can("battery_grid_charge", "off")
         can_grid_charge = grid_switch or (config["control_values"]["battery_charge"] != config["control_values"]["battery_hold"] and adapters.can("battery_mode", "charge"))
         ev_controls = adapters.can("ev_current", config["ev_max_amps"]) and charge_feedback is not None and adapters.can("ev_charge", "on") and adapters.can("ev_charge", "off")
+        # Deriving a home/grid meter makes balance tautological. Only independent
+        # site readings can establish spare solar or unmet household demand.
+        independent = home_basis == grid_basis == "meter" and all(v is not None for v in (home, grid, solar))
+        middle_soc = battery_soc is not None and max(10, config["backup_reserve"] + 5) <= battery_soc <= 85
+        force_charge = (self.state("battery_mode") is not None
+                        and config["control_values"]["battery_charge"] != config["control_values"]["battery_hold"]
+                        and adapters.matches("battery_mode", "charge"))
+        battery_valid = config["has_battery"] and battery is not None and battery_soc is not None and balance_ok and native
         return {"solar_kw": solar, "home_kw": home, "ev_kw": ev,
                 "house_kw": house_meter if house_meter is not None else max(home - ev, 0) if house_valid else None,
                 "grid_kw": grid, "battery_kw": battery, "balance_kw": balance,
                 "measurement_quality": quality, "ev_learning_valid": ev_valid,
+                "battery_learning_valid": battery_valid,
+                "battery_charge_opportunity": bool(independent and middle_soc and battery_valid and battery <= -.5
+                                                   and (grid <= -.5 or grid >= .5 and force_charge)),
+                "battery_discharge_opportunity": bool(independent and middle_soc and battery_valid and battery >= .5 and grid >= .5),
+                "battery_energy_counters": any(key in self.mappings for key in ("battery_charge_energy", "battery_discharge_energy")),
+                "battery_charge_energy": self.numeric("battery_charge_energy", 180, "kWh", 0),
+                "battery_discharge_energy": self.numeric("battery_discharge_energy", 180, "kWh", 0),
                 "battery_soc": battery_soc, "ev_soc": ev_soc, "ev_limit": ev_limit,
                 "ev_energy": self.numeric("ev_energy", 180, "kWh", 0),
                 "ev_amps": self.numeric("ev_measured_current", 180, "A", 0, 100)
@@ -325,6 +340,11 @@ class NRGRuntime(DataUpdateCoordinator):
         if not snapshot["ev_learning_valid"]:
             values["ev_kw"] = None
         self.stats.observe(now, values, self.zone)
+        self.stats.battery.configure(config, self.mappings)
+        self.stats.battery.observe(now, snapshot, config["has_battery"] and config["battery_learning"])
+        battery_quality = self.stats.battery.quality(config, now)
+        if self.stats.battery.model(config, now) != self.plan.get("battery_model"):
+            self.force_plan = True
         if config["has_solar"]:
             raw_solar = self.with_nights(aggregate_solar(list(self.entry.options.get("solar_sources", [])), self.solar_caches, config, now, self.zone), now)
         else:
@@ -366,6 +386,7 @@ class NRGRuntime(DataUpdateCoordinator):
                                "ev_control": config["has_ev"] and config["ev_control"], "battery_control": config["has_battery"] and config["battery_control"]},
                 "house_observations": sum(h.get("house_kwh") is not None for h in self.stats.hours),
                 "ev_sessions": len(self.stats.ev_sessions), "controller": self.controller.status,
+                "battery_calibration": battery_quality,
                 "ev_energy_estimate": self.stats.ev_estimate(config["ev_kwh_per_percent"]) if config["ev_learning"] else config["ev_kwh_per_percent"],
                 "ev_power_estimate": self.stats.ev_power(model_config["ev_kw_at_max"], model_config["ev_max_amps"]) if config["ev_learning"] else model_config["ev_kw_at_max"],
                 "mode": config["mode"], "charge_now": self.charge_now,

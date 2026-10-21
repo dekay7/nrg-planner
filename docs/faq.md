@@ -100,7 +100,10 @@ The bundled handbook needs no external assets. See [privacy](../PRIVACY.md).
 NRG uses the fallback assumptions until enough well-covered observations exist.
 Solar calibration starts after six valid daylight hours; EV calibration needs
 qualifying charging sessions; household learning builds from covered hours over
-time. Each switch can be turned off independently. **Reset learning** clears
+time. Optional battery calibration needs three covered, substantial closed-SOC cycles
+for efficiency and three sustained opportunities per power direction. It may take
+longer—or retain fallbacks—if normal operation does not provide those opportunities.
+It does not estimate battery health. Each switch can be turned off independently. **Reset learning** clears
 profiles and calibration while keeping settings and the measured-cost ledger.
 See [learning](learning.md) for the exact requirements.
 

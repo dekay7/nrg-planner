@@ -287,7 +287,8 @@ def household_advice(slots, ev, actions, initial, config, capacity, terminal, av
 
 
 def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous=None, charge_now=False):
-    config = config | {"zone": zone}
+    battery_model = stats.battery.model(config, now)
+    config = config | battery_model | {"zone": zone}
     previous = previous or {}
     managed_ev = config["has_ev"] and config["ev_control"]
     due = deadline(now, config, zone, telemetry, previous) if managed_ev else now + 48 * 3600
@@ -409,6 +410,7 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
             "ev_stop_at": first["start"] + first["ev_kwh"] / (power * first["ev_amps"] / config["ev_max_amps"]) * 3600 if first["ev_amps"] else None,
             "battery_action": first["battery_action"], "battery_reason": battery_reason, "battery_forecast_available": available,
             "battery_target_soc": first["battery_soc"], "effective_capacity_kwh": capacity,
+            "battery_model": battery_model,
             "terminal_value": terminal, "selected_candidate": best["name"],
              "candidate_costs": [{"name": o["name"], "modeled_cost": round(o["score"], 4) if has_known_cost else None, "shortfall_kwh": o["missing"]} for o in outcomes],
              "modeled_cost": best["score"] if has_known_cost else None, "household": advice, "slots": slots,
