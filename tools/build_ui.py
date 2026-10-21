@@ -35,6 +35,18 @@ def markdown(content):
     return {"type": "markdown", "content": content}
 
 
+def handbook_button(name):
+    return {
+        "type": "button",
+        "name": name,
+        "show_icon": False,
+        "tap_action": {
+            "action": "url",
+            "url_path": "/nrg-planner/guide.html",
+        },
+    }
+
+
 def handbook():
     """One locally hosted, responsive handbook; no scripts or external assets."""
     chapters = [
@@ -421,15 +433,15 @@ Normal comfort comes first. Appliance advice never starts a device. Any enabled 
 Solid forecast lines are a published outlook, not a settled bill. Dashed lines are tentative estimates. Missing data is never treated as free electricity.
 
 The administrator can change the reference appliance, rates, schedules and reserve in Energy Settings.
-
-[Open the complete household handbook](/nrg-planner/guide.html)""")], [timeline(), battery_forecast_note(), grid([
+""") , handbook_button("Open the complete household handbook")], [timeline(), battery_forecast_note(), grid([
         conditional("battery_control", metric("battery_action")), conditional("has_battery", metric("available_energy")),
         conditional("ev_control", metric("ev_shortfall")), conditional("has_solar", metric("source_health"))])]])]}
     config_link = {"type": "button", "name": "Open NRG Planner configuration", "show_icon": False,
                    "tap_action": {"action": "navigate", "navigation_path": "/config/integrations/integration/nrg"},
                    "grid_options": {"rows": 1}}
     admin_views = [settings_view("Operation", "operation", [[heading("Planner controls"),
-        markdown("Enable only the components this home has, and choose separately whether NRG may control them.\n\n[Household handbook and settings reference](/nrg-planner/guide.html)"),
+        markdown("Enable only the components this home has, and choose separately whether NRG may control them."),
+        handbook_button("Household handbook and settings reference"),
         setting_card("mode"),
         {"type": "entities", "show_header_toggle": False, "entities": [{"entity":"button.nrg_refresh","name":"Refresh forecasts"}]},
         conditional("ev_control", {"type": "vertical-stack", "cards": [

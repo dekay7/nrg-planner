@@ -15,10 +15,16 @@ views:
         columns: full
         rows: auto
     - type: markdown
-      content: 'Enable only the components this home has, and choose separately whether NRG may control them.
-
-
-        [Household handbook and settings reference](/nrg-planner/guide.html?v=7bd4cfa16cc5)'
+      content: Enable only the components this home has, and choose separately whether NRG may control them.
+      grid_options:
+        columns: full
+        rows: auto
+    - type: button
+      name: Household handbook and settings reference
+      show_icon: false
+      tap_action:
+        action: url
+        url_path: /nrg-planner/guide.html?v=8056065e5328
       grid_options:
         columns: full
         rows: auto

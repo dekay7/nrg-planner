@@ -83,11 +83,21 @@ console.log(JSON.stringify(input.plans.map(plan=>run({attributes:{plan}}))));"""
     assert blocked_points == []
 
 
-def test_handbook_links_bypass_ha_month_long_static_cache_after_updates():
+def test_handbook_links_open_as_direct_urls_and_bypass_static_cache():
     digest=hashlib.sha256((INTEGRATION/"assets/guide.html").read_bytes()).hexdigest()[:12]
-    for filename in ("nrg-home.yaml","nrg-settings.yaml"):
-        text=(INTEGRATION/"dashboards"/filename).read_text()
-        assert "/nrg-planner/guide.html?v="+digest in text
+    links = {
+        "nrg-home.yaml": "Open the complete household handbook",
+        "nrg-settings.yaml": "Household handbook and settings reference",
+    }
+    for filename, label in links.items():
+        dashboard = yaml.safe_load((INTEGRATION/"dashboards"/filename).read_text())
+        matches = [item for item in walk(dashboard) if item.get("name") == label]
+        assert len(matches) == 1
+        assert matches[0]["type"] == "button"
+        assert matches[0]["tap_action"] == {
+            "action": "url",
+            "url_path": "/nrg-planner/guide.html?v=" + digest,
+        }
 
 
 class HandbookParser(HTMLParser):

@@ -1087,6 +1087,7 @@ measurement mismatch; do not assume one manufacturer's defaults apply to your ho
 <li><a href="#learning-solar-forecast-calibration">Solar forecast calibration</a></li>
 <li><a href="#learning-calibrate-ev-charging-estimates">Calibrate EV charging estimates</a></li>
 <li><a href="#learning-learn-household-demand">Learn household demand</a></li>
+<li><a href="#learning-future-battery-learning">Future battery learning</a></li>
 <li><a href="#learning-solar-alternative-weight">Solar alternative weight</a></li>
 <li><a href="#learning-resetting-or-disabling-learning">Resetting or disabling learning</a></li>
 </ul>
@@ -1147,6 +1148,13 @@ After three matching observations, weekdays/weekends can have their own profile.
 reserves more energy for those evenings. An unfamiliar hour still uses your fallback.
 It predicts patterns rather than identifying individual appliances or controlling
 comfort settings. Turning learning off uses your explicit house-demand estimate.</p>
+<h3 id="learning-future-battery-learning">Future battery learning</h3>
+<p>Not implemented yet: NRG could learn effective round-trip efficiency from well-covered
+charge/discharge cycles, comparing measured AC energy in and out when the battery
+returns near its starting SOC. It could also learn usable AC kWh per SOC percentage
+point from covered discharge intervals. Both estimates would require enough consistent
+observations; NRG would retain the configured efficiency and capacity assumptions as
+fallbacks until then.</p>
 <h3 id="learning-solar-alternative-weight">Solar alternative weight</h3>
 <p><strong>Purpose:</strong> combine multiple estimates for the <strong>same physical panels</strong> without
 counting their electricity twice.</p>

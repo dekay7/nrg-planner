@@ -79,6 +79,15 @@ reserves more energy for those evenings. An unfamiliar hour still uses your fall
 It predicts patterns rather than identifying individual appliances or controlling
 comfort settings. Turning learning off uses your explicit house-demand estimate.
 
+## Future battery learning
+
+Not implemented yet: NRG could learn effective round-trip efficiency from well-covered
+charge/discharge cycles, comparing measured AC energy in and out when the battery
+returns near its starting SOC. It could also learn usable AC kWh per SOC percentage
+point from covered discharge intervals. Both estimates would require enough consistent
+observations; NRG would retain the configured efficiency and capacity assumptions as
+fallbacks until then.
+
 ## Solar alternative weight
 
 **Purpose:** combine multiple estimates for the **same physical panels** without
