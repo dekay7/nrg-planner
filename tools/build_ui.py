@@ -542,7 +542,7 @@ Includes remaining-energy value and any configured cycling cost. This is a model
         status_card("measurement_quality", "Local measurement quality"), metric("power_balance")]]))
     package = {"lovelace": {"dashboards": {
         "nrg-home": {"mode": "yaml", "title": "NRG Planner", "icon": "mdi:home-lightning-bolt", "show_in_sidebar": True, "require_admin": False, "filename": "custom_components/nrg/dashboards/nrg-home.yaml"},
-        "nrg-settings": {"mode": "yaml", "title": "NRG Planner settings", "icon": "mdi:lightning-bolt", "show_in_sidebar": True, "require_admin": True, "filename": "custom_components/nrg/dashboards/nrg-settings.yaml"}}},
+        "nrg-settings": {"mode": "yaml", "title": "NRG Planner settings", "icon": "mdi:crystal-ball", "show_in_sidebar": True, "require_admin": True, "filename": "custom_components/nrg/dashboards/nrg-settings.yaml"}}},
         "recorder": {"exclude": {"entities": ["sensor.nrg_plan", "sensor.nrg_source_health", "sensor.nrg_observations", "sensor.nrg_advice"]}}}
     write_yaml(INTEGRATION / "dashboard-package.yaml", package)
     text = json.dumps(translations(), indent=2, ensure_ascii=False) + "\n"

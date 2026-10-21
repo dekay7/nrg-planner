@@ -34,6 +34,7 @@ def test_homeowner_dashboard_contains_only_read_metrics_and_accessible_links():
     package = yaml.safe_load((INTEGRATION / "dashboard-package.yaml").read_text())
     assert package["lovelace"]["dashboards"]["nrg-home"]["require_admin"] is False
     assert package["lovelace"]["dashboards"]["nrg-settings"]["require_admin"] is True
+    assert package["lovelace"]["dashboards"]["nrg-settings"]["icon"] == "mdi:crystal-ball"
 
 
 async def test_dashboard_entities_exist_and_all_tuning_has_help(hass, installed):

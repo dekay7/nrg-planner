@@ -11,7 +11,7 @@ lovelace:
     nrg-settings:
       mode: yaml
       title: NRG Planner settings
-      icon: mdi:lightning-bolt
+      icon: mdi:crystal-ball
       show_in_sidebar: true
       require_admin: true
       filename: custom_components/nrg/dashboards/nrg-settings.yaml
