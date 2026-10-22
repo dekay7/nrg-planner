@@ -55,6 +55,7 @@ METRICS = {
     "control_status": ("Control status", None, None),
     "plan": ("Energy plan", None, None),
     "source_health": ("Forecast source health", None, None),
+    "pricing_health": ("Pricing health", None, None),
     "observations": ("Forecast observations", None, None),
     "components": ("Configured components", None, None),
     "tariff_status": ("Pricing schedule coverage", None, None),
@@ -153,12 +154,14 @@ class NRGSensor(NRGEntity, SensorEntity):
             return "Connection unknown"
         if key == "ev_status":
             return {"not_installed": "Not installed", "monitor_only": "Monitoring only", "unplugged": "Plug in at home", "telemetry_missing": "Waiting for vehicle data", "ready": "Ready",
-                    "blocked": "Waiting for vehicle controls or native event",
+                    "blocked": "Waiting for vehicle controls or native event", "fallback_paused": "Price-data fallback · charging paused",
                     "charge_now": "Immediate charging requested", "deadline": "Charging for departure", "charging": "Scheduled charging", "waiting": "Waiting for planned hours"}.get(planned.get(key), "Waiting for plan")
         if key == "control_status":
             return self.coordinator.controller.status
         if key == "plan":
             return planned.get("selected_candidate", "stale")
+        if key == "pricing_health":
+            return data.get("fallback", {}).get("state", "Degraded")
         if key == "source_health":
             if not self.coordinator.config["has_solar"]:
                 return "Solar not installed"
@@ -192,6 +195,11 @@ class NRGSensor(NRGEntity, SensorEntity):
             return plan.get("household", {}) | {"operating_mode": self.coordinator.config["mode"]}
         if self.key == "battery_action":
             return {"reason": plan.get("battery_reason"), "target_soc": plan.get("battery_target_soc"), "export_capability": plan.get("export_capability")}
+        if self.key == "pricing_health":
+            return data.get("fallback", {}) | {"device_results": self.coordinator.controller.fallback_results,
+                "control_status": self.coordinator.controller.status,
+                "operating_mode": self.coordinator.config["mode"],
+                "departure_at_risk": bool(plan.get("ev_shortfall_kwh"))}
         if self.key == "source_health":
             return {"sources": data.get("solar", {}).get("sources", []), "status": data.get("forecast_status", {}),
                     "solar_calibration": data.get("solar_quality", {}), "mappings": self.coordinator.mappings}

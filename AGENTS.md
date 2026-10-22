@@ -6,3 +6,4 @@
 - Use invented fixtures. Keep credentials and household data out of source, logs, and commits.
 - Regenerate UI, translations, dashboards, and handbook with `python -B tools/build_ui.py`; do not hand-edit generated files.
 - Publish releases only when explicitly requested. Keep version values aligned and never move published tags.
+- Prioritize a simple, coherent user experience: organize features appropriately, use clear and consistent labels, and review usability with each change.

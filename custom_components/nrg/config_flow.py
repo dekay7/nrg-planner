@@ -8,7 +8,7 @@ from homeassistant.core import callback
 from homeassistant.helpers import entity_registry as er, selector
 
 from .config import settings, validate, validate_sources
-from .const import DOMAIN, MAPPINGS, SETTINGS, CONTROL_VALUES, COMMAND_SCRIPTS, WEEKDAYS, OPTIONAL_RATES
+from .const import DOMAIN, MAPPINGS, SETTINGS, CONTROL_VALUES, COMMAND_SCRIPTS, WEEKDAYS, OPTIONAL_RATES, option_label
 from .tariffs import schedule_complete
 
 
@@ -18,12 +18,14 @@ def fields(section, options):
     for key, field in SETTINGS.items():
         if field.section != section:
             continue
+        if section == "fallback_actions" and not (values["has_" + key.removeprefix("fallback_")] and values[key.removeprefix("fallback_") + "_control"]):
+            continue
         marker = vol.Optional(key, description={"suggested_value": values[key]}) if values[key] is not None else vol.Optional(key)
         if field.kind == "number":
             control = selector.NumberSelector(selector.NumberSelectorConfig(min=field.low, max=field.high,
                 step=field.step, mode=selector.NumberSelectorMode.BOX, unit_of_measurement=field.unit))
         elif field.kind == "select":
-            control = selector.SelectSelector(selector.SelectSelectorConfig(options=list(field.choices), mode=selector.SelectSelectorMode.DROPDOWN))
+            control = selector.SelectSelector(selector.SelectSelectorConfig(options=[{"value": value, "label": option_label(key, value)} for value in field.choices], mode=selector.SelectSelectorMode.DROPDOWN))
         elif field.kind == "date":
             control = selector.DateSelector()
         elif field.kind == "time":
@@ -129,7 +131,10 @@ class NRGConfigFlow(ConfigFlow, domain=DOMAIN):
 class NRGOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input=None):
         config = settings(self.config_entry.options)
-        menu = ["components", "operation", "tariff", "pricing_periods"]
+        menu = ["components", "operation"]
+        if config["has_ev"] or config["has_battery"]:
+            menu.append("fallback")
+        menu += ["tariff", "pricing_periods"]
         menu += [name for name in ("solar", "battery", "ev") if config["has_" + name]]
         menu += ["planning", "notifications", "mappings", "measurements"]
         if config["has_ev"] or config["has_battery"]:
@@ -167,6 +172,36 @@ class NRGOptionsFlow(OptionsFlow):
 
     async def async_step_operation(self, user_input=None):
         return await self.section("operation", user_input)
+
+    async def async_step_fallback(self, user_input=None):
+        errors = {}
+        if user_input is not None:
+            try:
+                options = checked(self.hass, dict(self.config_entry.options) | user_input)
+                if settings(options)["price_fallback"] == "Custom fallback":
+                    self._fallback_options = options
+                    return await self.async_step_fallback_actions()
+                return self.async_create_entry(title="", data=options)
+            except ValueError as error:
+                errors["base"] = "invalid_settings"
+                self._error = str(error)
+        return self.async_show_form(step_id="fallback", data_schema=fields("fallback", self.config_entry.options),
+                                    errors=errors, last_step=False, description_placeholders={"error": getattr(self, "_error", "")})
+
+    async def async_step_fallback_actions(self, user_input=None):
+        options = getattr(self, "_fallback_options", dict(self.config_entry.options))
+        schema = fields("fallback_actions", options)
+        visible = {marker.schema for marker in schema.schema}
+        if user_input is not None or not visible:
+            try:
+                changes = {key: value for key, value in (user_input or {}).items() if key in visible}
+                result = checked(self.hass, options | changes)
+                return self.async_create_entry(title="", data=result)
+            except ValueError as error:
+                return self.async_show_form(step_id="fallback_actions", data_schema=schema, last_step=True,
+                    errors={"base": "invalid_settings"}, description_placeholders={"error": str(error)})
+        return self.async_show_form(step_id="fallback_actions", data_schema=schema, last_step=True,
+                                    description_placeholders={"error": ""})
 
     async def async_step_components(self, user_input=None):
         return await self.section("components", user_input)

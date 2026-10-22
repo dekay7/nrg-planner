@@ -48,6 +48,7 @@ async def async_setup_entry(hass, entry):
 
     async def execute(now):
         await runtime.controller.apply()
+        runtime.async_update_listeners()  # Publish readbacks without postponing price polling.
 
     async def options_updated(hass, updated_entry):
         runtime.revision += 1

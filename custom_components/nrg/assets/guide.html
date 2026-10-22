@@ -479,6 +479,7 @@ the graphs, <a href="#faq">common questions</a> for typical decisions, or
 <a href="#troubleshooting">troubleshooting</a> if an expected reading is missing.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="homeowner-guide" aria-label="Read the dashboard"><h2 id="homeowner-guide-reading-nrg-planner">Reading NRG Planner</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Read the dashboard topics"><div class="toc">
 <ul>
 <li><a href="#homeowner-guide-electricity-price-now">Electricity price now</a></li>
+<li><a href="#homeowner-guide-pricing-health-and-missing-price-protection">Pricing health and missing-price protection</a></li>
 <li><a href="#homeowner-guide-the-recommendation">The recommendation</a></li>
 <li><a href="#homeowner-guide-current-power-flow-the-sankey-diagram">Current power flow: the Sankey diagram</a></li>
 <li><a href="#homeowner-guide-only-the-equipment-this-home-has">Only the equipment this home has</a></li>
@@ -495,12 +496,30 @@ feeds. Supply and delivery are also shown separately so the total is explainable
 change at the configured boundaries. Solid forecast lines represent published
 outlooks; dashed lines are estimates. A gap means price information is missing,
 not that energy is free.</p>
+<h3 id="homeowner-guide-pricing-health-and-missing-price-protection">Pricing health and missing-price protection</h3>
+<ul>
+<li><strong>Healthy:</strong> current import pricing is usable.</li>
+<li><strong>Degraded:</strong> a fetch failed or some current pricing is unusable. A usable cached
+  price may still be used; this status alone does not mean custom fallback began.</li>
+<li><strong>Fallback:</strong> the administrator's selected missing-price actions apply. In
+  <strong>Observation</strong>, the banner explicitly describes a proposal and no equipment
+  commands are sent.</li>
+<li><strong>Recovering:</strong> fresh prices returned, but fallback stays active while recovery
+  is confirmed and a new plan is prepared.</li>
+</ul>
+<p>These are pricing-data states, not reports of a power outage or unusually high
+prices. The administrator configures actions and checks device results on
+<strong>Energy Settings → Price-data fallback</strong>. An active policy does not prove every
+command succeeded. A manual request persists until ended; fresh prices alone do
+not end that request. See <a href="#operations-price-data-fallback">fallback operation</a>.</p>
 <h3 id="homeowner-guide-the-recommendation">The recommendation</h3>
 <ul>
 <li><strong>Good time to use energy:</strong> now is among the better modeled opportunities.</li>
 <li><strong>Use energy as usual:</strong> shifting the reference task is not worth the difference.</li>
 <li><strong>Wait until …:</strong> a sufficiently cheaper complete window is available.</li>
 <li><strong>Waiting for dependable coverage:</strong> the information cannot support a full comparison.</li>
+<li><strong>Price-data fallback active:</strong> economic advice is paused; review the selected
+  device baseline rather than assuming a price-based schedule.</li>
 </ul>
 <p>The green segment marks a recommended window for the administrator's reference
 appliance, initially <strong>1 kWh over one hour</strong>. The benefit concerns that task, not
@@ -529,7 +548,9 @@ separately.</p>
 <p>With NRG EV control enabled, planned start/readiness aim for the selected limit by
 departure. The vehicle target is never raised by NRG. A shortfall means the model
 cannot meet that target under current assumptions. The administrator can use
-charge-now or a one-off departure override.</p>
+charge-now or a one-off departure override. An explicitly selected missing-price
+EV pause can leave the car below its target at departure; Charge now can override
+that pause, but not equipment protection checks.</p>
 <p>Battery percentage is measured. Available kWh uses the configured age-adjusted
 capacity and reserve, rather than claiming a measured battery-health test.</p>
 <p>While Observation is selected, schedules are proposals. Devices may currently be
@@ -559,6 +580,11 @@ dashboard has no equipment or configuration controls.</p><p class="back"><a href
 <li><a href="#operations-transfer-equipment-control">Transfer equipment control</a></li>
 <li><a href="#operations-everyday-controls">Everyday controls</a></li>
 <li><a href="#operations-missing-data">Missing data</a></li>
+<li><a href="#operations-price-data-fallback">Price-data fallback</a><ul>
+<li><a href="#operations-detection-and-recovery">Detection and recovery</a></li>
+<li><a href="#operations-verify-the-result">Verify the result</a></li>
+</ul>
+</li>
 <li><a href="#operations-recovery">Recovery</a></li>
 </ul>
 </div>
@@ -609,6 +635,90 @@ charge-now can operate without price data when EV checks pass. Battery failures
 are reported independently of EV execution, including when revoking a stale plan.
 Battery readiness, charge target, reserve, and EV activity are rechecked before
 each charging/discharging request. Shutdown blocks new equipment requests.</p>
+<h3 id="operations-price-data-fallback">Price-data fallback</h3>
+<p>Open <strong>Configure → Price-data fallback</strong>, or the <strong>Price-data fallback</strong> dashboard
+page. Choose <strong>Use my fallback actions</strong>, then review the device actions on the
+next screen. Only devices installed and enabled for NRG control have action
+choices; other saved choices are retained, not reset. Enable permissions on
+<strong>Components</strong> and keep <strong>Operation → Observation</strong> selected while reviewing.</p>
+<p>The default is <strong>Standard protection (default)</strong>. This is not an all-charging-off
+setting: it keeps normal guarded planner rules, including EV departure charging
+at potentially unknown prices. <strong>Use my fallback actions</strong> instead applies your
+chosen baseline automatically when current prices become unusable. Saving that
+choice does not start a manual request or enable equipment control. <strong>Saving can
+apply your actions immediately</strong> if prices are already unusable and Control is
+authorized. The dashboard routes policy changes through the guided configuration
+so you can review device actions before saving; edits to device actions on the
+dashboard take effect immediately if fallback is active. Neither policy sends
+commands in Observation or overrides configured grid, protection,
+or external-owner guards.</p>
+<p>Choose the baseline for each device:</p>
+<ul>
+<li><strong>EV: Pause scheduled charging</strong> stops scheduled charging, even if that risks
+  departure readiness. <strong>Charge for departure (price unknown)</strong> uses the remaining
+  charging opportunities and may buy energy at an unknown price. It is not a
+  completion guarantee. <strong>Charge now</strong>
+  explicitly overrides the fallback pause; connection, target and current checks
+  still apply.</li>
+<li><strong>Battery: Save battery energy</strong> holds stored energy. <strong>Power home above reserve
+  (self-consumption)</strong> lets the battery supply the home above backup reserve. Both revoke grid charging where
+  supported. Fallback never lowers the device's reserve, requests forced exports,
+  or intentionally supplies the EV when Preserve battery during EV charging is on.
+  Native protections remain responsible for instantaneous electrical behavior.</li>
+</ul>
+<p>For a conservative unknown-price response, choose <strong>Pause scheduled charging</strong>
+and <strong>Power home above reserve (self-consumption)</strong>. Choose <strong>Save battery energy</strong>
+instead when retaining backup energy matters more. These use the existing battery
+reserve and Preserve battery during EV charging settings; there are no separate
+fallback copies to keep in sync. A pricing outage is not evidence of high prices or a grid
+outage, and neither policy guarantees the lowest eventual bill.</p>
+<h4 id="operations-detection-and-recovery">Detection and recovery</h4>
+<p><strong>Pricing health</strong> distinguishes Healthy, Degraded, Fallback, and Recovering.
+A failed live fetch is Degraded while the current observation is still usable.
+Automatic fallback starts when current supply or delivery pricing is missing,
+stale or invalid. ComEd live observations must be less than 15 minutes old <strong>and
+belong to the current hour</strong>. Published/learned estimates do not substitute for a
+missing ComEd live price. Missing tomorrow forecasts alone do not activate it;
+configured flat/time-of-use rates do not depend on ComEd.</p>
+<p>Automatic recovery requires valid observations spanning at least two minutes;
+live sources must supply a distinct observation, not just repeated reads of the
+same cache. A fresh plan is required before normal dispatch resumes. Old charging
+settings are not blindly restored. The fallback outlook assumes the selected
+baseline continues until recovery; it is not a prediction of outage duration.</p>
+<p><strong>Start manual fallback now</strong> uses the selected baseline immediately, without
+waiting for cached prices to expire. It is shown only with <strong>Use my fallback
+actions</strong> and requires confirmation. The request stays saved across restarts and
+price recovery until <strong>End manual fallback request</strong> is pressed. Ending the
+manual request does not force normal operation while automatic fallback or its
+recovery checks still apply. A saved manual request can also be ended after
+switching to Standard protection; otherwise it can resume when fallback is
+selected again.
+Automatic fallback is reevaluated from current data after restart; saved settings,
+learning and the cost ledger are preserved. Charge now remains session-only.</p>
+<h4 id="operations-verify-the-result">Verify the result</h4>
+<p>Pricing health attributes show observation timestamps/ages, missing components,
+selected policies, manual/charge-now overrides and per-device command results.
+An acknowledged mode is not proof of measured power delivery. If a device fails,
+the other device is still attempted; unavailable controls cannot be bypassed by a
+fallback policy. An unmapped reserve/export control must be configured appropriately
+in the equipment itself. Do not map a forced-export mode to self-consumption.
+Command scripts must apply only the requested action and honor readback. During
+fallback their <code>reserve_soc</code> context retains a higher reported native reserve
+(or is unknown if that feedback is invalid), and <code>export_policy</code> is capped to
+Solar only or No exports; neither is permission to invent a missing control.</p>
+<p>The Price-data fallback page separates policy selection, device actions, status
+and manual requests, and links to optional alerts. Observation banners explicitly
+describe a proposal, not executed equipment actions. Operation keeps everyday
+mode/EV overrides and links to this page.</p>
+<p>Under <strong>Notifications</strong>, <strong>Household advice messages</strong> and <strong>Price-data fallback
+alerts</strong> are separate opt-ins. The minimum benefit applies only to household
+advice; it does not suppress price-data alerts. Both use the selected notification
+services and shared quiet hours, with a five-minute fallback transition-alert
+cooldown. Select at least one notification service to receive messages. Alert
+permission does not enable fallback or equipment control, and dashboard visibility
+needs no notification permission.
+Missing prices remain unknown in cost accounting and are never filled with a
+made-up emergency rate or claimed savings.</p>
 <h3 id="operations-recovery">Recovery</h3>
 <p>Use an HA backup and a previously reviewed component version when recovering from
 an update. Backups may contain private settings and measurements. Keep them out of
@@ -1295,6 +1405,15 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <li><a href="#settings-operating-mode">Operating mode</a></li>
 </ul>
 </li>
+<li><a href="#settings-price-data-fallback">Price-data fallback</a><ul>
+<li><a href="#settings-when-current-prices-are-unavailable">When current prices are unavailable</a></li>
+</ul>
+</li>
+<li><a href="#settings-fallback-device-actions">Fallback device actions</a><ul>
+<li><a href="#settings-ev-action-when-prices-are-unavailable">EV action when prices are unavailable</a></li>
+<li><a href="#settings-battery-action-when-prices-are-unavailable">Battery action when prices are unavailable</a></li>
+</ul>
+</li>
 <li><a href="#settings-tariff">Tariff</a><ul>
 <li><a href="#settings-supply-plan">Supply plan</a></li>
 <li><a href="#settings-flat-supply-rate">Flat supply rate</a></li>
@@ -1350,7 +1469,8 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 </li>
 <li><a href="#settings-notifications">Notifications</a><ul>
 <li><a href="#settings-send-household-advice-notifications">Send household advice notifications</a></li>
-<li><a href="#settings-minimum-notification-benefit">Minimum notification benefit</a></li>
+<li><a href="#settings-minimum-benefit-for-household-advice">Minimum benefit for household advice</a></li>
+<li><a href="#settings-send-price-data-fallback-alerts">Send price-data fallback alerts</a></li>
 <li><a href="#settings-notification-quiet-hours-start">Notification quiet hours start</a></li>
 <li><a href="#settings-notification-quiet-hours-end">Notification quiet hours end</a></li>
 </ul>
@@ -1396,6 +1516,25 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <p>Observation calculates without equipment commands. Control authorizes only the components you enabled for NRG control. Switching to Observation does not restore settings already saved in your equipment.</p>
 <p>Choices: <strong>Observation</strong>, <strong>Control</strong>.</p>
 <p>Reference key: <code>mode</code>.</p>
+<h3 id="settings-price-data-fallback">Price-data fallback</h3>
+<p>Choose the protection policy under Configure → Price-data fallback. This is separate from equipment permissions and operating mode.</p>
+<h4 id="settings-when-current-prices-are-unavailable">When current prices are unavailable</h4>
+<p>Default: <strong>Standard protection (default)</strong>.</p>
+<p>Standard protection keeps the normal planner rules: no discretionary battery use without dependable prices, but EV charging may continue to meet departure. Use my fallback actions instead applies the device actions you review before saving. If prices are already unusable and Control is authorized, saving can apply them immediately. A failed fetch alone does not trigger those actions while the current price is still usable. Neither choice enables device control or overrides Observation or protection guards.</p>
+<p>Choices: <strong>Standard protection (default)</strong>, <strong>Use my fallback actions</strong>.</p>
+<p>Reference key: <code>price_fallback</code>.</p>
+<h3 id="settings-fallback-device-actions">Fallback device actions</h3>
+<p>The next screen after choosing Use my fallback actions shows only devices enabled for NRG control. Hidden choices are retained, not reset. The dashboard groups these settings on its Price-data fallback page.</p>
+<h4 id="settings-ev-action-when-prices-are-unavailable">EV action when prices are unavailable</h4>
+<p>Default: <strong>Pause scheduled charging</strong>.</p>
+<p>Used only with Use my fallback actions and EV control enabled. Pause scheduled charging can leave the car below its target at departure. Charge for departure uses the available charging window and may buy at an unknown price; it is not a completion guarantee. Charge now explicitly overrides the pause, but not equipment checks.</p>
+<p>Choices: <strong>Pause scheduled charging</strong>, <strong>Charge for departure (price unknown)</strong>.</p>
+<p>Reference key: <code>fallback_ev</code>.</p>
+<h4 id="settings-battery-action-when-prices-are-unavailable">Battery action when prices are unavailable</h4>
+<p>Default: <strong>Save battery energy</strong>.</p>
+<p>Used only with Use my fallback actions and battery control enabled. Save battery energy holds stored energy for later. Power home above reserve requests self-consumption, not forced export. Both turn off grid charging where supported, retain a higher native reserve, and respect protection guards. Preserve battery during EV charging still takes priority.</p>
+<p>Choices: <strong>Save battery energy</strong>, <strong>Power home above reserve (self-consumption)</strong>.</p>
+<p>Reference key: <code>fallback_battery</code>.</p>
 <h3 id="settings-tariff">Tariff</h3>
 <p>Set your supply, delivery, and export pricing. For timed rates, use <a href="#pricing-editing-timed-periods-in-ha">Pricing periods</a>.</p>
 <h4 id="settings-supply-plan">Supply plan</h4>
@@ -1584,16 +1723,20 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <p>Accepted range: <strong>0 to 50 ¢/kWh</strong>; adjustable in increments of <strong>0.1 ¢/kWh</strong>.</p>
 <p>Reference key: <code>battery_wear_cents</code>.</p>
 <h3 id="settings-notifications">Notifications</h3>
-<p>Advice messages are opt-in. Select existing notify services in Configure → Notifications.</p>
+<p>Household advice and price-data fallback alerts are independently opt-in. Both use the notification services and quiet hours in Configure → Notifications; only advice uses the minimum-benefit threshold.</p>
 <h4 id="settings-send-household-advice-notifications">Send household advice notifications</h4>
 <p>Default: <strong>Off</strong>.</p>
 <p>Opt in to stable, worthwhile wait-until recommendations. Choose notify services in Configure → Notifications. Notifications do not command equipment.</p>
 <p>Reference key: <code>notifications</code>.</p>
-<h4 id="settings-minimum-notification-benefit">Minimum notification benefit</h4>
+<h4 id="settings-minimum-benefit-for-household-advice">Minimum benefit for household advice</h4>
 <p>Default: <strong>25 ¢</strong>.</p>
-<p>Notify only when delaying the reference appliance is expected to save at least this amount and the recommendation stays stable for two minutes.</p>
+<p>Applies only to household advice notifications, not price-data fallback messages. Notify when delaying the reference appliance is expected to save at least this amount and the advice stays stable for two minutes.</p>
 <p>Accepted range: <strong>0 to 1000 ¢</strong>; adjustable in increments of <strong>1 ¢</strong>.</p>
 <p>Reference key: <code>notification_saving_cents</code>.</p>
+<h4 id="settings-send-price-data-fallback-alerts">Send price-data fallback alerts</h4>
+<p>Default: <strong>Off</strong>.</p>
+<p>Optional entry and recovery alerts for Use my fallback actions, independent of household advice notifications and their savings threshold. Both message types share the selected notification services and quiet hours. This switch does not enable fallback or equipment control. Observation alerts describe a proposal, not equipment execution.</p>
+<p>Reference key: <code>fallback_notifications</code>.</p>
 <h4 id="settings-notification-quiet-hours-start">Notification quiet hours start</h4>
 <p>Default: <strong>21:00:00</strong>.</p>
 <p>Local start of quiet hours. Advice remains available on the dashboard.</p>

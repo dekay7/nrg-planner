@@ -72,9 +72,16 @@ class Adapters:
                 raise RuntimeError(f"{key}: requested value is outside configured/device bounds")
         script = self.script(key, action)
         if script:
+            reserve, export = self.runtime.config["backup_reserve"], self.runtime.config["export_policy"]
+            if getattr(self.runtime, "_fallback_active", False):
+                native = self.state("battery_reserve")
+                if native is not None:
+                    current = finite(native.state)
+                    reserve = max(reserve, current) if current is not None else None
+                export = "No exports" if export == "No exports" else "Solar only"
             await self.hass.services.async_call("script", script.split(".", 1)[1],
                 {"value": value, "action": action, "target_soc": self.runtime.plan.get("battery_target_soc"),
-                 "reserve_soc": self.runtime.config["backup_reserve"], "export_policy": self.runtime.config["export_policy"]}, blocking=True)
+                 "reserve_soc": reserve, "export_policy": export}, blocking=True)
             return
         domain = state.entity_id.split(".")[0]
         if domain in ("number", "input_number"):

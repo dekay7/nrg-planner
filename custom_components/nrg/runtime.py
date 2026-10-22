@@ -18,6 +18,7 @@ from .adapters import Adapters
 from .tariffs import usd_price, external_intervals
 from .control import Controller
 from .forecast import aggregate_solar, parse_comed, price_at, solar_response, known_nights
+from .fallback import PriceFallback, KNOWN_SOURCES, live_valid
 from .planner import plan
 from .statistics import Statistics
 
@@ -39,6 +40,10 @@ class NRGRuntime(DataUpdateCoordinator):
         self.last_fetch = 0
         self.forecast_status = {}
         self.charge_now = False
+        self.fallback = PriceFallback()
+        self.fallback_notice = None
+        self.last_fallback_notice = None
+        self.last_valid_prices = {}
         self.force_plan = True
         self.current_price_known = False
         self.live_export = None
@@ -69,10 +74,12 @@ class NRGRuntime(DataUpdateCoordinator):
         self.solar_caches = saved.get("solar", {})
         self.solar_signature = saved.get("solar_signature")
         self.delivered = saved.get("delivered", {})
+        self.fallback.manual = saved.get("manual_fallback") is True
 
     def persisted(self):
         return {"statistics": self.stats.export(), "prices": self.prices, "solar": self.solar_caches,
-                "solar_signature": self.solar_signature, "delivered": self.delivered}
+                "solar_signature": self.solar_signature, "delivered": self.delivered,
+                "manual_fallback": self.fallback.manual}
 
     async def close(self):
         self._closing = True
@@ -207,6 +214,8 @@ class NRGRuntime(DataUpdateCoordinator):
                 "native_ready": native, "guard_issues": guard_issues, "battery_controls_ready": battery_controls,
                 "battery_ready": config["has_battery"] and config["battery_control"] and native and battery_soc is not None and battery_controls,
                 "can_grid_charge": can_grid_charge, "can_set_export": adapters.can("battery_export", config["export_policy"]),
+                "battery_reserve_mapped": bool(self.mappings.get("battery_reserve")),
+                "battery_native_reserve": self.numeric("battery_reserve", low=0, high=100),
                 "local_connected": plugged, "ev_busy": ev_busy,
                 "home_basis": home_basis, "grid_basis": grid_basis,
                 "ev_data_basis": "Saved readings allowed while connected" if saved else "Recent reports required",
@@ -221,18 +230,92 @@ class NRGRuntime(DataUpdateCoordinator):
             state = self.state("live_supply", 900)
             value = finite(state.state) if state else None
             unit = state.attributes.get("unit_of_measurement") if state else None
-            if value is not None and unit in ("¢/kWh", "c/kWh", "cents/kWh", "USD/kWh", "$/kWh"):
+            hourly = self.config["supply_plan"] == "Hourly ComEd"
+            if (value is not None and live_valid(state.last_reported.timestamp(), time.time(), hourly=hourly)
+                    and unit in ("¢/kWh", "c/kWh", "cents/kWh", "USD/kWh", "$/kWh")):
                 supply = value / 100 if unit in ("¢/kWh", "c/kWh", "cents/kWh") else value
                 return supply if -10 <= supply <= 5 else None
             return None
-        if self.config["supply_plan"] == "Hourly ComEd" and self.live_cache and 0 <= time.time() - self.live_cache["time"] < 900:
+        if (self.config["supply_plan"] == "Hourly ComEd" and self.live_cache
+                and live_valid(self.live_cache["time"], time.time(), hourly=True)):
             return self.live_cache["supply"]
         return None
+
+    def evaluate_fallback(self, *, publish=False, allow_recovery=False):
+        """Recompute current prices even when a coordinator fetch/plan has stalled."""
+        now, config = time.time(), self.rate_context()
+        live = self.live_supply()
+        current = price_at(now, now, config, self.prices, live, self.stats.price_prior)
+        missing = [kind for kind in ("supply", "delivery")
+                   if current[kind + "_source"] not in KNOWN_SOURCES
+                   or kind == "supply" and config["supply_plan"] == "Hourly ComEd" and live is None]
+        observations = {}
+        token = []
+        for kind in ("supply", "delivery"):
+            source_key = kind + "_forecast" if current[kind + "_source"] == "external_forecast" and self.mappings.get(kind + "_forecast") else "live_" + kind
+            state = self.state(source_key, None)
+            external = config[kind + "_plan"].startswith("External") or config[kind + "_plan"] == "Hourly ComEd"
+            stamp = (state.last_reported.timestamp() if state else (
+                self.live_cache["time"] if kind == "supply" and config["supply_plan"] == "Hourly ComEd" and self.live_cache else None)) if external else None
+            identity = (kind, config[kind + "_plan"], self.mappings.get("live_" + kind), self.mappings.get(kind + "_forecast"))
+            if kind not in missing and stamp is not None:
+                self.last_valid_prices[identity] = stamp
+            valid_stamp = self.last_valid_prices.get(identity)
+            observations[kind] = {"source": current[kind + "_source"], "last_observation": stamp,
+                                  "last_valid_observation": valid_stamp,
+                                  "age_seconds": max(now - valid_stamp, 0) if valid_stamp is not None else None}
+            if current[kind + "_source"] in ("running_average", "external_live"):
+                token.append(stamp)
+        old_active = getattr(self, "_fallback_active", False)
+        enabled = config["price_fallback"] == "Custom fallback"
+        degraded = bool(config["supply_plan"] == "Hourly ComEd" and not self.mappings.get("live_supply")
+                        and self.forecast_status.get("live_price"))
+        active = self.fallback.update(now, enabled=enabled, known=current["price_known"],
+                                      degraded=degraded, observation=tuple(token) if token else now, allow_recovery=allow_recovery)
+        self._fallback_active = active
+        if active != old_active:
+            self.plan = {}
+            self.revision += 1
+            self.force_plan = True
+            self.fallback_notice = (active, "Price-data fallback activated" if active else "Price-data fallback released; a fresh plan is required")
+        result = {"state": self.fallback.state, "active": active, "enabled": enabled, "price_known": current["price_known"],
+                  "manual": self.fallback.manual, "missing": missing, "observations": observations,
+                  "recovery_since": self.fallback.recovery_since,
+                  "ev_policy": config["fallback_ev"], "battery_policy": config["fallback_battery"],
+                  "charge_now_override": active and self.charge_now,
+                  "reason": "Manual activation" if self.fallback.manual and active else
+                            "Missing, stale or invalid current pricing: " + ", ".join(missing) if missing else
+                            "Confirming stable fresh pricing" if active else
+                            "Live fetch failed; the current cached observation is still usable" if degraded else "Current import pricing is usable"}
+        if publish:
+            # Publishing a command-time check must not reset the coordinator's
+            # polling timer: the writer runs more often than the price poll.
+            self.data = (self.data or {}) | {"fallback": result, "plan": self.plan,
+                "price": current if current["price_known"] else None, "price_components": current}
+            self.async_update_listeners()
+            if active != old_active:
+                self.hass.async_create_task(self.async_request_refresh())
+        return result
+
+    async def set_manual_fallback(self, enabled):
+        if enabled and self.config["price_fallback"] != "Custom fallback":
+            raise HomeAssistantError("Choose Use my fallback actions in Configure → Price-data fallback before starting a manual request")
+        self.fallback.manual = enabled
+        # A manual release with usable prices still requires a fresh normal plan.
+        self.revision += 1
+        self.plan = {}
+        self.force_plan = True
+        await self.store.async_save(self.persisted())
+        self.evaluate_fallback(publish=True)
+        self.hass.async_create_task(self.async_request_refresh())
+        await self.controller.apply()
+        self.async_update_listeners()
 
     def rate_context(self):
         config = self.config | {"zone": self.zone}
         delivery = self.state("live_delivery", 900)
-        config["_delivery_live"] = usd_price(delivery.state, delivery.attributes.get("unit_of_measurement")) if delivery else None
+        config["_delivery_live"] = (usd_price(delivery.state, delivery.attributes.get("unit_of_measurement"))
+                                    if delivery and live_valid(delivery.last_reported.timestamp(), time.time()) else None)
         for component in ("supply", "delivery"):
             key = component + "_forecast"
             source = self.state(key, 36 * 3600) or self.state("live_" + component, 36 * 3600)
@@ -293,18 +376,28 @@ class NRGRuntime(DataUpdateCoordinator):
         if time.time() - self.last_fetch >= (300 if failed_source else 1800):
             await self.refresh_forecasts()
         if self.config["supply_plan"] == "Hourly ComEd" and not self.mappings.get("live_supply"):
-            if not self.live_cache or time.time() - self.live_cache["time"] > 300:
+            if (not self.live_cache or not live_valid(self.live_cache["time"], time.time(), hourly=True)
+                    or time.time() - self.live_cache["time"] >= 300):
                 try:
                     rows = json.loads(await self.get_text("https://hourlypricing.comed.com/api", {"type": "currenthouraverage"}))
+                    if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
+                        raise ValueError("Invalid ComEd live response")
                     row = rows[0]
                     stamp, cents = finite(row.get("millisUTC")), finite(row.get("price"))
-                    if stamp is None or cents is None or not 0 <= time.time() - stamp / 1000 < 900 or not -1000 <= cents <= 500:
+                    if (stamp is None or cents is None or not live_valid(stamp / 1000, time.time(), hourly=True)
+                            or not -1000 <= cents <= 500):
                         raise ValueError("Invalid or stale ComEd live price")
                     self.live_cache = {"time": stamp / 1000, "supply": cents / 100}
+                    self.forecast_status.pop("live_price", None)
                 except (ClientError, TimeoutError, ValueError, TypeError, KeyError, IndexError) as error:
                     self.forecast_status["live_price"] = f"Live ComEd unavailable ({type(error).__name__})"
+        if revision != self.revision:
+            return self.data or {}  # Options/ownership changed during network I/O.
+        fallback = self.evaluate_fallback(allow_recovery=True)
+        revision = self.revision
         now = time.time()
         config, snapshot, live = self.rate_context(), self.snapshot(), self.live_supply()
+        config["_fallback_active"] = fallback["active"]
         if config.get("departure_override"):
             override = datetime.fromisoformat(config["departure_override"])
             if override.tzinfo is None:
@@ -378,6 +471,7 @@ class NRGRuntime(DataUpdateCoordinator):
         today_start = datetime.combine(datetime.fromtimestamp(now, self.zone).date(), datetime.min.time(), self.zone).timestamp()
         coverage = ledger.get("coverage_hours", 0) / max((now - today_start) / 3600, 1e-9) * 100
         data = {"snapshot": snapshot, "plan": self.plan, "solar": solar, "solar_quality": quality,
+                "fallback": fallback,
                 "observations": list(self.stats.hours),
                 "price": current if self.current_price_known else None, "price_components": current, "ledger": ledger,
                 "cost_coverage": min(coverage, 100), "forecast_status": dict(self.forecast_status),
@@ -395,6 +489,7 @@ class NRGRuntime(DataUpdateCoordinator):
             self.store.async_delay_save(self.persisted, 1)
             self.last_save = now
         await self.notify(now)
+        await self.notify_fallback(now)
         return data
 
     def with_nights(self, forecast, now):
@@ -441,6 +536,29 @@ class NRGRuntime(DataUpdateCoordinator):
                 except Exception as error:
                     self.forecast_status["notification"] = f"Notification failed ({type(error).__name__})"
                     _LOGGER.exception("NRG notification delivery failed")
+
+    async def notify_fallback(self, now):
+        if not self.config["fallback_notifications"] or not self.fallback_notice:
+            return
+        current = datetime.fromtimestamp(now, self.zone).time().replace(tzinfo=None)
+        start, end = local_time.fromisoformat(self.config["quiet_start"]), local_time.fromisoformat(self.config["quiet_end"])
+        quiet = start <= current < end if start < end else current >= start or current < end if start > end else False
+        if quiet or self.last_fallback_notice is not None and now - self.last_fallback_notice < 300:
+            return
+        notice = self.fallback_notice
+        message = notice[1] + ". See NRG pricing health and control status for device results."
+        if self.config["mode"] == "Observation":
+            message += " Observation only: no equipment commands."
+        for target in self.entry.options.get("notification_targets", []):
+            if isinstance(target, str) and target.startswith("notify.") and self.hass.services.has_service("notify", target.split(".", 1)[1]):
+                try:
+                    await self.hass.services.async_call("notify", target.split(".", 1)[1],
+                        {"title": "Energy pricing", "message": message}, blocking=True)
+                except Exception as error:
+                    self.forecast_status["fallback_notification"] = f"Delivery failed ({type(error).__name__})"
+        if self.fallback_notice == notice:
+            self.fallback_notice = None
+        self.last_fallback_notice = now
 
     async def refresh(self):
         self.last_fetch = 0

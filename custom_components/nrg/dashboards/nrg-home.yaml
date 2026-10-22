@@ -16,6 +16,47 @@ views:
       icon: mdi:lightning-bolt
       grid_options:
         columns: full
+    - type: tile
+      entity: sensor.nrg_pricing_health
+      name: Pricing health
+      tap_action:
+        action: more-info
+      hold_action:
+        action: none
+      icon_tap_action:
+        action: more-info
+      grid_options:
+        columns: full
+    - type: markdown
+      content: '{% set active = state_attr(''sensor.nrg_pricing_health'',''active'') %}
+
+        {% set observation = state_attr(''sensor.nrg_pricing_health'',''operating_mode'') == ''Observation'' %}
+
+        {% if active %}**{{ ''Proposed price-data fallback · Observation only'' if observation else ''Price-data
+        fallback active · verify device results'' }}.**
+
+        {{ state_attr(''sensor.nrg_pricing_health'',''reason'') }}.
+
+        {% if observation %}No equipment commands are sent.{% else %}Configured permissions and protection guards
+        still apply; an active policy does not mean every device command succeeded.{% endif %}
+
+        {% if is_state(''sensor.nrg_pricing_health'',''Recovering'') %}Fresh prices have returned, but fallback
+        remains active until recovery is confirmed and a new plan is ready.{% endif %}
+
+        {% elif is_state(''sensor.nrg_pricing_health'',''Degraded'') %}**Pricing degraded.** {{ state_attr(''sensor.nrg_pricing_health'',''reason'')
+        }}. Check the last valid observation and source status.
+
+        {% endif %}
+
+        {% if is_state(''binary_sensor.nrg_fallback_manual'',''on'') %}**Manual request saved.** It persists across
+        restarts until ended, even if prices recover. {% if is_state(''binary_sensor.nrg_fallback_enabled'',''off'')
+        %}It is currently inactive under Standard protection; end it before selecting fallback again if you do not
+        want it to resume.{% endif %}{% endif %}
+
+        {% if active or is_state(''sensor.nrg_pricing_health'',''Degraded'') %}[Review price-data fallback](/nrg-settings/fallback).{%
+        endif %}'
+      grid_options:
+        columns: full
     - type: grid
       columns: 2
       square: false
@@ -522,7 +563,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=6e529147ba46
+        url_path: /nrg-planner/guide.html?v=9dc32f9d5b05
       grid_options:
         columns: full
   - type: grid
