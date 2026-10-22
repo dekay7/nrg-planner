@@ -112,6 +112,7 @@ def test_every_mapping_control_value_and_script_role_is_documented_from_catalogu
     "learning.md#solar-forecast-calibration",
     "learning.md#learn-household-demand",
     "learning.md#resetting-or-disabling-learning",
+    "simulation.md",
     "accounting.md#observed-ledger",
     "accounting.md#different-money-figures",
     "accounting.md#built-in-ha-energy",

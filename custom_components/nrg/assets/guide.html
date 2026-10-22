@@ -40,7 +40,7 @@ blockquote{margin:20px 0;padding:4px 18px;border-left:3px solid var(--accent);ba
 <p class="reading-help">Find anything with your browser's <strong>Find in page</strong> (<kbd>Ctrl F</kbd> or <kbd>⌘ F</kbd>). Use <strong>Print → Save as PDF</strong> to keep a copy. This page contains generic guidance, not your live settings.</p>
 </header>
 <div class="layout">
-<aside class="contents" id="contents" tabindex="-1"><details open><summary>Contents</summary><nav aria-label="Handbook chapters"><div class="nav-group"><h2>Getting started</h2><ul><li><a href="#overview">Start here</a></li><li><a href="#features">Features &amp; development history</a></li><li><a href="#installation">Installation &amp; updates</a></li><li><a href="#quick-start">Quick start</a></li></ul></div><div class="nav-group"><h2>Everyday use</h2><ul><li><a href="#homeowner-guide">Read the dashboard</a></li><li><a href="#operations">Operation &amp; handover</a></li><li><a href="#faq">Common questions</a></li></ul></div><div class="nav-group"><h2>Set up your home</h2><ul><li><a href="#pricing">Electricity pricing</a></li><li><a href="#integrations">Equipment &amp; adapters</a></li><li><a href="#learning">Learning explained</a></li><li><a href="#settings">Every setting</a></li></ul></div><div class="nav-group"><h2>Help &amp; reference</h2><ul><li><a href="#troubleshooting">Troubleshooting &amp; support</a></li><li><a href="#glossary">Plain-language glossary</a></li><li><a href="#privacy">Privacy &amp; diagnostics</a></li><li><a href="#security">Security reporting</a></li></ul></div><div class="nav-group"><h2>Deeper reading</h2><ul><li><a href="#design">How planning works</a></li><li><a href="#accounting">Costs &amp; accounting</a></li><li><a href="#alternatives">Other energy planners</a></li><li><a href="#review">Project review</a></li></ul></div></nav></details></aside>
+<aside class="contents" id="contents" tabindex="-1"><details open><summary>Contents</summary><nav aria-label="Handbook chapters"><div class="nav-group"><h2>Getting started</h2><ul><li><a href="#overview">Start here</a></li><li><a href="#features">Features &amp; development history</a></li><li><a href="#installation">Installation &amp; updates</a></li><li><a href="#quick-start">Quick start</a></li></ul></div><div class="nav-group"><h2>Everyday use</h2><ul><li><a href="#homeowner-guide">Read the dashboard</a></li><li><a href="#operations">Operation &amp; handover</a></li><li><a href="#faq">Common questions</a></li></ul></div><div class="nav-group"><h2>Set up your home</h2><ul><li><a href="#pricing">Electricity pricing</a></li><li><a href="#integrations">Equipment &amp; adapters</a></li><li><a href="#learning">Learning explained</a></li><li><a href="#settings">Every setting</a></li></ul></div><div class="nav-group"><h2>Help &amp; reference</h2><ul><li><a href="#troubleshooting">Troubleshooting &amp; support</a></li><li><a href="#glossary">Plain-language glossary</a></li><li><a href="#privacy">Privacy &amp; diagnostics</a></li><li><a href="#security">Security reporting</a></li></ul></div><div class="nav-group"><h2>Deeper reading</h2><ul><li><a href="#design">How planning works</a></li><li><a href="#accounting">Costs &amp; accounting</a></li><li><a href="#simulation">Synthetic simulation &amp; stress tests</a></li><li><a href="#alternatives">Other energy planners</a></li><li><a href="#review">Project review</a></li></ul></div></nav></details></aside>
 <main id="content" tabindex="-1"><section id="overview" aria-label="Start here"><h2 id="overview-nrg-planner-documentation">NRG Planner documentation</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Start here topics"><div class="toc">
 <ul>
 <li><a href="#overview-find-what-you-need">Find what you need</a></li>
@@ -117,6 +117,10 @@ including <strong>none of them</strong>. Start with advice and add equipment as 
 <tr>
 <td>Check data use, report a security issue, or get help</td>
 <td><a href="#privacy">Privacy</a> · <a href="#security">Security reporting</a> · <a href="#troubleshooting-getting-help">Support</a></td>
+</tr>
+<tr>
+<td>Stress-test forecasts and decisions with invented data</td>
+<td><a href="#simulation">Offline synthetic simulation</a></td>
 </tr>
 <tr>
 <td>Compare projects or review publication readiness</td>
@@ -474,6 +478,10 @@ update another installation automatically. See <a href="#installation-updates-an
 <td>Per-hour solar coverage/alternatives, explicit zero versus unknown, local-midnight normalization, exact repeated/skipped DST boundaries, device current bounds and independent physical/cost oracles. <a href="#review-modeling-and-forecasting-robustness-audit-unreleased">Audit evidence and limits</a>.</td>
 </tr>
 <tr>
+<td>Offline synthetic stress lab</td>
+<td>Source-only CLI using the real planner/learners and an independent synthetic plant; seeded stress scenarios, frozen forecast scoring, EV/cost/physical outcomes, fixed-plan advice evaluation and optional decision traces. No HA instance, network, household data or live commands. <a href="#simulation">Simulation guide</a>.</td>
+</tr>
+<tr>
 <td>Passive battery calibration</td>
 <td>Opt-in AC-side closed-cycle efficiency and sustained charge/discharge opportunities; paired counters, independent per-parameter fallbacks, retention and status. No forced calibration or battery-health claim. <a href="#learning-calibrate-battery-estimates">Battery learning</a>.</td>
 </tr>
@@ -553,7 +561,7 @@ There is no separately calculated capacity-charge saving. See
 </tr>
 <tr>
 <td><strong>Unreleased development after 0.2.0</strong></td>
-<td>Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs; modeling/forecasting robustness fixes and permanent independent-oracle regressions.</td>
+<td>Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs; modeling/forecasting robustness fixes and permanent independent-oracle regressions; offline seeded simulation of forecasts, learning and decision outcomes against independent synthetic physics.</td>
 </tr>
 </tbody>
 </table></div>
@@ -3549,7 +3557,251 @@ identify that provenance; HA Energy using those entities will also be using the
 estimate, not a settled utility rate. NRG's separate estimated-coverage subsets
 are in its own ledger, not a retroactive correction of HA Energy history.</p>
 <p>Use <code>sensor.nrg_export_price_usd</code> for export compensation. Changing Energy's price
-sources is a separate supported UI action; NRG does not rewrite historical records.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="alternatives" aria-label="Other energy planners"><h2 id="alternatives-free-alternatives-and-intended-community-value">Free alternatives and intended community value</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Other energy planners topics"><div class="toc">
+sources is a separate supported UI action; NRG does not rewrite historical records.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="simulation" aria-label="Synthetic simulation &amp; stress tests"><h2 id="simulation-synthetic-simulation-and-stress-testing">Synthetic simulation and stress testing</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Synthetic simulation &amp; stress tests topics"><div class="toc">
+<ul>
+<li><a href="#simulation-safety-permissions-and-defaults">Safety, permissions and defaults</a></li>
+<li><a href="#simulation-run-it">Run it</a></li>
+<li><a href="#simulation-scenarios">Scenarios</a></li>
+<li><a href="#simulation-how-it-works">How it works</a></li>
+<li><a href="#simulation-read-the-results">Read the results</a></li>
+<li><a href="#simulation-failures-recovery-and-limits">Failures, recovery and limits</a></li>
+</ul>
+</div>
+</nav></details>
+<p><strong>Unreleased development after 0.2.0.</strong> This is an offline developer tool in the
+source repository, not a dashboard, HA service or feature of a stable HACS install.
+It asks: <strong>if these forecasts were issued and this invented household behaved
+this way, what decisions would NRG propose, and what would happen?</strong></p>
+<h3 id="simulation-safety-permissions-and-defaults">Safety, permissions and defaults</h3>
+<p>The simulator needs no Home Assistant instance, credentials, entity mappings or
+household exports. It loads the production planning and learning modules without
+loading the integration's HA entry point, runtime or command writer. It makes no
+network requests and reads no HA storage or user options. Its only optional write
+is the report path you explicitly choose. Reports contain invented data only.</p>
+<p>Normal <strong>Observation</strong>, control permissions, notifications, settings and learning
+are unchanged. The synthetic setup grants planning permission for its invented
+EV and battery, and enables all learning, including battery calibration, <strong>inside
+the simulation only</strong>. The real integration's battery-learning default remains
+Off. <code>--no-learning</code> uses configured assumptions instead of learned estimates.
+Do not use a simulation report as authorization to enable live controls.</p>
+<h3 id="simulation-run-it">Run it</h3>
+<p>From a source checkout, using Python 3.14 (the project's tested version):</p>
+<pre tabindex="0" aria-label="Code example"><code class="language-sh"># List the stress scenarios. This tool uses only the Python standard library.
+python -B tools/simulate.py --list
+
+# One day, seven invented training days, reproducible seed; include all decisions.
+python -B tools/simulate.py --scenario baseline --seed 42 --trace \
+  --output local/simulation-baseline.json
+
+# A broader sweep: every scenario, three consecutive seeds, two real days each.
+python -B tools/simulate.py --scenario all --seed 42 --runs 3 --days 2 \
+  --output local/simulation-suite.json
+
+# Compare learned estimates with manual assumptions under the SAME synthetic truth.
+python -B tools/simulate.py --scenario slow-ev --seed 42 --days 2 \
+  --output local/slow-ev-learned.json
+python -B tools/simulate.py --scenario slow-ev --seed 42 --days 2 --no-learning \
+  --output local/slow-ev-manual.json
+
+# Cold start: no prior synthetic observations.
+python -B tools/simulate.py --scenario solar-miss --warmup-days 0 --trace \
+  --output local/solar-cold-start.json
+</code></pre>
+<p><code>local/</code> is ignored by git. Reports can be large with <code>--trace</code>; they are not
+written unless <code>--output</code> is provided. Normal source/version metadata is included
+so reports from changed code can be distinguished. The source hash covers the
+simulator and the pure planning/learning dependencies, not the entire repository.</p>
+<p>Defaults: <code>baseline</code>, seed 1, one run, one real 24-hour day, seven training days,
+learning enabled, no trace and no output file. <code>--runs</code> accepts 1–100, <code>--days</code>
+1–30 and <code>--warmup-days</code> 0–28. Repeated runs use consecutive seeds. A full suite
+can take several minutes; start with one day/scenario before a large sweep.</p>
+<h3 id="simulation-scenarios">Scenarios</h3>
+<div class="table-scroll" role="region" aria-label="Synthetic simulation &amp; stress tests table 1" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Name</th>
+<th scope="col">Stress applied</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>baseline</code></td>
+<td>Morning/evening demand, a daylight solar shape, night/evening prices and independent measurement/forecast variation.</td>
+</tr>
+<tr>
+<td><code>volatile-prices</code></td>
+<td>Negative midday prices and an unexpected expensive evening.</td>
+</tr>
+<tr>
+<td><code>solar-miss</code></td>
+<td>Optimistic solar forecasts, followed by an unforecast afternoon cloud collapse.</td>
+</tr>
+<tr>
+<td><code>demand-spike</code></td>
+<td>An unforecast 4 kW evening load.</td>
+</tr>
+<tr>
+<td><code>price-gap</code></td>
+<td>Current and future supply unavailable for four hours, then restored.</td>
+</tr>
+<tr>
+<td><code>solar-gap</code></td>
+<td>Six hours of missing solar forecast coverage, then restored.</td>
+</tr>
+<tr>
+<td><code>slow-ev</code></td>
+<td>Actual charging power is half the configured value; actual AC energy per SOC point is higher.</td>
+</tr>
+<tr>
+<td><code>battery-mismatch</code></td>
+<td>Actual capacity, efficiency and charge/discharge power are below the configured assumptions.</td>
+</tr>
+<tr>
+<td><code>no-grid-charge</code></td>
+<td>No supported battery grid charging.</td>
+</tr>
+<tr>
+<td><code>grid-only</code></td>
+<td>No EV, battery or solar; advice and electricity costs still work.</td>
+</tr>
+<tr>
+<td><code>dst-spring</code></td>
+<td>Chicago spring clock jump with real elapsed energy/time.</td>
+</tr>
+<tr>
+<td><code>dst-fall</code></td>
+<td>Chicago repeated autumn hour, including both UTC instants.</td>
+</tr>
+</tbody>
+</table></div>
+<p>All scenarios use invented rates and equipment—not a model of a particular home.
+The initial simulated car is connected at 45%, targets 80%, leaves at 08:00 and
+returns at 18:00 with an invented commute resetting SOC to 45%. A battery starts
+at 60% and retains a 20% reserve. The baseline policy charges the EV immediately
+when connected and lets the battery serve demand without grid charging; it is
+not constrained to the planner's preferred charging window. Both policies see
+the same actual household, weather, equipment and prices, but have independent
+battery/EV states.</p>
+<p>Training also uses synthetic measurements and a simple routine. It is not counted
+in evaluation costs. More training does not promise enough qualifying battery
+cycles or power opportunities: per-parameter learning may correctly remain on its
+configured fallback. The capacity-mismatch scenario cannot be fixed by battery
+calibration, which intentionally does not infer capacity.</p>
+<h3 id="simulation-how-it-works">How it works</h3>
+<ol>
+<li>A deterministic generator creates the actual demand, solar and price streams.
+   Separate forecast streams use a generic daily shape plus forecast noise/bias;
+   they do <strong>not</strong> read future actual measurements or unexpected load/cloud shocks.
+   Seeds/streams do not depend on policy calls or how often replanning occurs.</li>
+<li>Optional warm-up observations pass through the real coverage-gated household,
+   solar, EV and passive battery learners. Future solar forecasts are frozen via
+   the production statistics API before the measured hour, not revised afterward.</li>
+<li>Every fifteen real minutes the actual <code>plan()</code> function receives current
+   synthetic telemetry, the issued forecasts and the previous plan. Supply uses
+   the production external-price lookup, separate flat delivery and flat solar
+   export credit. Missing coverage remains unknown.</li>
+<li>Only the current dated decision is applied to an independent AC energy model.
+   This plant does <strong>not</strong> call the planner's physical transition function. It has
+   its own true capacity, losses and power limits and honors EV current/fractional
+   stops. Actual outcomes become later observations; a perfect forecast is never
+   sent back to the policy.</li>
+<li>Forecasts for 1-, 6- and 24-hour leads are frozen at issue and scored only once
+   their target interval is observed. Post-hoc advice counterfactuals never affect
+   the rolling policy, statistics or future truth.</li>
+</ol>
+<p>Days are <strong>24 real hours</strong>, not local calendar days. A DST run can therefore end
+at a different local clock hour. A one-day evaluation has no observed 24-hour-lead
+outcomes; use at least two days for that metric. Forecasts beyond the evaluation
+end are not scored, and an unfinished future departure is not counted as missed.</p>
+<h3 id="simulation-read-the-results">Read the results</h3>
+<p>The console shows each run's cash costs, missed EV departures, invariant failures,
+one-hour forecast MAE and final stored energy. JSON provides the full results:</p>
+<div class="table-scroll" role="region" aria-label="Synthetic simulation &amp; stress tests table 2" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Report section</th>
+<th scope="col">Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>source</code>, <code>scenario</code>, <code>seed</code>, <code>truth_parameters</code>, <code>model_assumptions</code></td>
+<td>Reproduction metadata, true equipment and configured starting assumptions. Preserve source hash and Python version when comparing runs.</td>
+</tr>
+<tr>
+<td><code>policies</code></td>
+<td>Actual synthetic purchases minus solar export credits, imported/exported/EV energy, battery discharge, final battery energy and EV SOC; departure shortfalls in AC kWh. A missed departure means more than 0.1 kWh short.</td>
+</tr>
+<tr>
+<td><code>forecast_errors</code></td>
+<td>MAE, RMSE and signed bias at each lead. Positive bias means overprediction. Demand/solar are kW; supply is USD/kWh. Console supply MAE is converted to cents/kWh.</td>
+</tr>
+<tr>
+<td><code>one_step_errors</code></td>
+<td>Issued current household/solar predictions and next battery SOC versus the realized interval; manual house fallback and uncalibrated solar are separate references. SOC error is in percentage points.</td>
+</tr>
+<tr>
+<td><code>samples</code>, <code>missing</code></td>
+<td>Covered prediction counts versus unknown forecasts. Missing is not a zero prediction, and missing forecasts cannot make MAE look perfect without visible coverage loss.</td>
+</tr>
+<tr>
+<td><code>learning_before</code>, <code>learning_after</code></td>
+<td>Observation counts, EV/solar estimates and per-parameter battery sample/source status. These are simulated statistics, never saved to HA.</td>
+</tr>
+<tr>
+<td><code>decisions</code></td>
+<td>Replan count, battery-mode changes, EV on/off changes, limited advice and missing current price/solar coverage. Changes count interval-to-interval proposals, not HA service calls.</td>
+</tr>
+<tr>
+<td><code>invariant_violations</code></td>
+<td>Physical AC/stored-energy balance, reserve/capacity/power/export bounds and grid-charge constraints; plus audits of requested modes/current/SOC/coverage so plant clamping cannot conceal an invalid request.</td>
+</tr>
+<tr>
+<td><code>advice</code></td>
+<td>Hourly sampled wait recommendations whose complete task fits the observed evaluation and dependable horizon; predicted savings versus post-hoc fixed-plan outcomes, and waits that cost over $0.001 more than starting now.</td>
+</tr>
+<tr>
+<td><code>trace</code></td>
+<td>Optional dated decisions, known/unknown coverage, forecasts, candidate, EV current/stop/deadline, predicted shortfall, actual state, advice and interval physical/cash outcomes.</td>
+</tr>
+</tbody>
+</table></div>
+<p>For advice, replay the <strong>issued modes and EV schedule</strong> separately with the task
+now and later, using the synthetic actuals and a shared initial state. Compare
+the replay cash costs with remaining energy valued at that plan's terminal rate
+at the same truncated dependable/evaluation boundary. This is a fixed-schedule
+counterfactual, <strong>not</strong> the outcome of later replanning with an actual appliance.
+Only waits are evaluated; it is not an exhaustive recommendation-regret measure.
+Limited-confidence advice remains labeled limited in the report.</p>
+<p><strong>Do not rank policies by cash cost alone.</strong> A car that misses departure or a battery
+left emptier can look cheaper. Inspect shortfalls, final battery/EV state, forecast
+coverage and physical failures together. Policy cash costs do not include terminal
+battery value or a utility bill's fixed charges/taxes; the reference baseline is
+not optimal. No difference in these invented costs demonstrates household savings.</p>
+<h3 id="simulation-failures-recovery-and-limits">Failures, recovery and limits</h3>
+<ul>
+<li>Exit <strong>0</strong>: simulation completed with no invariant violations. It does not mean
+  forecasts were accurate, all departures succeeded or the plan was optimal.</li>
+<li>Exit <strong>1</strong>: one or more physical/request invariants failed. JSON and trace identify
+  the time/policy/check. Keep the scenario, seed and source hash for regression work.</li>
+<li>Invalid CLI values exit <strong>2</strong>. File permission errors or unexpected code errors
+  are surfaced; the tool does not silently treat a partial report as success.</li>
+<li>Price/solar gaps restore coverage at their synthetic end; the next plan can
+  resume economic decisions. This tests the pure planner's conservative response,
+  <strong>not</strong> HA's fallback activation/recovery state machine.</li>
+<li>The plant assumes ideal immediate native-mode response and minute-resolution
+  learning observations reconstructed within each simulated quarter-hour. It
+  does not reproduce telemetry latency, command failures, device ownership,
+  protection-event behavior, provider parsers, ComEd publication rules, battery
+  aging, outages, script adapters or the HA scheduler/writer. Existing integration
+  and independent-oracle tests remain necessary for those areas.</li>
+<li>No global-optimum or perfect-foresight policy is claimed. Synthetic distributions
+  cannot prove general accuracy, real-world safety, hardware capability or savings.</li>
+</ul>
+<p>For implementation details see <a href="#design">the planning method</a>,
+<a href="#learning">learning</a> and <a href="#accounting">cost accounting</a>. Add scenarios and
+regressions in <code>tools/simulate.py</code> and <code>tests/test_simulation.py</code>, using invented
+fixtures only. No release is published by running this tool.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="alternatives" aria-label="Other energy planners"><h2 id="alternatives-free-alternatives-and-intended-community-value">Free alternatives and intended community value</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Other energy planners topics"><div class="toc">
 <ul>
 <li><a href="#alternatives-nrgs-intended-niche">NRG's intended niche</a></li>
 <li><a href="#alternatives-evidence-still-needed">Evidence still needed</a></li>
@@ -3626,6 +3878,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 <li><a href="#review-verification-and-remaining-limits">Verification and remaining limits</a></li>
 </ul>
 </li>
+<li><a href="#review-offline-synthetic-simulation-verification-unreleased">Offline synthetic simulation verification (unreleased)</a></li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -3954,6 +4207,29 @@ available. Sample-based calibration depends on AC measurement boundaries, covera
 and SOC precision; it is not a health/capacity measurement. Refill potential is not
 a promise of a chronological refill. No real-home forecast backtest, future saving,
 physical command response or live deployment was validated by this audit.</p>
+<h3 id="review-offline-synthetic-simulation-verification-unreleased">Offline synthetic simulation verification (unreleased)</h3>
+<p>The <a href="#simulation">source-only simulation tool</a> exercises the production planner
+and coverage-gated learners without importing Home Assistant or invoking its
+runtime/writer. A separate AC plant realizes decisions under invented actuals;
+forecasts use independent seeded streams, with future predictions frozen before
+scoring. It reports missing coverage, forecast error, EV departure shortfalls,
+final stored energy, physical/request invariants and fixed-plan advice outcomes.
+It is not a real-house backtest, global-optimum benchmark or live-control test.</p>
+<p>Local verification on Python 3.14.8 and HA 2026.10.2 passes <strong>485 tests</strong>, including
+18 simulator regressions and standard-library-only execution outside the checkout.
+A sweep of all <strong>12 scenarios</strong>, seed 1, one evaluation day and one synthetic
+training day completes with no physical/request invariant violations. A separate
+uncalibrated slow-charger regression deliberately misses departure, demonstrating
+that completion failures are reported rather than masked by modeled feasibility.
+Tests also cover reproducibility, unknown forecast coverage/recovery, partial EV
+stops, independent energy/cost calculations, DST instants, training restart/session
+boundaries and post-hoc advice isolation.</p>
+<p>Ruff's configured <code>F</code> rules, dependency consistency, privacy/history and whitespace
+checks pass. Handbook/dashboard assets are regenerated with the standard builder.
+The dependency audit still fails on the <strong>36 existing HA-pinned Pillow/uv
+advisories</strong> above; the simulator adds no dependency, override or audit exclusion.
+No installation settings, learning formats, control defaults or version values
+change, and no release or live deployment is performed.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as
