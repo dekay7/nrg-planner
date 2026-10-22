@@ -100,13 +100,29 @@ outage, and neither policy guarantees the lowest eventual bill.
 A failed live fetch is Degraded while the current observation is still usable.
 Automatic fallback starts when current supply or delivery pricing is missing,
 stale or invalid. ComEd live observations must be less than 15 minutes old **and
-belong to the current hour**. Published/learned estimates do not substitute for a
-missing ComEd live price. Missing tomorrow forecasts alone do not activate it;
-configured flat/time-of-use rates do not depend on ComEd.
+belong to the current hour**. The previous hour's live price is never relabeled as
+current.
+
+ComEd normally needs time to publish the first running average of a new hour.
+During the **first ten minutes only**, a valid published forecast for that exact
+hour can bridge the gap without activating fallback. Pricing health explains the
+bridge; its attributes and the buying/supply price entities report
+`comed_publication_bridge: true`, with source `day_ahead`, not a live observation.
+The forecast must satisfy the normal 36-hour cache limit. Missing, expired or
+learned-only forecasts cannot bridge the gap. If live pricing is still absent at
+ten past, current pricing becomes unusable and the selected protection applies.
+A genuine fetch/DNS error remains visible as Degraded while the forecast bridge
+or cached live observation is usable. An expected previous-hour response during
+the publication window is not itself a fetch failure.
+
+Missing tomorrow forecasts alone do not activate fallback; configured
+flat/time-of-use rates do not depend on ComEd.
 
 Automatic recovery requires valid observations spanning at least two minutes;
 live sources must supply a distinct observation, not just repeated reads of the
-same cache. A fresh plan is required before normal dispatch resumes. Old charging
+same cache. The publication bridge does not release an already active automatic
+fallback or count as fresh live recovery evidence. A manual request also stays
+active. A fresh plan is required before normal dispatch resumes. Old charging
 settings are not blindly restored. The fallback outlook assumes the selected
 baseline continues until recovery; it is not a prediction of outage duration.
 

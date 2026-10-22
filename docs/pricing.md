@@ -16,6 +16,26 @@ Negative rates remain signed. A −2¢ supply price plus 6¢ delivery still cost
 These are illustrative numbers, not defaults. All numeric rate inputs start unset;
 unknown rates remain unknown until supplied. Enter zero explicitly if applicable.
 
+## ComEd's new-hour publication window
+
+The first live running average is not necessarily available at the hour boundary.
+For the first ten minutes, NRG can use the **published forecast for that exact
+hour** while awaiting live pricing. It does not reuse the previous hour's live
+price or invent a rate from learned history. The forecast must be within its
+normal 36-hour freshness limit.
+
+This short bridge is labeled `day_ahead` in price-source attributes and charts;
+`comed_publication_bridge` identifies it in Pricing health and the buying/supply
+price entities. A normal publication gap alone keeps Pricing health Healthy;
+a transport failure still shows Degraded. Neither status activates fallback
+while the price remains usable. Live pricing takes priority as soon as it is
+available, and NRG makes a fresh plan at that handover.
+
+Without a valid published forecast, or if the live gap continues beyond ten past,
+normal price-data protection applies. A forecast bridge cannot release an already
+active automatic fallback; that still requires fresh live recovery observations.
+See [detection and recovery](operations.md#detection-and-recovery).
+
 ## Editing timed periods in HA
 
 1. Open **Settings → Devices & services → NRG Planner → Configure → Pricing periods**.

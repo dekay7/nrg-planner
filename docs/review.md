@@ -125,6 +125,23 @@ above; requirements and advisory handling are unchanged. Hosted results are reco
 on the pull request. These checks do not claim globally optimal schedules, promised
 chronological refills or verified physical equipment response.
 
+## ComEd publication-gap verification — 2026-10-22
+
+The bounded new-hour forecast bridge is verified locally on the current mainline
+with Python 3.14.8 and Home Assistant 2026.10.2: **355 tests pass**. Invented
+regressions cover uninterrupted hourly handover, the exact ten-minute cutoff,
+missing/expired forecasts, missing delivery prices, manual and automatic fallback,
+distinct live recovery observations, transport failures, DST transitions, price
+provenance, and cost coverage without learning forecasts as live observations.
+Observation defaults, control permissions, settings and learning formats are unchanged.
+The generated handbook/dashboards, Ruff checks, dependency consistency and
+privacy/history checks pass; generated assets reproduce deterministically.
+
+The dependency audit still reports the **25 existing HA-pinned Pillow/uv
+advisories** documented above. This change adds no dependency overrides or audit
+exclusions. Hosted CI and the code review are recorded on the pull request;
+local verification does not claim live deployment or physical equipment validation.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public

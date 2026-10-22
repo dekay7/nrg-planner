@@ -42,11 +42,58 @@ def test_comed_hour_ending_dates_and_cache_age():
     assert result["price_source"] == "missing" and result["supply_price"] is None
 
 
-def test_current_day_ahead_outlook_does_not_replace_missing_live_price():
+def test_current_day_ahead_outlook_does_not_replace_missing_live_price_after_publication_window():
     rows = [{"start": NOW, "supply": .02, "fetched_at": NOW}]
-    result = price_at(NOW, NOW, settings({"supply_plan":"Hourly ComEd", "delivery_cents": 4}), rows, None)
+    result = price_at(NOW + 600, NOW + 600, settings({"supply_plan":"Hourly ComEd", "delivery_cents": 4}), rows, None)
     assert result["price_source"] == "day_ahead"
     assert result["price_known"] is False
+    assert not result["comed_publication_bridge"]
+
+
+@pytest.mark.parametrize("offset,bridge", [(0, True), (300, True), (599.99, True), (600, False), (900, False)])
+def test_comed_publication_bridge_is_bounded_and_explicit(offset, bridge):
+    rows = [{"start": NOW, "supply": -.02, "fetched_at": NOW - 3600}]
+    config = settings({"supply_plan": "Hourly ComEd", "delivery_cents": 4,
+                       "export_rate": "Supply plus adder", "export_adder_cents": 1})
+    result = price_at(NOW + offset, NOW + offset, config, rows, None)
+    assert result["comed_publication_bridge"] is bridge
+    assert result["price_known"] is bridge
+    assert result["export_known"] is bridge
+    assert result["supply_source"] == "day_ahead"  # Never relabel a forecast as live.
+    assert result["import_price"] == pytest.approx(.02)
+
+
+@pytest.mark.parametrize("rows", [[], [{"start": NOW - 3600, "supply": .02, "fetched_at": NOW}],
+                                  [{"start": NOW, "supply": .02, "fetched_at": NOW - 36 * 3600 - 1}],
+                                  [{"start": NOW, "supply": .02, "fetched_at": NOW + 1}]])
+def test_comed_publication_bridge_requires_a_valid_published_current_hour(rows):
+    result = price_at(NOW, NOW, settings({"supply_plan": "Hourly ComEd", "delivery_cents": 4}),
+                      rows, None, lambda hour: (.05, 10))
+    assert not result["comed_publication_bridge"]
+    assert not result["price_known"]  # Learned estimates cannot bridge a missing publication.
+
+
+@pytest.mark.parametrize("hour", [datetime(2026, 3, 8, 3, tzinfo=ZONE),
+                                 datetime(2026, 11, 1, 1, tzinfo=ZONE, fold=0),
+                                 datetime(2026, 11, 1, 1, tzinfo=ZONE, fold=1)])
+def test_comed_publication_window_uses_real_hours_across_dst(hour):
+    start = hour.timestamp()
+    config = settings({"supply_plan": "Hourly ComEd", "delivery_cents": 4})
+    rows = [{"start": start, "supply": .03, "fetched_at": start - 3600}]
+    for offset, bridge in ((0, True), (599.99, True), (600, False)):
+        result = price_at(start + offset, start + offset, config, rows, None)
+        assert result["comed_publication_bridge"] is bridge
+        assert result["price_known"] is bridge
+    previous_hour = [{"start": start - 3600, "supply": .03, "fetched_at": start - 3600}]
+    assert not price_at(start, start, config, previous_hour, None)["comed_publication_bridge"]
+
+
+def test_current_comed_live_price_takes_priority_over_publication_bridge():
+    result = price_at(NOW, NOW, settings({"supply_plan": "Hourly ComEd", "delivery_cents": 4}),
+                      [{"start": NOW, "supply": .02, "fetched_at": NOW}], .07)
+    assert result["supply_source"] == "running_average"
+    assert result["supply_price"] == .07
+    assert result["price_known"] and not result["comed_publication_bridge"]
 
 
 def test_comed_rejects_partial_wrong_date_and_ambiguous_dst():
