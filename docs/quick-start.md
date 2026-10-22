@@ -35,6 +35,12 @@ Configure export compensation separately: No credit, Flat credit, or Supply plus
 adder. Both numeric export fields start unset. They are never inferred from
 delivery. See [pricing](pricing.md).
 
+If you use Hourly ComEd, leave **During ComEd live-price delays → Strict live
+pricing** selected initially, or explicitly review **Allow brief published
+estimates**. The latter temporarily uses a published exact-hour forecast with
+Degraded status and blocks battery grid charging; it is not permission to use
+old live readings indefinitely. See [brief-delay limits](pricing.md#brief-comed-live-data-delays).
+
 ## 3. Map available HA measurements
 
 In **Configure → Mappings**, choose ordinary entities from existing integrations:
@@ -56,6 +62,10 @@ appropriate values for your equipment before relying on a schedule.
 
 Installation dates start unset. Leave them unset until known. Learning uses only
 this HA installation's covered measurements; no household profile is bundled.
+Household, EV and solar learning have independent switches. **Calibrate battery
+estimates** is a separate opt-in, initially off: confirm AC-side power/SOC semantics
+before enabling it. The [learning guide](learning.md) explains qualification,
+manual fallbacks, retention and reset behavior; it never measures battery health.
 
 ## 5. Configure optional controls
 
@@ -67,11 +77,30 @@ compatibility. See [adapters](integrations.md).
 Map available protection and external-controller-priority flags. A selected guard
 must report the expected clear state; missing selected guards pause commands.
 
-## 6. Review the plan
+## 6. Choose outage behavior and optional notifications
+
+Under **Configure → Price-data fallback**, the default **Standard protection**
+keeps guarded planner rules, including EV departure charging at potentially unknown
+prices. **Use my fallback actions** instead opens a review of the controlled
+devices' EV pause/departure and battery hold/self-consumption actions. Saving can
+apply those actions immediately when prices are unusable and Control is authorized.
+Keep Observation while reviewing. A manual fallback request is a separate action.
+See [fallback operation](operations.md#price-data-fallback).
+
+Under **Configure → Notifications**, household advice and price-data fallback
+alerts are independent opt-ins sharing your selected notify services and quiet
+hours. Only household advice uses the benefit threshold and advice-stability test.
+Notifications do not enable controls. See [notification behavior](operations.md#notifications).
+
+## 7. Review the plan
 
 Use the native entities or install the [optional dashboards](installation.md#optional-dashboards).
 Compare the inputs, forecast coverage, and proposed actions with actual readings.
 Use the [operations guide](operations.md) when transferring device control.
+A battery-backed suggested appliance window need not be the cheapest grid hour.
+Check dependable comparison coverage and any **Limited battery estimate** notice;
+future missing rates do not establish a saving. Cost coverage may include separately
+tracked forecast-priced intervals. See [the dashboard guide](homeowner-guide.md).
 
 ## What a working setup looks like
 

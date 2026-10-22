@@ -47,28 +47,33 @@ def handbook_button(name):
     }
 
 
+# Keep every narrative documentation page in the local handbook; tests enforce coverage.
+HANDBOOK_CHAPTERS = [
+    ("docs/README.md", "overview", "Start here", "Getting started"),
+    ("docs/features.md", "features", "Features & development history", "Getting started"),
+    ("docs/installation.md", "installation", "Installation & updates", "Getting started"),
+    ("docs/quick-start.md", "quick-start", "Quick start", "Getting started"),
+    ("docs/homeowner-guide.md", "homeowner-guide", "Read the dashboard", "Everyday use"),
+    ("docs/operations.md", "operations", "Operation & handover", "Everyday use"),
+    ("docs/faq.md", "faq", "Common questions", "Everyday use"),
+    ("docs/pricing.md", "pricing", "Electricity pricing", "Set up your home"),
+    ("docs/integrations.md", "integrations", "Equipment & adapters", "Set up your home"),
+    ("docs/learning.md", "learning", "Learning explained", "Set up your home"),
+    ("docs/settings.md", "settings", "Every setting", "Set up your home"),
+    ("docs/troubleshooting.md", "troubleshooting", "Troubleshooting & support", "Help & reference"),
+    ("docs/glossary.md", "glossary", "Plain-language glossary", "Help & reference"),
+    ("PRIVACY.md", "privacy", "Privacy & diagnostics", "Help & reference"),
+    ("SECURITY.md", "security", "Security reporting", "Help & reference"),
+    ("docs/design.md", "design", "How planning works", "Deeper reading"),
+    ("docs/accounting.md", "accounting", "Costs & accounting", "Deeper reading"),
+    ("docs/alternatives.md", "alternatives", "Other energy planners", "Deeper reading"),
+    ("docs/review.md", "review", "Project review", "Deeper reading"),
+]
+
+
 def handbook():
     """One locally hosted, responsive handbook; no scripts or external assets."""
-    chapters = [
-        ("docs/README.md", "overview", "Start here", "Getting started"),
-        ("docs/installation.md", "installation", "Installation & updates", "Getting started"),
-        ("docs/quick-start.md", "quick-start", "Quick start", "Getting started"),
-        ("docs/homeowner-guide.md", "homeowner-guide", "Read the dashboard", "Everyday use"),
-        ("docs/operations.md", "operations", "Operation & handover", "Everyday use"),
-        ("docs/faq.md", "faq", "Common questions", "Everyday use"),
-        ("docs/pricing.md", "pricing", "Electricity pricing", "Set up your home"),
-        ("docs/integrations.md", "integrations", "Equipment & adapters", "Set up your home"),
-        ("docs/learning.md", "learning", "Learning explained", "Set up your home"),
-        ("docs/settings.md", "settings", "Every setting", "Set up your home"),
-        ("docs/troubleshooting.md", "troubleshooting", "Troubleshooting & support", "Help & reference"),
-        ("docs/glossary.md", "glossary", "Plain-language glossary", "Help & reference"),
-        ("PRIVACY.md", "privacy", "Privacy & diagnostics", "Help & reference"),
-        ("SECURITY.md", "security", "Security reporting", "Help & reference"),
-        ("docs/design.md", "design", "How planning works", "Deeper reading"),
-        ("docs/accounting.md", "accounting", "Costs & accounting", "Deeper reading"),
-        ("docs/alternatives.md", "alternatives", "Other energy planners", "Deeper reading"),
-        ("docs/review.md", "review", "Project review", "Deeper reading"),
-    ]
+    chapters = HANDBOOK_CHAPTERS
     mapping = {(ROOT / name).resolve(): key for name, key, _, _ in chapters}
     sections = []
     groups = {}
@@ -515,7 +520,7 @@ Normal comfort comes first. Appliance advice never starts a device. Any enabled 
 
 Solid forecast lines are a published outlook, not a settled bill. Dashed lines are tentative estimates. Missing data is never treated as free electricity.
 
-The administrator can change the reference appliance, rates, schedules and reserve in Energy Settings.
+The administrator can change the reference appliance, rates, schedules and reserve in NRG Planner settings.
 """) , handbook_button("Open the complete household handbook")], [timeline(), battery_forecast_note(), grid([
         conditional("battery_control", metric("battery_action")), conditional("has_battery", metric("available_energy")),
         conditional("ev_control", metric("ev_shortfall")), conditional("has_solar", metric("source_health"))])]])]}
@@ -699,6 +704,44 @@ EV shortfall: {{ c.shortfall_kwh | round(2) }} kWh
                 reference.extend([f"Accepted range: **{field.low:g} to {field.high:g} {field.unit or ''}**; "
                                   f"adjustable in increments of **{field.step:g} {field.unit or ''}**.", ""])
             reference.extend([f"Reference key: `{key}`.", ""])
+    reference.extend([
+        "## Configuration beyond catalogue fields", "",
+        "The forms also store the structured choices below. Use Configure or the native entities; "
+        "do not edit HA storage files. These choices persist across restarts, unlike Charge now.", "",
+        "| Configuration | Initial value and behavior | Guide |", "|---|---|---|",
+        "| `supply_periods`, `delivery_periods` | Empty independent schedules; the optional template leaves rates blank. | [Period editor](pricing.md#editing-timed-periods-in-ha) |",
+        "| `mappings` | No entities selected on fresh setup; only relevant roles are shown, and hidden choices are retained. | [Measurements](integrations.md#provider-neutral-measurements) |",
+        "| `solar_sources` | No forecasts selected; use Add/Edit/Remove for entity, label, physical group, weight and age correction. | [Solar sources](integrations.md#solar-forecasts-and-alternatives) |",
+        "| `departure_override` | Unset; one-off local date/time takes precedence over daily departure. | [Everyday controls](operations.md#everyday-controls) |",
+        "| `notification_targets` | No notify services selected; shared by the two independent message types. | [Notifications](operations.md#notifications) |",
+        "| `control_values` | Device-state examples below, not detected compatibility. | [Control adapters](integrations.md#direct-controls-and-option-names) |",
+        "| `command_scripts` | No scripts selected; each selected command path still requires mapped feedback. | [Script adapters](integrations.md#script-adapters) |", "",
+        "## Measurement and control entity mappings", "",
+        "Configure → Mappings selects ordinary entities from your existing integrations. "
+        "Mapping a control never enables equipment commands. Input helpers retain their saved settings; "
+        "other readings follow the documented freshness checks.", "",
+        "| Reference key | HA role | Accepted entity domains | Description |", "|---|---|---|---|",
+    ])
+    for key, (label, domain, description) in MAPPINGS.items():
+        domains = domain if isinstance(domain, tuple) else (domain,)
+        reference.append(f"| `{key}` | {label} | {', '.join('`' + d + '`' for d in domains)} | {description} |")
+    reference.extend([
+        "", "## Control-state names and command scripts", "",
+        "Configure → Control adapters matches these example values to the actual device. "
+        "They are not manufacturer detection or permission to issue commands. "
+        "Match hold/serve/charge behavior before transferring control; never map serve-home to forced export.", "",
+        "| Control value key | Default device-state example |", "|---|---|",
+    ])
+    reference.extend(f"| `{key}` | `{value}` |" for key, value in CONTROL_VALUES.items())
+    reference.extend([
+        "", "Script selections start empty and use available `script.*` entities. "
+        "The form field is `script_` plus the role; it is stored under `command_scripts`. "
+        "See [script variables and feedback limits](integrations.md#script-adapters), including "
+        "reserve/export restrictions during fallback and estimated pricing.", "",
+        "| Script role key | Selection field |", "|---|---|",
+    ])
+    reference.extend(f"| `{key}` | `script_{key}` |" for key in COMMAND_SCRIPTS)
+    reference.append("")
     (ROOT / "docs/settings.md").write_text("\n".join(reference))
     handbook()
     guide_version = hashlib.sha256((INTEGRATION / "assets/guide.html").read_bytes()).hexdigest()[:12]

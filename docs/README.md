@@ -15,6 +15,7 @@ including **none of them**. Start with advice and add equipment as needed.
 
 | I want to… | Read this |
 |---|---|
+| See every feature and what changed since the original planner | [Feature guide and development history](features.md) |
 | Set it up for the first time | [Installation](installation.md), then [Quick start](quick-start.md) |
 | Understand the dashboard and its advice | [Homeowner guide](homeowner-guide.md) |
 | Enter my electricity rates | [Pricing](pricing.md) |
@@ -55,6 +56,9 @@ must still be reachable to open it. Its text is generic, not your live settings.
 are documented in [installation](installation.md). NRG Planner is in early
 development and is not included in the default HACS catalog. Check the
 [project review](review.md) for current validation results and open release items.
+The [feature milestones](features.md#development-milestones-since-creation) distinguish
+released functionality from later development: GitHub main documentation can be
+ahead of the latest stable HACS release.
 
 ## What can it do for my home?
 
@@ -131,7 +135,7 @@ NRG Planner → Configure**, then choose the named section.
 |---|---|
 | **NRG Planner → Home Energy** | Read prices, household advice, live power flow, enabled equipment, and available cost estimates. This optional homeowner view is read-only. |
 | **NRG Planner → Why?** | Read the reason behind the advice, inspect the modeled energy timeline, and open this handbook. |
-| **NRG Planner settings** | Use the optional administrator dashboard for components, operation, rates, equipment assumptions, sources, and details. |
+| **NRG Planner settings** | Use the optional administrator dashboard for components, operation, price-data fallback, rates/resilience, equipment assumptions, learning, sources, notifications, and details. |
 | **Settings → Devices & services → NRG Planner → Configure** | Use the setup forms to save rates, period schedules, measurements, forecast sources, control adapters, and notification services. Dashboards are not required. |
 | **Home Assistant's Energy dashboard configuration** | Select the actual power meters used by the live power-flow diagram. NRG's own mappings do not configure that diagram. |
 
@@ -154,6 +158,13 @@ govern access to entities and configuration.
 5. Read the advice and explanation in **Observation**, then compare the readings
    with your device apps or meters. Complete [control handover](operations.md)
    if you want NRG to operate the enabled devices.
+
+For price outages, review [fallback actions](operations.md#price-data-fallback)
+separately from the optional [brief ComEd estimate mode](pricing.md#brief-comed-live-data-delays).
+Both retain explicit control permissions and Observation defaults. Optional
+[battery calibration](learning.md#calibrate-battery-estimates), bounded economic
+advice and [forecast-priced cost coverage](accounting.md#observed-ledger) have their
+own explanations in the [complete feature guide](features.md).
 
 Continue with the [step-by-step quick start](quick-start.md). If something is
 missing, use [troubleshooting](troubleshooting.md); unfamiliar terms are in the

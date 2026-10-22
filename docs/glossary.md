@@ -56,6 +56,13 @@
 | **Reference appliance / flexible load** | The energy and uninterrupted duration of the example task used for run-now-versus-later advice. It is not an automatically controlled appliance. |
 | **Coverage** | How much time has usable readings and prices. Missing time is unknown, not zero usage or free electricity. |
 | **Calibration / learning** | Improving predictions using valid local observations. It does not rewrite measurements. |
+| **Pricing health** | Healthy, Degraded, Fallback or Recovering describes usable price data and selected protection, not the grid's electrical condition. |
+| **Publication bridge** | A valid exact-hour ComEd forecast temporarily covering the first ten minutes of a new hour while live pricing is published. It is not a prior-hour live price. |
+| **Brief published estimates** | An opt-in current-hour forecast allowance ending 60 minutes after the last verified live observation. Degraded, not live; blocks battery grid charging and cannot renew itself on refresh/restart. |
+| **Price-data fallback** | Standard guarded protection or explicitly reviewed custom EV/battery actions when current pricing is unusable. Manual requests and automatic recovery have separate rules. |
+| **Dependable economic horizon** | The contiguous period with the applicable price/solar coverage needed for a supported cost comparison. The physical/EV outlook can extend beyond it. |
+| **Refill potential / common battery value** | Permitted solar/grid charging capacity after demand, modes and losses; insufficient potential uses a conservative reference shared by candidate schedules and advice, not a promised future refill. |
+| **Forecast-priced coverage** | Newly tracked ledger time priced using a permitted published forecast. Its costs/credits are subsets of totals, not live or settled prices; old history is not retroactively classified. |
 | **HACS** | Home Assistant Community Store, an optional way to install community integrations and dashboard cards. It is not required for manual installation of NRG itself. |
 | **YAML / package** | A text configuration format and a grouped HA configuration file. The optional dashboard package registers NRG's bundled views. |
 | **Sankey** | A flow diagram whose bands show the amount of power moving between sources and consumers. NRG's card uses HA Energy's configured live meters. |

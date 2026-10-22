@@ -95,8 +95,8 @@ are called with these variables:
 | `value` | Requested number, device mode name or configured feedback state. |
 | `action` | Logical request, e.g. `hold`, `serve`, `charge`, `on`, `off`, or current. |
 | `target_soc` | Proposed battery target, when applicable. |
-| `reserve_soc` | Configured backup reserve. |
-| `export_policy` | Solar only, Battery or No exports. |
+| `reserve_soc` | Configured backup reserve during normal operation; during fallback or bounded estimated pricing, retains a higher reported native reserve, or is unknown if that feedback is invalid. |
+| `export_policy` | Solar only, Battery or No exports during normal operation; capped to Solar only or No exports during fallback or bounded estimated pricing. |
 
 An EV-current script can use `{{ value }}` as amps in its integration/MQTT action.
 The selected current-setting feedback must then report that setting. Actual measured
@@ -105,6 +105,10 @@ current is a separate role: a stopped car drawing zero cannot confirm a 16 A set
 Scripts should complete promptly and recheck NRG ownership before delayed device
 operations. NRG validates before/after each script and waits up to fifteen seconds
 for matching feedback, but it cannot rewrite a user script's internal sequence.
+Scripts must honor the passed reserve/export limits and must not turn a logical
+hold or serve-home request into forced export or speculative charging. Missing
+feedback cannot be bypassed by a script. The complete role keys and default
+control-state examples are in [the settings reference](settings.md#control-state-names-and-command-scripts).
 
 ## Optional protection inputs
 

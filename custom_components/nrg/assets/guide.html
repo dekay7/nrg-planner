@@ -40,7 +40,7 @@ blockquote{margin:20px 0;padding:4px 18px;border-left:3px solid var(--accent);ba
 <p class="reading-help">Find anything with your browser's <strong>Find in page</strong> (<kbd>Ctrl F</kbd> or <kbd>⌘ F</kbd>). Use <strong>Print → Save as PDF</strong> to keep a copy. This page contains generic guidance, not your live settings.</p>
 </header>
 <div class="layout">
-<aside class="contents" id="contents" tabindex="-1"><details open><summary>Contents</summary><nav aria-label="Handbook chapters"><div class="nav-group"><h2>Getting started</h2><ul><li><a href="#overview">Start here</a></li><li><a href="#installation">Installation &amp; updates</a></li><li><a href="#quick-start">Quick start</a></li></ul></div><div class="nav-group"><h2>Everyday use</h2><ul><li><a href="#homeowner-guide">Read the dashboard</a></li><li><a href="#operations">Operation &amp; handover</a></li><li><a href="#faq">Common questions</a></li></ul></div><div class="nav-group"><h2>Set up your home</h2><ul><li><a href="#pricing">Electricity pricing</a></li><li><a href="#integrations">Equipment &amp; adapters</a></li><li><a href="#learning">Learning explained</a></li><li><a href="#settings">Every setting</a></li></ul></div><div class="nav-group"><h2>Help &amp; reference</h2><ul><li><a href="#troubleshooting">Troubleshooting &amp; support</a></li><li><a href="#glossary">Plain-language glossary</a></li><li><a href="#privacy">Privacy &amp; diagnostics</a></li><li><a href="#security">Security reporting</a></li></ul></div><div class="nav-group"><h2>Deeper reading</h2><ul><li><a href="#design">How planning works</a></li><li><a href="#accounting">Costs &amp; accounting</a></li><li><a href="#alternatives">Other energy planners</a></li><li><a href="#review">Project review</a></li></ul></div></nav></details></aside>
+<aside class="contents" id="contents" tabindex="-1"><details open><summary>Contents</summary><nav aria-label="Handbook chapters"><div class="nav-group"><h2>Getting started</h2><ul><li><a href="#overview">Start here</a></li><li><a href="#features">Features &amp; development history</a></li><li><a href="#installation">Installation &amp; updates</a></li><li><a href="#quick-start">Quick start</a></li></ul></div><div class="nav-group"><h2>Everyday use</h2><ul><li><a href="#homeowner-guide">Read the dashboard</a></li><li><a href="#operations">Operation &amp; handover</a></li><li><a href="#faq">Common questions</a></li></ul></div><div class="nav-group"><h2>Set up your home</h2><ul><li><a href="#pricing">Electricity pricing</a></li><li><a href="#integrations">Equipment &amp; adapters</a></li><li><a href="#learning">Learning explained</a></li><li><a href="#settings">Every setting</a></li></ul></div><div class="nav-group"><h2>Help &amp; reference</h2><ul><li><a href="#troubleshooting">Troubleshooting &amp; support</a></li><li><a href="#glossary">Plain-language glossary</a></li><li><a href="#privacy">Privacy &amp; diagnostics</a></li><li><a href="#security">Security reporting</a></li></ul></div><div class="nav-group"><h2>Deeper reading</h2><ul><li><a href="#design">How planning works</a></li><li><a href="#accounting">Costs &amp; accounting</a></li><li><a href="#alternatives">Other energy planners</a></li><li><a href="#review">Project review</a></li></ul></div></nav></details></aside>
 <main id="content" tabindex="-1"><section id="overview" aria-label="Start here"><h2 id="overview-nrg-planner-documentation">NRG Planner documentation</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Start here topics"><div class="toc">
 <ul>
 <li><a href="#overview-find-what-you-need">Find what you need</a></li>
@@ -74,6 +74,10 @@ including <strong>none of them</strong>. Start with advice and add equipment as 
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>See every feature and what changed since the original planner</td>
+<td><a href="#features">Feature guide and development history</a></td>
+</tr>
 <tr>
 <td>Set it up for the first time</td>
 <td><a href="#installation">Installation</a>, then <a href="#quick-start">Quick start</a></td>
@@ -145,7 +149,10 @@ must still be reachable to open it. Its text is generic, not your live settings.
 <p><strong>Installation options:</strong> manual installation and a HACS custom-repository path
 are documented in <a href="#installation">installation</a>. NRG Planner is in early
 development and is not included in the default HACS catalog. Check the
-<a href="#review">project review</a> for current validation results and open release items.</p>
+<a href="#review">project review</a> for current validation results and open release items.
+The <a href="#features-development-milestones-since-creation">feature milestones</a> distinguish
+released functionality from later development: GitHub main documentation can be
+ahead of the latest stable HACS release.</p>
 <h3 id="overview-what-can-it-do-for-my-home">What can it do for my home?</h3>
 <div class="table-scroll" role="region" aria-label="Start here table 2" tabindex="0"><table>
 <thead>
@@ -241,7 +248,7 @@ NRG Planner → Configure</strong>, then choose the named section.</p>
 </tr>
 <tr>
 <td><strong>NRG Planner settings</strong></td>
-<td>Use the optional administrator dashboard for components, operation, rates, equipment assumptions, sources, and details.</td>
+<td>Use the optional administrator dashboard for components, operation, price-data fallback, rates/resilience, equipment assumptions, learning, sources, notifications, and details.</td>
 </tr>
 <tr>
 <td><strong>Settings → Devices &amp; services → NRG Planner → Configure</strong></td>
@@ -271,9 +278,285 @@ govern access to entities and configuration.</p>
    with your device apps or meters. Complete <a href="#operations">control handover</a>
    if you want NRG to operate the enabled devices.</li>
 </ol>
+<p>For price outages, review <a href="#operations-price-data-fallback">fallback actions</a>
+separately from the optional <a href="#pricing-brief-comed-live-data-delays">brief ComEd estimate mode</a>.
+Both retain explicit control permissions and Observation defaults. Optional
+<a href="#learning-calibrate-battery-estimates">battery calibration</a>, bounded economic
+advice and <a href="#accounting-observed-ledger">forecast-priced cost coverage</a> have their
+own explanations in the <a href="#features">complete feature guide</a>.</p>
 <p>Continue with the <a href="#quick-start">step-by-step quick start</a>. If something is
 missing, use <a href="#troubleshooting">troubleshooting</a>; unfamiliar terms are in the
-<a href="#glossary">plain-language glossary</a>.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="installation" aria-label="Installation &amp; updates"><h2 id="installation-installation-and-updates">Installation and updates</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Installation &amp; updates topics"><div class="toc">
+<a href="#glossary">plain-language glossary</a>.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="features" aria-label="Features &amp; development history"><h2 id="features-feature-guide-and-development-history">Feature guide and development history</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Features &amp; development history topics"><div class="toc">
+<ul>
+<li><a href="#features-which-features-are-in-my-installation">Which features are in my installation?</a></li>
+<li><a href="#features-installation-setup-and-dashboards">Installation, setup and dashboards</a></li>
+<li><a href="#features-electricity-pricing-and-resilience">Electricity pricing and resilience</a></li>
+<li><a href="#features-ev-and-home-battery-planning">EV and home-battery planning</a></li>
+<li><a href="#features-learning-forecasts-and-measurement-quality">Learning, forecasts and measurement quality</a></li>
+<li><a href="#features-advice-accounting-and-notifications">Advice, accounting and notifications</a></li>
+<li><a href="#features-privacy-lifecycle-and-retired-behavior">Privacy, lifecycle and retired behavior</a></li>
+<li><a href="#features-development-milestones-since-creation">Development milestones since creation</a></li>
+</ul>
+</div>
+</nav></details>
+<p>This is the feature index for the <strong>current source</strong>, from the original planner
+through the subsequent setup, learning, safety, advice and pricing work. Each row
+links to the guide that explains how to use the feature and its limits. The
+<a href="#settings">settings reference</a> lists every catalogue default, mapping role,
+control-state name and script-adapter role.</p>
+<h3 id="features-which-features-are-in-my-installation">Which features are in my installation?</h3>
+<p>The latest numbered release is <strong>0.2.0</strong>. Work merged after that release is
+<strong>unreleased development</strong>, even while its source manifest still says 0.2.0.
+Documentation on GitHub's main branch can therefore describe features not present
+in a HACS installation following stable releases. The handbook shipped inside an
+installation belongs to the component files installed there; it is generic help,
+not a detection of that home's configuration.</p>
+<p>Use the release notes and installation source to identify the installed feature
+set; a version number alone cannot distinguish a manually installed development
+snapshot with the same manifest version. A merge does not publish a release or
+update another installation automatically. See <a href="#installation-updates-and-removal">updates</a>.</p>
+<h3 id="features-installation-setup-and-dashboards">Installation, setup and dashboards</h3>
+<div class="table-scroll" role="region" aria-label="Features &amp; development history table 1" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Feature</th>
+<th scope="col">What it provides and where to learn more</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Manual and HACS custom-repository installation</td>
+<td>Install the integration without a separate NRG account. Dashboard packages are optional and registered separately. <a href="#installation">Installation</a>.</td>
+</tr>
+<tr>
+<td>Independent optional components</td>
+<td>Grid-only advice, or any combination of one EV, one home-battery system and solar. Monitoring, device-control permissions and Observation/Control are separate. Hidden device choices are retained. <a href="#overview-the-three-ideas-that-make-setup-easier">Overview</a>.</td>
+</tr>
+<tr>
+<td>Native setup forms and entities</td>
+<td>Configure components, operation, prices, periods, meters, forecast sources, controls, notifications and assumptions without the dashboards. Defaults/ranges and structured configuration are in <a href="#settings">Every setting</a>.</td>
+</tr>
+<tr>
+<td>Read-only homeowner dashboard</td>
+<td>Home Energy and Why? explain current prices, advice, measured equipment status, coverage and the modeled timeline. Equipment cards follow the selected components. <a href="#homeowner-guide">Read the dashboard</a>.</td>
+</tr>
+<tr>
+<td>Administrator settings dashboard</td>
+<td>A distinct settings sidebar icon, separate Operation and Price-data fallback pages, readiness/guard diagnostics, sources, learning and cost details. <a href="#overview-where-to-go-in-home-assistant">Navigation</a>.</td>
+</tr>
+<tr>
+<td>Live power-flow Sankey</td>
+<td>Uses the actual power meters configured for HA Energy, never a fabricated planner flow. <a href="#homeowner-guide-current-power-flow-the-sankey-diagram">Power flow</a>.</td>
+</tr>
+<tr>
+<td>Direct local handbook</td>
+<td>Accessible from both dashboards, with responsive tables, browser Find/Print, no scripts/external assets and content-versioned links. <a href="#installation-optional-dashboards">Handbook access</a>.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="features-electricity-pricing-and-resilience">Electricity pricing and resilience</h3>
+<div class="table-scroll" role="region" aria-label="Features &amp; development history table 2" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Feature</th>
+<th scope="col">What it provides and where to learn more</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Independent supply and delivery</td>
+<td>Flat, timed or external pricing for each component; explicit unset versus zero and signed negative rates. Inputs use cents/kWh; USD/kWh sensors support HA Energy. <a href="#pricing-the-prominent-buying-price">Pricing</a>.</td>
+</tr>
+<tr>
+<td>Time-of-use period editor</td>
+<td>Add/edit/remove periods, an optional blank-rate four-period template, starting weekdays, overnight periods, exact boundaries and DST behavior. Overlaps are rejected and gaps remain unknown. <a href="#pricing-editing-timed-periods-in-ha">Period editor</a>.</td>
+</tr>
+<tr>
+<td>External price entities and forecasts</td>
+<td>Separate current/forecast mappings, supported interval aliases and currency units, configurable attribute names and validation. No ComEd substitution for another provider's missing prices. <a href="#pricing-external-utility-price-integrations">External pricing</a>.</td>
+</tr>
+<tr>
+<td>Separate export compensation and permission</td>
+<td>No credit, flat credit or supply plus an adder; export permission does not schedule a forced battery sale or reconstruct credit banks. <a href="#pricing-export-compensation">Export compensation</a>.</td>
+</tr>
+<tr>
+<td>ComEd live, published and tentative prices</td>
+<td>Current-hour running average, dated published forecasts and locally recorded tentative estimates are distinct sources. Old HTTP-success responses do not become fresh observations. <a href="#pricing-comed-price-sources-and-freshness">Sources and freshness</a>.</td>
+</tr>
+<tr>
+<td>New-hour publication bridge</td>
+<td>Under Strict live pricing, a valid exact-hour forecast can bridge the first ten minutes. Prior-hour live values are never relabeled, and forecasts cannot release an existing outage. <a href="#pricing-comeds-new-hour-publication-window">Publication window</a>.</td>
+</tr>
+<tr>
+<td>Opt-in brief published estimates</td>
+<td>Up to 60 minutes from the last verified live observation, with Degraded status, a fixed persistent deadline, continued EV planning and blocked battery grid charging. Refreshes/restarts cannot renew it. <a href="#pricing-brief-comed-live-data-delays">Brief delays</a>.</td>
+</tr>
+<tr>
+<td>Guarded price-data fallback</td>
+<td>Standard protection or guided custom EV/battery actions; manual start/end requests; higher native reserve retention, export limits, per-device results and separate alerts. <a href="#operations-price-data-fallback">Fallback actions</a>.</td>
+</tr>
+<tr>
+<td>Stable automatic recovery</td>
+<td>Distinct fresh observations over at least two minutes plus a fresh plan. Manual requests and automatic outage latches survive restarts; forecasts alone cannot release them. <a href="#operations-detection-and-recovery">Detection and recovery</a>.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="features-ev-and-home-battery-planning">EV and home-battery planning</h3>
+<div class="table-scroll" role="region" aria-label="Features &amp; development history table 3" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Feature</th>
+<th scope="col">What it provides and where to learn more</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EV departure planning</td>
+<td>Cheapest, solar-aware, earliest/latest and previous feasible schedules; normal window, completion buffer, stable-current bounds and fractional final intervals. The selected vehicle limit is read-only. <a href="#design-ev-candidates">EV candidates</a>.</td>
+</tr>
+<tr>
+<td>EV overrides and sleeping-vehicle support</td>
+<td>Charge now, persistent one-off departure, overdue-session handling, separate observed/planned status, and opt-in saved readings while connected. <a href="#operations-everyday-controls">Everyday controls</a> and <a href="#integrations-provider-neutral-measurements">measurement freshness</a>.</td>
+</tr>
+<tr>
+<td>Supported battery modes</td>
+<td>Hold, serve home and supported grid charging; capacity/age, reserve, conversion losses, optional cycling cost, native charge capability and whether hold accepts solar. No unsupported grid refill or forced exports. <a href="#design-battery-search">Battery search</a>.</td>
+</tr>
+<tr>
+<td>EV/battery coordination</td>
+<td>No simultaneous planned grid charging of both; Preserve battery during EV charging also applies to fallback. Commands/readbacks do not guarantee instantaneous power response. <a href="#design-battery-search">Battery search</a> and <a href="#operations-transfer-equipment-control">handover</a>.</td>
+</tr>
+<tr>
+<td>Observation battery trajectory</td>
+<td>A proposed battery line can be shown without live control, while missing SOC, controls or selected guards produce a specific blocker rather than an invented flat line. <a href="#homeowner-guide-modeled-energy-plan-the-battery-line">Battery chart</a>.</td>
+</tr>
+<tr>
+<td>Provider-neutral controls</td>
+<td>Compatible HA numbers, selects and switches; optional scripts with mapped feedback; charge/hold capability checks; reserve/export options and protection/ownership guards. <a href="#integrations-direct-controls-and-option-names">Adapters</a> and <a href="#integrations-script-adapters">script variables</a>.</td>
+</tr>
+<tr>
+<td>Guarded execution and stale-plan revocation</td>
+<td>Dated plan intervals, ownership/revision/permission checks, current target/reserve/readiness checks, readbacks, independent EV/battery error handling and revoked charging grants when plans expire. <a href="#design-household-advice-and-execution">Execution</a>.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="features-learning-forecasts-and-measurement-quality">Learning, forecasts and measurement quality</h3>
+<div class="table-scroll" role="region" aria-label="Features &amp; development history table 4" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Feature</th>
+<th scope="col">What it provides and where to learn more</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Meter normalization and quality</td>
+<td>W/kW conversion, grid/battery sign switches, house-only versus whole-home meters, derived site flows, balance checks and unknown-versus-absent equipment. <a href="#integrations-provider-neutral-measurements">Measurements</a>.</td>
+</tr>
+<tr>
+<td>Forecast.Solar sources and alternatives</td>
+<td>Add/edit/remove sources, physical coverage groups, alternative weights, overlap rejection, age correction, cache freshness/retries and known nighttime zero. <a href="#integrations-solar-forecasts-and-alternatives">Solar sources</a>.</td>
+</tr>
+<tr>
+<td>Household-demand learning</td>
+<td>Covered hours, EV subtraction, recency weighting, weekday/weekend matching and explicit fallback demand. <a href="#learning-learn-household-demand">Demand learning</a>.</td>
+</tr>
+<tr>
+<td>Solar forecast calibration</td>
+<td>Forecasts frozen before each hour; bounded actual/forecast correction after enough daylight samples, forecast error and source-change reset. <a href="#learning-solar-forecast-calibration">Solar learning</a>.</td>
+</tr>
+<tr>
+<td>EV calibration</td>
+<td>Covered AC energy/SOC sessions and conservative energy-per-point/power-per-amp estimates, with independent configured fallbacks. <a href="#learning-calibrate-ev-charging-estimates">EV learning</a>.</td>
+</tr>
+<tr>
+<td>Passive battery calibration</td>
+<td>Opt-in AC-side closed-cycle efficiency and sustained charge/discharge opportunities; paired counters, independent per-parameter fallbacks, retention and status. No forced calibration or battery-health claim. <a href="#learning-calibrate-battery-estimates">Battery learning</a>.</td>
+</tr>
+<tr>
+<td>Reset and retention</td>
+<td>Disabling learning preserves completed summaries; Reset learning retains settings and cost ledgers. Mapping changes reset only the affected calibration/comparisons. <a href="#learning-resetting-or-disabling-learning">Reset behavior</a>.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="features-advice-accounting-and-notifications">Advice, accounting and notifications</h3>
+<div class="table-scroll" role="region" aria-label="Features &amp; development history table 5" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Feature</th>
+<th scope="col">What it provides and where to learn more</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Reference-appliance advice</td>
+<td>Compares a complete task now versus later, with grid/direct-solar/battery/mixed supply and the grid rate shown separately. The green window never operates an appliance. <a href="#homeowner-guide-the-recommendation">Recommendations</a>.</td>
+</tr>
+<tr>
+<td>Dependable economic horizon</td>
+<td>Cost comparisons stop at the first applicable import/export/solar gap while the longer outlook retains physical energy and EV feasibility. Missing later data cannot make an earlier action free. <a href="#design-battery-search">Planning method</a>.</td>
+</tr>
+<tr>
+<td>Feasible refill valuation</td>
+<td>Shared solar/grid charging power, supported modes, house/EV demand and losses constrain refill potential. A common conservative value covers insufficient refill; limited confidence suppresses savings notifications. <a href="#accounting-different-money-figures">Valuation</a>.</td>
+</tr>
+<tr>
+<td>Observed costs and coverage</td>
+<td>Metered purchases minus export credits, signed costs, tariff-boundary splitting, partial-day/restart gaps and 62-day retention. Not a utility bill or proven savings. <a href="#accounting-observed-ledger">Ledger</a>.</td>
+</tr>
+<tr>
+<td>Forecast-priced accounting</td>
+<td>Separate coverage, purchase-cost and export-credit subsets for newly tracked published-estimate intervals; exact deadline/hour cutoffs and no learning forecasts as live. <a href="#accounting-observed-ledger">Estimated coverage</a>.</td>
+</tr>
+<tr>
+<td>HA Energy price sensors</td>
+<td>Independent USD/kWh buying and export entities; buying already includes delivery. NRG does not rewrite Energy configuration/history. <a href="#accounting-built-in-ha-energy">HA Energy</a>.</td>
+</tr>
+<tr>
+<td>Two notification types</td>
+<td>Stable worthwhile household wait advice and separate fallback-entry/recovery alerts; independent opt-ins, shared notify services/quiet hours, deduplication/cooldown and Observation wording. <a href="#operations-notifications">Notifications</a>.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="features-privacy-lifecycle-and-retired-behavior">Privacy, lifecycle and retired behavior</h3>
+<p>Settings, learning and bounded caches/ledgers stay in HA; reloads and updates retain
+them. Integration removal deletes NRG's local store, not HA's separately retained
+backups or recorder history. The diagnostics download is an allowlisted summary,
+not a dump of rates, entity IDs, plans or household readings. The local handbook
+contains generic documentation only. See <a href="#privacy">privacy</a>,
+<a href="#installation-updates-and-removal">removal</a> and <a href="#security">security reporting</a>.</p>
+<p>The former <strong>summer peak-import heuristic is retired</strong>. Its saved option/entity
+is cleaned up automatically and it no longer constrains charging. Use actual
+supply/delivery schedules and configured permissions, not a seasonal switch.
+There is no separately calculated capacity-charge saving. See
+<a href="#design-time-and-prices">the current planning rules</a>.</p>
+<h3 id="features-development-milestones-since-creation">Development milestones since creation</h3>
+<div class="table-scroll" role="region" aria-label="Features &amp; development history table 6" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Stage</th>
+<th scope="col">Features and improvements</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Original implementation through <strong>0.1.0</strong></td>
+<td>Optional components; independent tariffs/export and period editor; external/ComEd/solar adapters; EV/battery planning; local learning; cost ledger; guarded provider-neutral controls; homeowner/admin dashboards and a complete local wiki. Setup/readiness explanations, private-store removal cleanup and retirement of the summer heuristic were included before 0.1.0. Publication/privacy checks and release-based updates were established.</td>
+</tr>
+<tr>
+<td><strong>0.2.0</strong></td>
+<td>Passive battery efficiency/charge/discharge calibration with independent fallbacks and AC-meter safeguards. Direct handbook buttons and a distinctive settings icon were also included by this release.</td>
+</tr>
+<tr>
+<td><strong>Unreleased development after 0.2.0</strong></td>
+<td>Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs.</td>
+</tr>
+</tbody>
+</table></div>
+<p>The detailed verification evidence and open upstream dependency-audit findings are
+in <a href="#review">the project review</a>. Passing tests are not proof of globally optimal
+plans, future savings or instantaneous physical device response. See
+<a href="#design-scope-and-objective">scope and limitations</a> and <a href="#alternatives">alternatives</a>.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="installation" aria-label="Installation &amp; updates"><h2 id="installation-installation-and-updates">Installation and updates</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Installation &amp; updates topics"><div class="toc">
 <ul>
 <li><a href="#installation-what-to-have-ready">What to have ready</a></li>
 <li><a href="#installation-manual-installation">Manual installation</a></li>
@@ -379,6 +662,13 @@ configuration. It includes troubleshooting, FAQs, a glossary, and privacy detail
 There are no scripts, external fonts, or external assets. Use browser Find to
 search and Print to save a PDF; reading a loaded copy needs no internet connection.</p>
 <h3 id="installation-updates-and-removal">Updates and removal</h3>
+<p>Check the <a href="#features-development-milestones-since-creation">feature guide and milestones</a>
+when comparing the online docs with your installation. The latest stable release
+is 0.2.0; later main-branch work is unreleased until a new release is explicitly
+published. A manually installed development snapshot may still report 0.2.0, so
+keep its source commit with your private deployment record. The bundled handbook
+travels with the installed component rather than silently following GitHub main.
+Do not move a published tag to make its contents match development docs.</p>
 <p>Routine development commits do not offer updates to users following stable
 releases. A published stable GitHub Release makes a new version available in HACS;
 install it when convenient unless you have configured automatic updates. Review
@@ -388,7 +678,12 @@ To select an older release, use HACS <strong>Redownload</strong> and its version
 check its compatibility with your current HA version and stored data first.</p>
 <p>For manual updates, replace only the component directory with a reviewed newer
 copy and restart. HACS updates follow the same component boundary. Integration
-options, learning, and ledgers use HA storage, not files inside the component.</p>
+options, learning, and ledgers use HA storage, not files inside the component.
+Completed battery calibration, saved fallback requests/outage latches and ComEd
+continuity timestamps are retained too. New opt-in features do not automatically
+enable controls, battery calibration, custom fallback, or brief published estimates.
+The retired summer-heuristic option/entity is cleaned up automatically and no longer
+blocks charging. No manual storage-file migration is required.</p>
 <p>Before removing NRG, release its control and establish the desired device baseline
 as described in <a href="#operations">operations</a>. Remove the integration through Devices
 &amp; services, remove its dashboard-package include if present, then remove its
@@ -405,7 +700,8 @@ own retention settings.</p><p class="back"><a href="#contents">Back to contents 
 <li><a href="#quick-start-3-map-available-ha-measurements">3. Map available HA measurements</a></li>
 <li><a href="#quick-start-4-review-generic-equipment-assumptions">4. Review generic equipment assumptions</a></li>
 <li><a href="#quick-start-5-configure-optional-controls">5. Configure optional controls</a></li>
-<li><a href="#quick-start-6-review-the-plan">6. Review the plan</a></li>
+<li><a href="#quick-start-6-choose-outage-behavior-and-optional-notifications">6. Choose outage behavior and optional notifications</a></li>
+<li><a href="#quick-start-7-review-the-plan">7. Review the plan</a></li>
 <li><a href="#quick-start-what-a-working-setup-looks-like">What a working setup looks like</a></li>
 </ul>
 </div>
@@ -435,6 +731,11 @@ template has blank rates. Missing times and missing rates remain unknown.</p>
 <p>Configure export compensation separately: No credit, Flat credit, or Supply plus
 adder. Both numeric export fields start unset. They are never inferred from
 delivery. See <a href="#pricing">pricing</a>.</p>
+<p>If you use Hourly ComEd, leave <strong>During ComEd live-price delays → Strict live
+pricing</strong> selected initially, or explicitly review <strong>Allow brief published
+estimates</strong>. The latter temporarily uses a published exact-hour forecast with
+Degraded status and blocks battery grid charging; it is not permission to use
+old live readings indefinitely. See <a href="#pricing-brief-comed-live-data-delays">brief-delay limits</a>.</p>
 <h3 id="quick-start-3-map-available-ha-measurements">3. Map available HA measurements</h3>
 <p>In <strong>Configure → Mappings</strong>, choose ordinary entities from existing integrations:</p>
 <ul>
@@ -451,7 +752,11 @@ unknown. Review meter signs and whether the home meter includes EV charging in
 generic starting assumptions, not discovered specifications. Replace them with
 appropriate values for your equipment before relying on a schedule.</p>
 <p>Installation dates start unset. Leave them unset until known. Learning uses only
-this HA installation's covered measurements; no household profile is bundled.</p>
+this HA installation's covered measurements; no household profile is bundled.
+Household, EV and solar learning have independent switches. <strong>Calibrate battery
+estimates</strong> is a separate opt-in, initially off: confirm AC-side power/SOC semantics
+before enabling it. The <a href="#learning">learning guide</a> explains qualification,
+manual fallbacks, retention and reset behavior; it never measures battery health.</p>
 <h3 id="quick-start-5-configure-optional-controls">5. Configure optional controls</h3>
 <p>Compatible switches, numbers, and selects work directly. <strong>Configure → Control
 adapters</strong> maps battery modes, export settings, and optional command scripts to
@@ -459,10 +764,26 @@ your device's actual behavior. Default option names are examples, not proof of
 compatibility. See <a href="#integrations">adapters</a>.</p>
 <p>Map available protection and external-controller-priority flags. A selected guard
 must report the expected clear state; missing selected guards pause commands.</p>
-<h3 id="quick-start-6-review-the-plan">6. Review the plan</h3>
+<h3 id="quick-start-6-choose-outage-behavior-and-optional-notifications">6. Choose outage behavior and optional notifications</h3>
+<p>Under <strong>Configure → Price-data fallback</strong>, the default <strong>Standard protection</strong>
+keeps guarded planner rules, including EV departure charging at potentially unknown
+prices. <strong>Use my fallback actions</strong> instead opens a review of the controlled
+devices' EV pause/departure and battery hold/self-consumption actions. Saving can
+apply those actions immediately when prices are unusable and Control is authorized.
+Keep Observation while reviewing. A manual fallback request is a separate action.
+See <a href="#operations-price-data-fallback">fallback operation</a>.</p>
+<p>Under <strong>Configure → Notifications</strong>, household advice and price-data fallback
+alerts are independent opt-ins sharing your selected notify services and quiet
+hours. Only household advice uses the benefit threshold and advice-stability test.
+Notifications do not enable controls. See <a href="#operations-notifications">notification behavior</a>.</p>
+<h3 id="quick-start-7-review-the-plan">7. Review the plan</h3>
 <p>Use the native entities or install the <a href="#installation-optional-dashboards">optional dashboards</a>.
 Compare the inputs, forecast coverage, and proposed actions with actual readings.
-Use the <a href="#operations">operations guide</a> when transferring device control.</p>
+Use the <a href="#operations">operations guide</a> when transferring device control.
+A battery-backed suggested appliance window need not be the cheapest grid hour.
+Check dependable comparison coverage and any <strong>Limited battery estimate</strong> notice;
+future missing rates do not establish a saving. Cost coverage may include separately
+tracked forecast-priced intervals. See <a href="#homeowner-guide">the dashboard guide</a>.</p>
 <h3 id="quick-start-what-a-working-setup-looks-like">What a working setup looks like</h3>
 <ul>
 <li>The combined buying price matches your supply plus delivery. Blank prices call
@@ -499,8 +820,10 @@ not that energy is free.</p>
 <h3 id="homeowner-guide-pricing-health-and-missing-price-protection">Pricing health and missing-price protection</h3>
 <ul>
 <li><strong>Healthy:</strong> current import pricing is usable.</li>
-<li><strong>Degraded:</strong> a fetch failed or some current pricing is unusable. A usable cached
-  price may still be used; this status alone does not mean custom fallback began.</li>
+<li><strong>Degraded:</strong> a fetch failed, current pricing is limited, or the administrator
+  enabled temporary published-estimate operation during a ComEd delay. A usable
+  cached price or permitted estimate may still be used; this status alone does
+  not mean custom fallback began.</li>
 <li><strong>Fallback:</strong> the administrator's selected missing-price actions apply. In
   <strong>Observation</strong>, the banner explicitly describes a proposal and no equipment
   commands are sent.</li>
@@ -509,9 +832,21 @@ not that energy is free.</p>
 </ul>
 <p>These are pricing-data states, not reports of a power outage or unusually high
 prices. The administrator configures actions and checks device results on
-<strong>Energy Settings → Price-data fallback</strong>. An active policy does not prove every
+<strong>NRG Planner settings → Price-data fallback</strong>. An active policy does not prove every
 command succeeded. A manual request persists until ended; fresh prices alone do
 not end that request. See <a href="#operations-price-data-fallback">fallback operation</a>.</p>
+<p>For ComEd, Strict live pricing permits a short published-forecast bridge during
+the first ten minutes of a new hour. The separate opt-in <strong>Allow brief published
+estimates</strong> mode can continue for at most 60 minutes from the last verified live
+observation, not from the time an error is noticed. Its Degraded explanation shows
+last live age, forecast age and remaining allowance. EV planning can continue;
+battery grid charging is blocked and reserve/protection checks remain. Repeated
+old readings or restarting do not renew it. An already active automatic fallback
+still needs confirmed fresh live recovery. See <a href="#pricing-brief-comed-live-data-delays">pricing resilience</a>.</p>
+<p>A published estimate remains on the solid <strong>Published outlook</strong> graph line. It is
+not the dashed <strong>Tentative estimate</strong> learned from historical local observations.
+Check Pricing health and the source attributes rather than assuming every visible
+current price is live.</p>
 <h3 id="homeowner-guide-the-recommendation">The recommendation</h3>
 <ul>
 <li><strong>Good time to use energy:</strong> now is among the better modeled opportunities.</li>
@@ -587,6 +922,12 @@ exceed purchases over the covered time; it does not establish a cash payout.</p>
 <p>Coverage matters. First days, restarts and missing readings are partial, not free.
 Fixed fees, capacity charges and unconfigured taxes are excluded. A home with no
 site power meter gets price advice but no claimed metered daily cost.</p>
+<p>Totals can include published-price estimates during an allowed ComEd bridge or
+brief delay. <strong>NRG Planner settings → Details → Today's forecast-priced coverage</strong>
+shows the newly tracked estimated hours; cost/coverage entity attributes separate
+<code>estimated_import_cost</code>, <code>estimated_export_credit</code> and <code>estimated_coverage_hours</code>.
+These are subsets of the totals, not additional charges. Old ledger history is
+not retroactively classified. See <a href="#accounting-observed-ledger">accounting</a>.</p>
 <p>Use <strong>Why?</strong> and the linked complete handbook for explanations. The homeowner
 dashboard has no equipment or configuration controls.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="operations" aria-label="Operation &amp; handover"><h2 id="operations-operation-handover-and-recovery">Operation, handover, and recovery</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Operation &amp; handover topics"><div class="toc">
 <ul>
@@ -599,6 +940,7 @@ dashboard has no equipment or configuration controls.</p><p class="back"><a href
 <li><a href="#operations-verify-the-result">Verify the result</a></li>
 </ul>
 </li>
+<li><a href="#operations-notifications">Notifications</a></li>
 <li><a href="#operations-recovery">Recovery</a></li>
 </ul>
 </div>
@@ -689,19 +1031,23 @@ outage, and neither policy guarantees the lowest eventual bill.</p>
 <h4 id="operations-detection-and-recovery">Detection and recovery</h4>
 <p><strong>Pricing health</strong> distinguishes Healthy, Degraded, Fallback, and Recovering.
 A failed live fetch is Degraded while the current observation is still usable.
-Automatic fallback starts when current supply or delivery pricing is missing,
-stale or invalid. ComEd live observations must be less than 15 minutes old <strong>and
+With <strong>Use my fallback actions</strong> selected, automatic fallback starts when current
+supply or delivery pricing is missing, stale or invalid and no permitted bridge
+or estimate is usable. Standard protection instead keeps its normal guarded
+planner rules. ComEd live observations must be less than 15 minutes old <strong>and
 belong to the current hour</strong>. The previous hour's live price is never relabeled as
 current.</p>
 <p>ComEd normally needs time to publish the first running average of a new hour.
-During the <strong>first ten minutes only</strong>, a valid published forecast for that exact
-hour can bridge the gap without activating fallback. Pricing health explains the
+Under <strong>Strict live pricing</strong>, during the <strong>first ten minutes only</strong>, a valid
+published forecast for that exact hour can bridge the gap without activating
+fallback. Pricing health explains the
 bridge; its attributes and the buying/supply price entities report
 <code>comed_publication_bridge: true</code>, with source <code>day_ahead</code>, not a live observation.
 The forecast must satisfy the normal 36-hour cache limit. Missing, expired or
 learned-only forecasts cannot bridge the gap. If live pricing is still absent at
-ten past, current pricing becomes unusable and the selected protection applies.
-The optional <strong>Allow brief published estimates</strong> setting under <strong>Tariff</strong> adds a
+ten past under Strict live pricing, current pricing becomes unusable and the
+selected protection applies.</p>
+<p>The optional <strong>Allow brief published estimates</strong> setting under <strong>Tariff</strong> adds a
 bounded estimated-price mode instead of immediately applying fallback actions.
 It requires a valid forecast for the exact current hour and ends 60 minutes after
 the last verified live observation. Cold starts without one get only the usual
@@ -717,11 +1063,11 @@ the publication window is not itself a fetch failure.</p>
 flat/time-of-use rates do not depend on ComEd.</p>
 <p>Automatic recovery requires valid observations spanning at least two minutes;
 live sources must supply a distinct observation, not just repeated reads of the
-same cache. Neither the publication bridge nor optional estimated pricing releases an already
-active automatic fallback or counts as fresh live recovery evidence. The
-automatic outage latch is saved so restarting cannot bypass that requirement. A manual request also stays
-active. A fresh plan is required before normal dispatch resumes. Old charging
-settings are not blindly restored. The fallback outlook assumes the selected
+same cache. Neither the publication bridge nor optional estimated pricing releases
+an already active automatic fallback or counts as fresh live recovery evidence.
+The automatic outage latch is saved so restarting cannot bypass that requirement.
+A manual request also stays active. A fresh plan is required before normal dispatch
+resumes. Old charging settings are not blindly restored. The fallback outlook assumes the selected
 baseline continues until recovery; it is not a prediction of outage duration.</p>
 <p><strong>Start manual fallback now</strong> uses the selected baseline immediately, without
 waiting for cached prices to expire. It is shown only with <strong>Use my fallback
@@ -741,25 +1087,41 @@ the other device is still attempted; unavailable controls cannot be bypassed by 
 fallback policy. An unmapped reserve/export control must be configured appropriately
 in the equipment itself. Do not map a forced-export mode to self-consumption.
 Command scripts must apply only the requested action and honor readback. During
-fallback their <code>reserve_soc</code> context retains a higher reported native reserve
-(or is unknown if that feedback is invalid), and <code>export_policy</code> is capped to
+fallback or optional estimated-price operation, their <code>reserve_soc</code> context retains
+a higher reported native reserve (or is unknown if that feedback is invalid), and <code>export_policy</code> is capped to
 Solar only or No exports; neither is permission to invent a missing control.</p>
 <p>The Price-data fallback page separates policy selection, device actions, status
 and manual requests, and links to optional alerts. Observation banners explicitly
 describe a proposal, not executed equipment actions. Operation keeps everyday
 mode/EV overrides and links to this page.</p>
-<p>Under <strong>Notifications</strong>, <strong>Household advice messages</strong> and <strong>Price-data fallback
-alerts</strong> are separate opt-ins. The minimum benefit applies only to household
-advice; it does not suppress price-data alerts. Both use the selected notification
-services and shared quiet hours, with a five-minute fallback transition-alert
-cooldown. Select at least one notification service to receive messages. Alert
-permission does not enable fallback or equipment control, and dashboard visibility
-needs no notification permission.
-Missing prices remain unknown in cost accounting and are never filled with a
+<p>Missing prices remain unknown in cost accounting and are never filled with a
 made-up emergency rate or claimed savings. Valid published-price estimates used
 by the publication bridge or optional bounded estimate mode are tracked separately
 in forecast-priced coverage, purchase-cost and export-credit attributes. Older
 ledger intervals are not retroactively reclassified.</p>
+<h3 id="operations-notifications">Notifications</h3>
+<p>Under <strong>Configure → Notifications</strong>, <strong>Household advice messages</strong> and
+<strong>Price-data fallback alerts</strong> are separate opt-ins, both initially off.</p>
+<ul>
+<li>Household advice sends a worthwhile <strong>wait-until</strong> recommendation only when
+  dependable comparison confidence and complete task coverage exist, the benefit
+  reaches its notification threshold, and the same recommendation remains stable
+  for at least two minutes. A limited battery-refill estimate suppresses it.
+  NRG deduplicates a delivered window per selected notify service. The planner's
+  separate minimum-improvement setting controls schedule stability, not this
+  notification threshold.</li>
+<li>Price-data alerts describe custom-fallback activation or recovery, not every
+  failed fetch or Degraded estimate. They are independent of the appliance benefit
+  threshold and use a five-minute transition-alert cooldown. Observation messages
+  describe proposals, not executed equipment commands.</li>
+</ul>
+<p>Select at least one existing notify service; none is selected automatically.
+Both message types share these destinations and the configured local quiet hours.
+Equal quiet-hour start/end disables quiet hours; periods crossing midnight are
+supported. No message is expected solely because a price changed. A pending alert
+can wait for quiet hours/cooldown to end; it is not an immediate-delivery guarantee.
+Alert permission does not enable fallback or equipment control, and dashboard
+visibility needs no notification permission.</p>
 <h3 id="operations-recovery">Recovery</h3>
 <p>Use an HA backup and a previously reviewed component version when recovering from
 an update. Backups may contain private settings and measurements. Keep them out of
@@ -777,6 +1139,8 @@ summary. See <a href="#privacy">privacy</a> before sharing logs, screenshots, or
 <li><a href="#faq-how-do-i-stop-nrg-controlling-a-device">How do I stop NRG controlling a device?</a></li>
 <li><a href="#faq-can-i-use-my-existing-car-charger-or-battery-integration">Can I use my existing car, charger, or battery integration?</a></li>
 <li><a href="#faq-does-it-raise-my-cars-charge-limit">Does it raise my car's charge limit?</a></li>
+<li><a href="#faq-why-does-comed-enter-fallback-when-its-api-still-responds">Why does ComEd enter fallback when its API still responds?</a></li>
+<li><a href="#faq-will-missing-prices-always-stop-my-car-charging">Will missing prices always stop my car charging?</a></li>
 <li><a href="#faq-why-suggest-an-appliance-window-when-the-grid-price-is-high">Why suggest an appliance window when the grid price is high?</a></li>
 <li><a href="#faq-why-wait-when-the-buying-price-is-negative-or-solar-is-producing">Why wait when the buying price is negative or solar is producing?</a></li>
 <li><a href="#faq-why-does-nrg-recommend-using-energy-as-usual-on-a-flat-rate">Why does NRG recommend using energy as usual on a flat rate?</a></li>
@@ -784,7 +1148,9 @@ summary. See <a href="#privacy">privacy</a> before sharing logs, screenshots, or
 <li><a href="#faq-can-it-manage-multiple-evs-other-currencies-or-timed-battery-exports">Can it manage multiple EVs, other currencies, or timed battery exports?</a></li>
 <li><a href="#faq-does-it-need-the-internet-or-an-nrg-account">Does it need the internet or an NRG account?</a></li>
 <li><a href="#faq-how-long-does-learning-take-and-can-i-turn-it-off">How long does learning take, and can I turn it off?</a></li>
+<li><a href="#faq-why-did-a-price-change-not-send-a-notification">Why did a price change not send a notification?</a></li>
 <li><a href="#faq-what-stays-saved-when-home-assistant-restarts">What stays saved when Home Assistant restarts?</a></li>
+<li><a href="#faq-why-do-the-online-docs-show-a-feature-missing-from-my-hacs-installation">Why do the online docs show a feature missing from my HACS installation?</a></li>
 <li><a href="#faq-is-nrg-free-and-where-do-i-ask-for-help">Is NRG free, and where do I ask for help?</a></li>
 </ul>
 </div>
@@ -831,6 +1197,26 @@ using the available time and configured charging assumptions. A shortfall means
 the model cannot reach the selected target by departure under those conditions.
 Use <strong>Charge now</strong> or adjust the departure override when appropriate; see
 <a href="#operations-everyday-controls">everyday controls</a>.</p>
+<h3 id="faq-why-does-comed-enter-fallback-when-its-api-still-responds">Why does ComEd enter fallback when its API still responds?</h3>
+<p>A successful request can contain an old reading. Live ComEd data must be less
+than 15 minutes old and belong to the current hour. Under the default <strong>Strict
+live pricing</strong>, only a valid published forecast during the first ten minutes of
+a new hour can bridge missing live pricing.</p>
+<p>The separate opt-in <strong>Allow brief published estimates</strong> can use a valid exact-hour
+forecast for up to 60 minutes from the last verified live observation. It shows
+Degraded, lets EV planning continue, blocks battery grid charging and retains
+reserve/protection checks. Refreshing or restarting cannot renew the allowance.
+Neither a forecast nor selecting this option releases an already active automatic
+fallback; distinct fresh live recovery is still required.
+See <a href="#pricing-brief-comed-live-data-delays">brief ComEd delays</a>.</p>
+<h3 id="faq-will-missing-prices-always-stop-my-car-charging">Will missing prices always stop my car charging?</h3>
+<p>No. <strong>Standard protection</strong> can continue guarded EV charging to meet departure at
+an unknown price. <strong>Use my fallback actions</strong> applies the separately reviewed
+EV choice: pause scheduled charging or charge for departure. The pause can leave
+the car below its target. <strong>Charge now</strong> explicitly overrides that pause, but never
+connection, selected-target, current or protection checks. Permitted temporary
+published-estimate operation can also keep normal EV planning available without
+activating custom fallback. See <a href="#operations-price-data-fallback">outage actions</a>.</p>
 <h3 id="faq-why-suggest-an-appliance-window-when-the-grid-price-is-high">Why suggest an appliance window when the grid price is high?</h3>
 <p>The reference appliance may be supplied by the home battery rather than the grid.
 The advice identifies grid, direct-solar, battery-backed or mixed supply and shows
@@ -853,6 +1239,11 @@ still create differences, but a flat grid rate alone does not make one hour
 cheaper than another.</p>
 <h3 id="faq-does-the-displayed-cost-equal-my-bill-or-show-money-saved">Does the displayed cost equal my bill or show money saved?</h3>
 <p>No. Today's net energy cost estimates covered grid purchases minus export credits.
+It can include separately tracked published-forecast intervals during permitted
+ComEd bridges/delays. <strong>Today's forecast-priced coverage</strong> and cost entity attributes
+identify those newly classified subsets; older ledger entries are not retroactively
+reclassified. HA Energy using NRG's price entities also receives a permitted
+forecast-backed current price. Neither source is a settlement-price guarantee.
 Missing readings and restart downtime reduce coverage. Fixed fees, capacity/demand
 charges, and unconfigured taxes are excluded. Credit banks and billing restrictions
 are not reconstructed. Modeled plan costs and appliance benefits answer different
@@ -875,15 +1266,36 @@ qualifying charging sessions; household learning builds from covered hours over
 time. Optional battery calibration needs three covered, substantial closed-SOC cycles
 for efficiency and three sustained opportunities per power direction. It may take
 longer—or retain fallbacks—if normal operation does not provide those opportunities.
-It does not estimate battery health. Each switch can be turned off independently. <strong>Reset learning</strong> clears
-profiles and calibration while keeping settings and the measured-cost ledger.
+It does not estimate battery health. Each switch can be turned off independently.
+<strong>Reset learning</strong> clears profiles and calibration while keeping settings and the
+measured-cost ledger.
 See <a href="#learning">learning</a> for the exact requirements.</p>
+<h3 id="faq-why-did-a-price-change-not-send-a-notification">Why did a price change not send a notification?</h3>
+<p>Household advice and price-data fallback alerts are independent opt-ins. Advice
+needs a stable, worthwhile wait recommendation with dependable coverage; a limited
+refill estimate suppresses savings messages. Fallback alerts describe entry or
+recovery, not every delayed request or estimated-price interval. Both need selected
+notify services and respect quiet hours. Enabling messages grants no equipment
+control. See <a href="#operations-notifications">notifications</a>.</p>
 <h3 id="faq-what-stays-saved-when-home-assistant-restarts">What stays saved when Home Assistant restarts?</h3>
-<p>Settings, source mappings, learned summaries, and cost ledgers use Home Assistant
-storage. <strong>Charge now</strong> is session-only and clears on restart; it also clears on
-completion or disconnection. A one-off departure persists until cleared and takes
-precedence over the daily time. Restart gaps are not filled with invented use.
+<p>Settings, source mappings, completed learning, forecast caches and cost ledgers use
+Home Assistant storage. Manual fallback requests, the automatic-outage latch and
+the verified ComEd live timestamp also persist; restarting cannot renew a delay
+allowance or use a forecast to release an existing outage. Incomplete battery
+calibration opportunities/cycles and live recovery confirmation start over.</p>
+<p><strong>Charge now</strong> is session-only and clears on restart; it also clears on completion
+or disconnection. A one-off departure takes precedence over the daily time and
+can stay overdue while the car remains connected and incomplete; clear it when
+no longer needed. Restart gaps are not filled with invented use. Integration
+removal deletes NRG's own local store, whereas reloads/updates preserve it.
 The <a href="#operations">operations guide</a> covers updates and recovery.</p>
+<h3 id="faq-why-do-the-online-docs-show-a-feature-missing-from-my-hacs-installation">Why do the online docs show a feature missing from my HACS installation?</h3>
+<p>Main-branch documentation can include unreleased development after 0.2.0. HACS
+stable users receive features through published releases, not every merged PR.
+A manually installed development snapshot may retain the same manifest version
+as the latest release, so that number alone does not identify its feature set.
+See <a href="#features-development-milestones-since-creation">the feature history</a> and
+<a href="#installation-updates-and-removal">updates</a>.</p>
 <h3 id="faq-is-nrg-free-and-where-do-i-ask-for-help">Is NRG free, and where do I ask for help?</h3>
 <p>NRG is <a href="https://github.com/dekay7/nrg-planner/blob/main/LICENSE">MIT-licensed</a>.
 Home Assistant hardware, electricity, and third-party integrations or services
@@ -894,6 +1306,7 @@ to prepare a useful report for the
 <a href="#security">security policy</a> to report suspected vulnerabilities privately.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="pricing" aria-label="Electricity pricing"><h2 id="pricing-supply-delivery-and-time-of-use-plans">Supply, delivery and time-of-use plans</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Electricity pricing topics"><div class="toc">
 <ul>
 <li><a href="#pricing-the-prominent-buying-price">The prominent buying price</a></li>
+<li><a href="#pricing-comed-price-sources-and-freshness">ComEd price sources and freshness</a></li>
 <li><a href="#pricing-comeds-new-hour-publication-window">ComEd's new-hour publication window</a></li>
 <li><a href="#pricing-brief-comed-live-data-delays">Brief ComEd live-data delays</a></li>
 <li><a href="#pricing-editing-timed-periods-in-ha">Editing timed periods in HA</a><ul>
@@ -916,9 +1329,44 @@ supply source; it is never used as a fallback for another provider's missing rat
 Negative rates remain signed. A −2¢ supply price plus 6¢ delivery still costs 4¢ to import.
 These are illustrative numbers, not defaults. All numeric rate inputs start unset;
 unknown rates remain unknown until supplied. Enter zero explicitly if applicable.</p>
+<h3 id="pricing-comed-price-sources-and-freshness">ComEd price sources and freshness</h3>
+<p>ComEd is an optional supply adapter, not a fallback provider for other tariffs.
+It combines the public current-hour-average API with dated published forecasts.
+ComEd forecast labels use Central hour-ending times; the parser converts them to
+real hour starts rather than treating the website's <code>Date.UTC</code> label as UTC.
+Ambiguous/nonexistent DST labels and incomplete forecasts are rejected rather
+than guessed. A previously valid cache or current live observation may still be
+usable independently.</p>
+<div class="table-scroll" role="region" aria-label="Electricity pricing table 1" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Source</th>
+<th scope="col">Meaning and limits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>running_average</code></td>
+<td>A live observation less than <strong>15 minutes</strong> old that belongs to the current real hour; not a final settlement price. A recent prior-hour reading is still not a current-hour price.</td>
+</tr>
+<tr>
+<td><code>day_ahead</code></td>
+<td>A published exact-hour forecast with a <strong>36-hour</strong> cache limit. Dependable as a forecast for planning, but substitutes for missing current live pricing only under the bounded policies below.</td>
+</tr>
+<tr>
+<td><code>recorded_estimate</code></td>
+<td>A tentative estimate from this installation's previously recorded live observations for the matching Central clock hour. Dashed in charts; no embedded household profile, no current-live authorization and no permission for discretionary battery economics.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Repeated successful HTTP responses containing the same old timestamp do not
+refresh the underlying live observation. A mapped <strong>Current supply price</strong> sensor
+can replace the live API; its HA report timestamp and declared units are validated.
+That report is not proof that the upstream provider took a new measurement.</p>
 <h3 id="pricing-comeds-new-hour-publication-window">ComEd's new-hour publication window</h3>
-<p>The first live running average is not necessarily available at the hour boundary.
-For the first ten minutes, NRG can use the <strong>published forecast for that exact
+<p>With the default <strong>Strict live pricing</strong> policy, the first live running average
+is not necessarily available at the hour boundary. For the first ten minutes,
+NRG can use the <strong>published forecast for that exact
 hour</strong> while awaiting live pricing. It does not reuse the previous hour's live
 price or invent a rate from learned history. The forecast must be within its
 normal 36-hour freshness limit.</p>
@@ -940,7 +1388,8 @@ published estimates</strong> lets NRG temporarily use the published forecast for
 live or settled price. It also works with a mapped ComEd live-price sensor.
 Other supply plans are unaffected.</p>
 <p>The allowance ends <strong>60 minutes after the last verified live observation's
-provider timestamp</strong>, not 60 minutes after discovering the delay. Repeated old
+timestamp</strong>, not 60 minutes after discovering the delay. The API uses ComEd's
+provider timestamp; a mapped sensor uses its HA report timestamp. Repeated old
 responses, forecast refreshes, hour changes, settings edits and restarts do not
 renew it. Without a verified observation, only the normal first-ten-minute
 publication bridge is available. Once an existing allowance expires, a new-hour
@@ -978,7 +1427,7 @@ No choice enables equipment control or bypasses Observation/protection guards.</
    for the components whose schedules should operate.</li>
 </ol>
 <p>The template starts with these times. Its rates are blank until you enter them:</p>
-<div class="table-scroll" role="region" aria-label="Electricity pricing table 1" tabindex="0"><table>
+<div class="table-scroll" role="region" aria-label="Electricity pricing table 2" tabindex="0"><table>
 <thead>
 <tr>
 <th scope="col">Period</th>
@@ -1043,7 +1492,7 @@ Saturday/Sunday. This avoids a Friday overnight period overlapping Saturday's ra
 a forecast sensor too; it can be the same entity. Configure the forecast attribute
 name, default <code>forecast</code>.</p>
 <p>Supported interval fields are:</p>
-<div class="table-scroll" role="region" aria-label="Electricity pricing table 2" tabindex="0"><table>
+<div class="table-scroll" role="region" aria-label="Electricity pricing table 3" tabindex="0"><table>
 <thead>
 <tr>
 <th scope="col">Purpose</th>
@@ -1237,11 +1686,11 @@ are called with these variables:</p>
 </tr>
 <tr>
 <td><code>reserve_soc</code></td>
-<td>Configured backup reserve.</td>
+<td>Configured backup reserve during normal operation; during fallback or bounded estimated pricing, retains a higher reported native reserve, or is unknown if that feedback is invalid.</td>
 </tr>
 <tr>
 <td><code>export_policy</code></td>
-<td>Solar only, Battery or No exports.</td>
+<td>Solar only, Battery or No exports during normal operation; capped to Solar only or No exports during fallback or bounded estimated pricing.</td>
 </tr>
 </tbody>
 </table></div>
@@ -1250,7 +1699,11 @@ The selected current-setting feedback must then report that setting. Actual meas
 current is a separate role: a stopped car drawing zero cannot confirm a 16 A setting.</p>
 <p>Scripts should complete promptly and recheck NRG ownership before delayed device
 operations. NRG validates before/after each script and waits up to fifteen seconds
-for matching feedback, but it cannot rewrite a user script's internal sequence.</p>
+for matching feedback, but it cannot rewrite a user script's internal sequence.
+Scripts must honor the passed reserve/export limits and must not turn a logical
+hold or serve-home request into forced export or speculative charging. Missing
+feedback cannot be bypassed by a script. The complete role keys and default
+control-state examples are in <a href="#settings-control-state-names-and-command-scripts">the settings reference</a>.</p>
 <h3 id="integrations-optional-protection-inputs">Optional protection inputs</h3>
 <p>A selected grid-connected sensor must report on. Selected protection/grid-services/
 external-controller flags must report off. Missing selected guards pause applicable
@@ -1586,6 +2039,9 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <li><a href="#settings-home-meter-includes-ev-charging">Home meter includes EV charging</a></li>
 </ul>
 </li>
+<li><a href="#settings-configuration-beyond-catalogue-fields">Configuration beyond catalogue fields</a></li>
+<li><a href="#settings-measurement-and-control-entity-mappings">Measurement and control entity mappings</a></li>
+<li><a href="#settings-control-state-names-and-command-scripts">Control-state names and command scripts</a></li>
 </ul>
 </div>
 </nav></details>
@@ -1868,8 +2324,334 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <h4 id="settings-home-meter-includes-ev-charging">Home meter includes EV charging</h4>
 <p>Default: <strong>On</strong>.</p>
 <p>Enable for a whole-home load meter that includes the car. Disable for a house-only circuit meter; NRG then adds separately measured EV power for the Home total while learning the house-only reading directly.</p>
-<p>Reference key: <code>home_includes_ev</code>.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="troubleshooting" aria-label="Troubleshooting &amp; support"><h2 id="troubleshooting-troubleshooting-and-support">Troubleshooting and support</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Troubleshooting &amp; support topics"><div class="toc">
+<p>Reference key: <code>home_includes_ev</code>.</p>
+<h3 id="settings-configuration-beyond-catalogue-fields">Configuration beyond catalogue fields</h3>
+<p>The forms also store the structured choices below. Use Configure or the native entities; do not edit HA storage files. These choices persist across restarts, unlike Charge now.</p>
+<div class="table-scroll" role="region" aria-label="Every setting table 1" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Configuration</th>
+<th scope="col">Initial value and behavior</th>
+<th scope="col">Guide</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>supply_periods</code>, <code>delivery_periods</code></td>
+<td>Empty independent schedules; the optional template leaves rates blank.</td>
+<td><a href="#pricing-editing-timed-periods-in-ha">Period editor</a></td>
+</tr>
+<tr>
+<td><code>mappings</code></td>
+<td>No entities selected on fresh setup; only relevant roles are shown, and hidden choices are retained.</td>
+<td><a href="#integrations-provider-neutral-measurements">Measurements</a></td>
+</tr>
+<tr>
+<td><code>solar_sources</code></td>
+<td>No forecasts selected; use Add/Edit/Remove for entity, label, physical group, weight and age correction.</td>
+<td><a href="#integrations-solar-forecasts-and-alternatives">Solar sources</a></td>
+</tr>
+<tr>
+<td><code>departure_override</code></td>
+<td>Unset; one-off local date/time takes precedence over daily departure.</td>
+<td><a href="#operations-everyday-controls">Everyday controls</a></td>
+</tr>
+<tr>
+<td><code>notification_targets</code></td>
+<td>No notify services selected; shared by the two independent message types.</td>
+<td><a href="#operations-notifications">Notifications</a></td>
+</tr>
+<tr>
+<td><code>control_values</code></td>
+<td>Device-state examples below, not detected compatibility.</td>
+<td><a href="#integrations-direct-controls-and-option-names">Control adapters</a></td>
+</tr>
+<tr>
+<td><code>command_scripts</code></td>
+<td>No scripts selected; each selected command path still requires mapped feedback.</td>
+<td><a href="#integrations-script-adapters">Script adapters</a></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="settings-measurement-and-control-entity-mappings">Measurement and control entity mappings</h3>
+<p>Configure → Mappings selects ordinary entities from your existing integrations. Mapping a control never enables equipment commands. Input helpers retain their saved settings; other readings follow the documented freshness checks.</p>
+<div class="table-scroll" role="region" aria-label="Every setting table 2" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Reference key</th>
+<th scope="col">HA role</th>
+<th scope="col">Accepted entity domains</th>
+<th scope="col">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>home_power</code></td>
+<td>Whole-home power</td>
+<td><code>sensor</code></td>
+<td>Total AC household demand including the EV, from any provider, W or kW.</td>
+</tr>
+<tr>
+<td><code>grid_power</code></td>
+<td>Signed grid power</td>
+<td><code>sensor</code></td>
+<td>Grid meter: positive import, negative export, W or kW.</td>
+</tr>
+<tr>
+<td><code>grid_connected</code></td>
+<td>Grid connected (optional)</td>
+<td><code>binary_sensor</code></td>
+<td>Optional protection input: on while connected. If selected, missing/off prevents equipment commands.</td>
+</tr>
+<tr>
+<td><code>live_supply</code></td>
+<td>Current supply price (optional)</td>
+<td><code>sensor</code></td>
+<td>External supply-price sensor in cents/kWh or USD/kWh. Also usable instead of the live ComEd API in ComEd mode.</td>
+</tr>
+<tr>
+<td><code>supply_forecast</code></td>
+<td>External supply forecast (optional)</td>
+<td><code>sensor</code></td>
+<td>Sensor with a list of price intervals in its configured forecast attribute. May be the same as the current-price sensor.</td>
+</tr>
+<tr>
+<td><code>live_delivery</code></td>
+<td>Current delivery price (optional)</td>
+<td><code>sensor</code></td>
+<td>External delivery-price sensor for External delivery entity mode.</td>
+</tr>
+<tr>
+<td><code>delivery_forecast</code></td>
+<td>External delivery forecast (optional)</td>
+<td><code>sensor</code></td>
+<td>Independent delivery-price interval list. Missing intervals remain unknown.</td>
+</tr>
+<tr>
+<td><code>solar_power</code></td>
+<td>Actual solar power</td>
+<td><code>sensor</code></td>
+<td>Solar production from any integration, W or kW. Prefer a local meter when available.</td>
+</tr>
+<tr>
+<td><code>battery_power</code></td>
+<td>Signed battery power</td>
+<td><code>sensor</code></td>
+<td>AC-side battery meter: positive discharge, negative charging, W or kW. DC battery-terminal power is not suitable for AC flows or battery calibration.</td>
+</tr>
+<tr>
+<td><code>battery_soc</code></td>
+<td>Battery charge</td>
+<td><code>sensor</code></td>
+<td>Home battery percentage, independent of manufacturer or integration.</td>
+</tr>
+<tr>
+<td><code>battery_charge_energy</code></td>
+<td>Battery lifetime AC charging energy (optional)</td>
+<td><code>sensor</code></td>
+<td>Increasing AC kWh received by the battery system, not stored DC energy or a resetting daily/session counter. Select both battery energy counters or neither; both must use the same AC boundary as battery power.</td>
+</tr>
+<tr>
+<td><code>battery_discharge_energy</code></td>
+<td>Battery lifetime AC discharged energy (optional)</td>
+<td><code>sensor</code></td>
+<td>Increasing AC kWh delivered by the battery system. Pair with lifetime AC charging energy; missing/resetting selected counters pause efficiency learning rather than switching measurement methods.</td>
+</tr>
+<tr>
+<td><code>battery_mode</code></td>
+<td>Battery mode control / feedback</td>
+<td><code>select</code>, <code>sensor</code>, <code>input_select</code></td>
+<td>Select/input_select controls work directly. Read-only feedback needs a script adapter. Configure the device's actual hold/serve/charge option names.</td>
+</tr>
+<tr>
+<td><code>battery_reserve</code></td>
+<td>Battery reserve control / feedback (optional)</td>
+<td><code>number</code>, <code>sensor</code>, <code>input_number</code></td>
+<td>Optional device backup-reserve setting. Read-only feedback can be paired with a script adapter.</td>
+</tr>
+<tr>
+<td><code>battery_grid_charge</code></td>
+<td>Grid-charge permission (optional)</td>
+<td><code>switch</code>, <code>binary_sensor</code>, <code>sensor</code>, <code>input_boolean</code></td>
+<td>Optional permission switch. A separate force-charge operating mode can be used instead; no grid-charge commands are invented for unsupported devices.</td>
+</tr>
+<tr>
+<td><code>battery_export</code></td>
+<td>Export policy control / feedback (optional)</td>
+<td><code>select</code>, <code>sensor</code>, <code>input_select</code></td>
+<td>Optional export-permission control. Configure option names under Control adapters. If omitted, set the policy in the device's own app.</td>
+</tr>
+<tr>
+<td><code>storm_watch</code></td>
+<td>Protection event active (optional)</td>
+<td><code>binary_sensor</code></td>
+<td>Optional active protection event, e.g. Storm Watch or a manufacturer override. On or missing blocks commands when selected.</td>
+</tr>
+<tr>
+<td><code>grid_services</code></td>
+<td>Grid services active (optional)</td>
+<td><code>binary_sensor</code></td>
+<td>Optional utility/grid-services event. On or missing blocks commands when selected.</td>
+</tr>
+<tr>
+<td><code>grid_services_enabled</code></td>
+<td>External controller priority (optional)</td>
+<td><code>binary_sensor</code></td>
+<td>Optional ownership/protection flag: while on, an external controller has priority.</td>
+</tr>
+<tr>
+<td><code>ev_connected</code></td>
+<td>EV plugged in</td>
+<td><code>binary_sensor</code></td>
+<td>Plug/connection sensor from any provider. If it identifies this home's charger, location need not also be mapped.</td>
+</tr>
+<tr>
+<td><code>ev_location</code></td>
+<td>EV at home (optional)</td>
+<td><code>device_tracker</code>, <code>binary_sensor</code>, <code>sensor</code></td>
+<td>Optional additional home check: home for a tracker/sensor or on for a binary sensor. Omit when the connection sensor already identifies the home charger.</td>
+</tr>
+<tr>
+<td><code>ev_soc</code></td>
+<td>Vehicle charge</td>
+<td><code>sensor</code></td>
+<td>Vehicle battery percentage, e.g. TeslaMate, Teslemetry, Tessie or another EV integration.</td>
+</tr>
+<tr>
+<td><code>ev_limit</code></td>
+<td>Selected vehicle charge limit</td>
+<td><code>number</code>, <code>sensor</code>, <code>input_number</code></td>
+<td>Selected target percentage. Read only: NRG never raises it.</td>
+</tr>
+<tr>
+<td><code>ev_power</code></td>
+<td>EV charging power</td>
+<td><code>sensor</code></td>
+<td>AC charging power from a charger or vehicle integration. Local meters are preferred, not required.</td>
+</tr>
+<tr>
+<td><code>ev_energy</code></td>
+<td>EV lifetime AC energy</td>
+<td><code>sensor</code></td>
+<td>Increasing AC kWh counter for charging, not a resetting session counter. Optional; EV calibration needs it.</td>
+</tr>
+<tr>
+<td><code>ev_measured_current</code></td>
+<td>EV measured current</td>
+<td><code>sensor</code></td>
+<td>Optional actual charging current in amperes. Otherwise the configured current-setting entity is used for power calibration.</td>
+</tr>
+<tr>
+<td><code>ev_current</code></td>
+<td>EV current setting / feedback</td>
+<td><code>number</code>, <code>sensor</code>, <code>input_number</code></td>
+<td>Current setting in A. Number/input_number controls work directly. A read-only sensor needs an EV current script under Control adapters.</td>
+</tr>
+<tr>
+<td><code>ev_charge</code></td>
+<td>EV charging control / feedback</td>
+<td><code>switch</code>, <code>binary_sensor</code>, <code>sensor</code>, <code>input_boolean</code></td>
+<td>Switches work directly. Read-only state feedback needs start/stop scripts. Set its charging/paused state values under Control adapters if they are not on/off.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="settings-control-state-names-and-command-scripts">Control-state names and command scripts</h3>
+<p>Configure → Control adapters matches these example values to the actual device. They are not manufacturer detection or permission to issue commands. Match hold/serve/charge behavior before transferring control; never map serve-home to forced export.</p>
+<div class="table-scroll" role="region" aria-label="Every setting table 3" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Control value key</th>
+<th scope="col">Default device-state example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>battery_hold</code></td>
+<td><code>backup</code></td>
+</tr>
+<tr>
+<td><code>battery_serve</code></td>
+<td><code>self_consumption</code></td>
+</tr>
+<tr>
+<td><code>battery_charge</code></td>
+<td><code>backup</code></td>
+</tr>
+<tr>
+<td><code>export_solar</code></td>
+<td><code>pv_only</code></td>
+</tr>
+<tr>
+<td><code>export_battery</code></td>
+<td><code>battery_ok</code></td>
+</tr>
+<tr>
+<td><code>export_none</code></td>
+<td><code>never</code></td>
+</tr>
+<tr>
+<td><code>ev_on</code></td>
+<td><code>on</code></td>
+</tr>
+<tr>
+<td><code>ev_off</code></td>
+<td><code>off</code></td>
+</tr>
+<tr>
+<td><code>grid_charge_on</code></td>
+<td><code>on</code></td>
+</tr>
+<tr>
+<td><code>grid_charge_off</code></td>
+<td><code>off</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Script selections start empty and use available <code>script.*</code> entities. The form field is <code>script_</code> plus the role; it is stored under <code>command_scripts</code>. See <a href="#integrations-script-adapters">script variables and feedback limits</a>, including reserve/export restrictions during fallback and estimated pricing.</p>
+<div class="table-scroll" role="region" aria-label="Every setting table 4" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Script role key</th>
+<th scope="col">Selection field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ev_current</code></td>
+<td><code>script_ev_current</code></td>
+</tr>
+<tr>
+<td><code>ev_start</code></td>
+<td><code>script_ev_start</code></td>
+</tr>
+<tr>
+<td><code>ev_stop</code></td>
+<td><code>script_ev_stop</code></td>
+</tr>
+<tr>
+<td><code>battery_mode</code></td>
+<td><code>script_battery_mode</code></td>
+</tr>
+<tr>
+<td><code>battery_export</code></td>
+<td><code>script_battery_export</code></td>
+</tr>
+<tr>
+<td><code>battery_reserve</code></td>
+<td><code>script_battery_reserve</code></td>
+</tr>
+<tr>
+<td><code>grid_charge_on</code></td>
+<td><code>script_grid_charge_on</code></td>
+</tr>
+<tr>
+<td><code>grid_charge_off</code></td>
+<td><code>script_grid_charge_off</code></td>
+</tr>
+</tbody>
+</table></div><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="troubleshooting" aria-label="Troubleshooting &amp; support"><h2 id="troubleshooting-troubleshooting-and-support">Troubleshooting and support</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Troubleshooting &amp; support topics"><div class="toc">
 <ul>
+<li><a href="#troubleshooting-a-documented-feature-is-missing">A documented feature is missing</a></li>
 <li><a href="#troubleshooting-nrg-does-not-appear-in-add-integration">NRG does not appear in Add integration</a></li>
 <li><a href="#troubleshooting-the-integration-is-installed-but-no-nrg-dashboards-appear">The integration is installed, but no NRG dashboards appear</a></li>
 <li><a href="#troubleshooting-charts-say-custom-element-does-not-exist-or-are-blank">Charts say Custom element does not exist or are blank</a></li>
@@ -1893,6 +2675,14 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <p>Start with the symptom below. <strong>Configure → …</strong> means <strong>Settings → Devices &amp;
 services → NRG Planner → Configure</strong>. The optional administrator dashboard is
 called <strong>NRG Planner settings</strong>.</p>
+<h3 id="troubleshooting-a-documented-feature-is-missing">A documented feature is missing</h3>
+<p>Check <a href="#features-which-features-are-in-my-installation">feature availability</a>
+before resetting or reinstalling. GitHub main can include unreleased work after
+0.2.0; a HACS stable installation only has its selected release. A development
+snapshot can use the same manifest version, so compare its source/release notes
+and bundled handbook, not just the displayed number. Some forms/cards also hide
+choices for components not installed or enabled for NRG control. Hidden saved
+choices are retained. See <a href="#installation-updates-and-removal">updates</a>.</p>
 <h3 id="troubleshooting-nrg-does-not-appear-in-add-integration">NRG does not appear in Add integration</h3>
 <ol>
 <li>Confirm that Home Assistant is 2026.10.2 or newer; this version targets 2026.10.2.</li>
@@ -1949,7 +2739,11 @@ NRG does not reset its freshness merely because the request succeeded.</p>
 delays → Allow brief published estimates</strong>. This opt-in uses a valid exact-hour
 published forecast for at most 60 minutes from the last verified live observation.
 It keeps Pricing health Degraded, permits normal EV planning and blocks battery
-grid charging. Remaining allowance and forecast age are shown in Pricing health.
+grid charging. Remaining allowance, forecast age and last verified live age are
+shown in Pricing health. In More info, inspect <code>comed_estimated_price</code>,
+<code>last_live_observation</code>, <code>live_age_seconds</code>, <code>forecast_age_seconds</code>, <code>estimate_until</code>
+and <code>estimate_seconds_remaining</code>. <code>comed_publication_bridge</code> identifies the short
+new-hour bridge; source <code>day_ahead</code> means published forecast, not live.
 It does not change your fallback actions, control permissions, or manual request.
 Forecasts cannot release an already active automatic fallback: wait for confirmed
 fresh live recovery. See <a href="#pricing-brief-comed-live-data-delays">the limits and safeguards</a>.</p>
@@ -2032,7 +2826,10 @@ continuously connected session stays overdue instead of quietly moving to tomorr
 <p>Grid charging requires a supported charge action. If charge and hold share the
 same device mode, a separate grid-charge permission switch is needed; otherwise a
 distinct charge-capable mode can work. Missing trustworthy price/solar inputs,
-reserve, and device readiness can also limit moves.</p>
+reserve, and device readiness can also limit moves. During opt-in ComEd
+published-estimate operation, battery grid charging is deliberately blocked even
+with a visible estimated buying price. Inspect Pricing health rather than treating
+that visible price as fresh live authorization.</p>
 <p>NRG does not schedule forced battery exports. <strong>Battery</strong> export policy permits
 exports where a control exists; it does not request a timed sale. Without a mapped
 export control, configure that policy in the equipment's own app. See
@@ -2053,21 +2850,33 @@ missing readings, and downtime are partial. Price advice can still work without
 site metering.</p>
 <p>NRG integrates covered power samples; HA Energy can use lifetime energy counters.
 Their totals need not match. Fixed fees and unconfigured taxes are outside NRG's
-variable-cost ledger. Changing a rate does not retroactively reprice recorded
-intervals. See <a href="#accounting">accounting</a>.</p>
+variable-cost ledger. During permitted ComEd bridges/delays, the cost total can
+include separately tracked published-price estimates. <strong>Today's forecast-priced
+coverage</strong> and the cost/coverage attributes <code>estimated_coverage_hours</code>,
+<code>estimated_import_cost</code> and <code>estimated_export_credit</code> identify new estimated
+intervals; they are subsets, not extra charges. Older history is not reclassified.
+Changing a rate does not retroactively reprice recorded intervals. See
+<a href="#accounting">accounting</a>.</p>
 <h3 id="troubleshooting-learning-or-notifications-do-not-seem-to-work">Learning or notifications do not seem to work</h3>
 <p><strong>Learning:</strong> check the relevant switch and measurement coverage. Household hours
 need 80% valid coverage. Solar needs six valid daylight comparisons. EV sessions
 need at least five percentage points, five minutes, and covered AC energy readings
-from an increasing lifetime counter. Until then, configured fallbacks are expected.
+from an increasing lifetime counter. Optional battery calibration needs AC-side
+power/SOC, three qualifying closed cycles for efficiency and three sustained
+opportunities for each power direction. Ordinary low-load readings do not prove
+maximum capability. Each parameter can still use its own configured fallback.
+Until these qualifications are met, configured fallbacks are expected.
 <a href="#learning">Learning</a> explains each requirement. Reset only when you intend to
 discard learned profiles and comparisons.</p>
 <p><strong>Notifications:</strong> enable notifications and select existing notify services in
 <strong>Configure → Notifications</strong>. The feature sends stable wait-until advice only
 when its modeled benefit reaches your threshold and quiet hours permit it. A
 two-minute stability requirement prevents immediate messages; the default
-threshold is 25¢ for the reference task. No message is expected just because a
-price changed.</p>
+threshold is 25¢ for the reference task. Incomplete comparison coverage or a limited
+battery-refill estimate suppresses savings messages. Price-data fallback alerts are
+a separate opt-in, independent of that benefit threshold, with a transition-alert
+cooldown. Both message types respect the shared quiet hours and need a selected
+notify service. No message is expected just because a price changed.</p>
 <h3 id="troubleshooting-the-handbook-looks-old-after-an-update">The handbook looks old after an update</h3>
 <p>Open it using a dashboard's handbook link; the generated link includes a content
 version to avoid an old cached copy. Reload the browser if needed. With a manual
@@ -2303,6 +3112,34 @@ describes exactly what the standard diagnostic download includes and excludes.</
 <td>Improving predictions using valid local observations. It does not rewrite measurements.</td>
 </tr>
 <tr>
+<td><strong>Pricing health</strong></td>
+<td>Healthy, Degraded, Fallback or Recovering describes usable price data and selected protection, not the grid's electrical condition.</td>
+</tr>
+<tr>
+<td><strong>Publication bridge</strong></td>
+<td>A valid exact-hour ComEd forecast temporarily covering the first ten minutes of a new hour while live pricing is published. It is not a prior-hour live price.</td>
+</tr>
+<tr>
+<td><strong>Brief published estimates</strong></td>
+<td>An opt-in current-hour forecast allowance ending 60 minutes after the last verified live observation. Degraded, not live; blocks battery grid charging and cannot renew itself on refresh/restart.</td>
+</tr>
+<tr>
+<td><strong>Price-data fallback</strong></td>
+<td>Standard guarded protection or explicitly reviewed custom EV/battery actions when current pricing is unusable. Manual requests and automatic recovery have separate rules.</td>
+</tr>
+<tr>
+<td><strong>Dependable economic horizon</strong></td>
+<td>The contiguous period with the applicable price/solar coverage needed for a supported cost comparison. The physical/EV outlook can extend beyond it.</td>
+</tr>
+<tr>
+<td><strong>Refill potential / common battery value</strong></td>
+<td>Permitted solar/grid charging capacity after demand, modes and losses; insufficient potential uses a conservative reference shared by candidate schedules and advice, not a promised future refill.</td>
+</tr>
+<tr>
+<td><strong>Forecast-priced coverage</strong></td>
+<td>Newly tracked ledger time priced using a permitted published forecast. Its costs/credits are subsets of totals, not live or settled prices; old history is not retroactively classified.</td>
+</tr>
+<tr>
 <td><strong>HACS</strong></td>
 <td>Home Assistant Community Store, an optional way to install community integrations and dashboard cards. It is not required for manual installation of NRG itself.</td>
 </tr>
@@ -2339,9 +3176,10 @@ should use the account's GitHub no-reply address, not a personal email.</p>
 <h3 id="privacy-runtime-data-stays-in-home-assistant">Runtime data stays in Home Assistant</h3>
 <p>NRG stores integration options and bounded learning/cost summaries through HA's
 storage APIs. That includes user-entered rates, source mappings, hourly summaries,
-EV-session estimates, compact battery-cycle/power-opportunity summaries, and daily
-ledgers. These are private installation data, not
-repository assets. HA backups may contain them.</p>
+EV-session estimates, compact battery-cycle/power-opportunity summaries, daily
+ledgers (including forecast-priced cost subsets), saved manual/automatic fallback
+state, and the source identity/timestamp of the last verified ComEd live
+observation. These are private installation data, not repository assets. HA backups may contain them.</p>
 <p>Removing the integration through Devices &amp; services deletes its own local storage.
 Reloads and updates preserve it. Existing HA backups and recorder history follow
 HA's separate retention settings.</p>
@@ -2424,8 +3262,12 @@ the same time-of-use rate, while energy uses their real elapsed duration.</p>
 Both support flat, timed and external prices; supply additionally supports ComEd.
 External current observations are not extrapolated as future rates. Missing foreign
 utility data never receives a ComEd historical fallback. See <a href="#pricing">pricing</a>.
-Flat rates also start unset. The optional ComEd estimate uses only observations
-learned by the current installation; no historical profile is embedded.</p>
+Flat rates also start unset. ComEd's live running average, published exact-hour
+forecast and tentative estimate from locally recorded observations are distinct.
+Only the documented publication bridge or opt-in bounded estimate allowance can
+substitute a published forecast for missing current live pricing; learned-history
+estimates cannot authorize it. No historical household profile is embedded.
+See <a href="#pricing-comed-price-sources-and-freshness">sources and freshness</a>.</p>
 <p>For daily departure on a DST change, the first occurrence of an ambiguous local
 time is used. A nonexistent spring time shifts forward by the DST jump.</p>
 <h3 id="design-measurements-and-statistics">Measurements and statistics</h3>
@@ -2484,8 +3326,9 @@ baseline. Replanning can extend the economic horizon as coverage improves.</p>
 discretionary battery trajectory. No charge-capable mode/switch means grid charging
 is excluded rather than invented. Unknown current prices/solar permit hold only.</p>
 <p>Grid charging is not scheduled alongside EV charging. The preserve-battery option
-also excludes serving the car from storage. The optional seasonal peak precaution
-is separate from tariff prices and starts off for non-ComEd configurations.</p>
+also excludes serving the car from storage. There is no active seasonal charging
+heuristic: the former summer restriction was removed. Actual configured tariffs,
+coverage, equipment permissions and protections determine the permitted modes.</p>
 <p>For round-trip efficiency <code>r</code>:</p>
 <pre tabindex="0" aria-label="Code example"><code class="language-text">next stored energy = stored energy
                    + AC charging energy × sqrt(r)
@@ -2502,7 +3345,9 @@ favor less battery throughput, avoiding artificial flat-rate cycling.</p>
 from permitted grid and solar refill potential within that same horizon. Valuation
 and dispatch share one mode-permission function. Grid refill requires a supported
 charge mode and either a reversible grid-permission switch or distinct force-charge
-mode; it is excluded during EV charging and price-data fallback. Solar surplus is
+mode; it is excluded during EV charging, price-data fallback and current intervals
+using the opt-in published estimate. Estimate-backed operation retains a higher
+reported native reserve and caps export permission to solar only or no exports. Solar surplus is
 calculated after house and EV demand. If hold prevents solar charging, solar is
 counted only where another permitted mode accepts it. Unavailable/monitor-only
 batteries claim no scheduled refill potential.</p>
@@ -2545,6 +3390,13 @@ These are incremental costs under the selected modes, not a separate globally
 reoptimized appliance schedule. Incomplete equipment information limits confidence;
 only dependable advice can send savings notifications. Tentative/gap outlook values
 remain distinguishable. Advice never operates an appliance.</p>
+<p>Current pricing health is reevaluated at command boundaries as well as coordinator
+updates. Moving into or out of estimated pricing, entering/releasing fallback,
+or changing assumptions invalidates the old plan. A ComEd estimate deadline is
+an exact slot boundary; commands cannot extend it using an old charging grant.
+The last verified live timestamp and automatic-outage latch persist across
+restarts, without persisting an unfinished live-recovery confirmation.
+See <a href="#pricing-brief-comed-live-data-delays">price resilience</a>.</p>
 <p>Plans expire after seven minutes and replan every five minutes/on important changes.
 The serialized writer runs every thirty seconds and selects the applicable dated
 plan interval, so tariff/charging boundaries do not wait for a fresh five-minute
@@ -2582,8 +3434,8 @@ credit. Export policy controls what is permitted where a supported device contro
 exists; it does not itself establish compensation or a timed sale. Credit-bank,
 cash-out and billing-period restrictions are not automatically reconstructed.</p>
 <p>Fixed customer fees do not change which hour is cheaper. Capacity charges and
-unconfigured taxes are excluded. The optional seasonal precaution is not an
-invented per-kWh cost or a claimed capacity-dollar saving.</p>
+unconfigured taxes are excluded; there is no modeled capacity-charge saving or
+active seasonal charging heuristic.</p>
 <h3 id="accounting-observed-ledger">Observed ledger</h3>
 <pre tabindex="0" aria-label="Code example"><code class="language-text">purchase cost = positive grid kW × hours × buying price at that time
 export credit = negative grid kW magnitude × hours × configured export credit
@@ -2603,8 +3455,10 @@ published estimates. Cost and coverage entities expose <code>estimated_coverage_
 of the displayed totals, not additional charges. Live/contract-rate coverage is
 total coverage minus estimated coverage. Tracking begins with this update; older
 saved ledger intervals are preserved but cannot be retroactively classified.
-Estimated-price accounting stops at the exact allowance deadline, even between
-samples. Published estimates are not utility settlement prices.</p>
+Estimated-price accounting stops at the earlier of the exact allowance deadline
+or the real hour boundary, even between samples. A previous hour's forecast is
+not carried into the following hour. Published estimates are not utility settlement
+prices.</p>
 <p>User rate changes do not retroactively reprice earlier observed intervals.</p>
 <p>Missing price/grid data contributes neither cost nor cost coverage. Negative
 purchase costs and negative export credits remain signed, including adverse native
@@ -2647,6 +3501,11 @@ observed operation and reconcile actual bills.</p>
 <p>Use <strong><code>sensor.nrg_import_price_usd</code></strong> as the buying-price entity if configuring HA
 Energy costs. It includes the selected supply and delivery methods; do not add
 delivery again. Its availability follows price coverage.</p>
+<p>During a permitted ComEd forecast bridge/estimate allowance, these entities can
+publish a forecast-backed price. Their price-source attributes and Pricing health
+identify that provenance; HA Energy using those entities will also be using the
+estimate, not a settled utility rate. NRG's separate estimated-coverage subsets
+are in its own ledger, not a retroactive correction of HA Energy history.</p>
 <p>Use <code>sensor.nrg_export_price_usd</code> for export compensation. Changing Energy's price
 sources is a separate supported UI action; NRG does not rewrite historical records.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="alternatives" aria-label="Other energy planners"><h2 id="alternatives-free-alternatives-and-intended-community-value">Free alternatives and intended community value</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Other energy planners topics"><div class="toc">
 <ul>
@@ -2718,6 +3577,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 <li><a href="#review-refill-capability-hardening-verification-2026-10-22">Refill-capability hardening verification — 2026-10-22</a></li>
 <li><a href="#review-comed-publication-gap-verification-2026-10-22">ComEd publication-gap verification — 2026-10-22</a></li>
 <li><a href="#review-bounded-comed-estimate-verification-2026-10-22">Bounded ComEd estimate verification — 2026-10-22</a></li>
+<li><a href="#review-full-feature-documentation-audit-2026-10-22">Full feature documentation audit — 2026-10-22</a></li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -2911,6 +3771,27 @@ No requirements or audit exclusions change. Hosted CI and the self-review are
 recorded on the pull request; this local record is not a claim of independent
 review, live deployment, or verified physical equipment response. No release is
 published by this change.</p>
+<h3 id="review-full-feature-documentation-audit-2026-10-22">Full feature documentation audit — 2026-10-22</h3>
+<p>Audited the original implementation and each subsequent feature/behavior change
+through the bounded-estimate work against the current source and user guides.
+The <a href="#features">feature guide</a> now indexes the complete feature areas and
+separates original/0.1.0, 0.2.0 and unreleased development. It explicitly marks the
+summer charging heuristic as retired. Removed its stale active-feature claims,
+replaced the dated provider-availability banner with durable pricing guidance,
+and aligned homeowner/setup/FAQ/troubleshooting, pricing, notification, script,
+privacy, accounting and update instructions with current behavior.</p>
+<p>The generated settings reference covers all <strong>56 catalogue settings, 28 mapping
+roles, 10 control-state examples and eight command-script roles</strong>, plus structured
+period/source/departure/notification choices. All documentation chapters are
+bundled into the local handbook. New regression checks verify chapter inclusion,
+source-derived defaults/help, mapping/control/script coverage, Markdown link
+fragments, original/new feature entry points, and release/retirement clarity.</p>
+<p><strong>427 tests pass</strong> on Python 3.14.8 / HA 2026.10.2, including 31 new documentation
+checks. Ruff, privacy/history, dependency consistency, local links and generated
+asset reproduction pass. The unchanged HA-pinned dependency audit still reports
+<strong>36 Pillow/uv advisories</strong> as detailed above; none is suppressed. This audit adds
+no pricing, planning, control, storage, dependency or version behavior change.
+Hosted CI/self-review are recorded on its PR; no new release is published.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as

@@ -57,6 +57,31 @@ the model cannot reach the selected target by departure under those conditions.
 Use **Charge now** or adjust the departure override when appropriate; see
 [everyday controls](operations.md#everyday-controls).
 
+## Why does ComEd enter fallback when its API still responds?
+
+A successful request can contain an old reading. Live ComEd data must be less
+than 15 minutes old and belong to the current hour. Under the default **Strict
+live pricing**, only a valid published forecast during the first ten minutes of
+a new hour can bridge missing live pricing.
+
+The separate opt-in **Allow brief published estimates** can use a valid exact-hour
+forecast for up to 60 minutes from the last verified live observation. It shows
+Degraded, lets EV planning continue, blocks battery grid charging and retains
+reserve/protection checks. Refreshing or restarting cannot renew the allowance.
+Neither a forecast nor selecting this option releases an already active automatic
+fallback; distinct fresh live recovery is still required.
+See [brief ComEd delays](pricing.md#brief-comed-live-data-delays).
+
+## Will missing prices always stop my car charging?
+
+No. **Standard protection** can continue guarded EV charging to meet departure at
+an unknown price. **Use my fallback actions** applies the separately reviewed
+EV choice: pause scheduled charging or charge for departure. The pause can leave
+the car below its target. **Charge now** explicitly overrides that pause, but never
+connection, selected-target, current or protection checks. Permitted temporary
+published-estimate operation can also keep normal EV planning available without
+activating custom fallback. See [outage actions](operations.md#price-data-fallback).
+
 ## Why suggest an appliance window when the grid price is high?
 
 The reference appliance may be supplied by the home battery rather than the grid.
@@ -87,6 +112,11 @@ cheaper than another.
 ## Does the displayed cost equal my bill or show money saved?
 
 No. Today's net energy cost estimates covered grid purchases minus export credits.
+It can include separately tracked published-forecast intervals during permitted
+ComEd bridges/delays. **Today's forecast-priced coverage** and cost entity attributes
+identify those newly classified subsets; older ledger entries are not retroactively
+reclassified. HA Energy using NRG's price entities also receives a permitted
+forecast-backed current price. Neither source is a settlement-price guarantee.
 Missing readings and restart downtime reduce coverage. Fixed fees, capacity/demand
 charges, and unconfigured taxes are excluded. Credit banks and billing restrictions
 are not reconstructed. Modeled plan costs and appliance benefits answer different
@@ -115,17 +145,43 @@ qualifying charging sessions; household learning builds from covered hours over
 time. Optional battery calibration needs three covered, substantial closed-SOC cycles
 for efficiency and three sustained opportunities per power direction. It may take
 longer—or retain fallbacks—if normal operation does not provide those opportunities.
-It does not estimate battery health. Each switch can be turned off independently. **Reset learning** clears
-profiles and calibration while keeping settings and the measured-cost ledger.
+It does not estimate battery health. Each switch can be turned off independently.
+**Reset learning** clears profiles and calibration while keeping settings and the
+measured-cost ledger.
 See [learning](learning.md) for the exact requirements.
+
+## Why did a price change not send a notification?
+
+Household advice and price-data fallback alerts are independent opt-ins. Advice
+needs a stable, worthwhile wait recommendation with dependable coverage; a limited
+refill estimate suppresses savings messages. Fallback alerts describe entry or
+recovery, not every delayed request or estimated-price interval. Both need selected
+notify services and respect quiet hours. Enabling messages grants no equipment
+control. See [notifications](operations.md#notifications).
 
 ## What stays saved when Home Assistant restarts?
 
-Settings, source mappings, learned summaries, and cost ledgers use Home Assistant
-storage. **Charge now** is session-only and clears on restart; it also clears on
-completion or disconnection. A one-off departure persists until cleared and takes
-precedence over the daily time. Restart gaps are not filled with invented use.
+Settings, source mappings, completed learning, forecast caches and cost ledgers use
+Home Assistant storage. Manual fallback requests, the automatic-outage latch and
+the verified ComEd live timestamp also persist; restarting cannot renew a delay
+allowance or use a forecast to release an existing outage. Incomplete battery
+calibration opportunities/cycles and live recovery confirmation start over.
+
+**Charge now** is session-only and clears on restart; it also clears on completion
+or disconnection. A one-off departure takes precedence over the daily time and
+can stay overdue while the car remains connected and incomplete; clear it when
+no longer needed. Restart gaps are not filled with invented use. Integration
+removal deletes NRG's own local store, whereas reloads/updates preserve it.
 The [operations guide](operations.md) covers updates and recovery.
+
+## Why do the online docs show a feature missing from my HACS installation?
+
+Main-branch documentation can include unreleased development after 0.2.0. HACS
+stable users receive features through published releases, not every merged PR.
+A manually installed development snapshot may retain the same manifest version
+as the latest release, so that number alone does not identify its feature set.
+See [the feature history](features.md#development-milestones-since-creation) and
+[updates](installation.md#updates-and-removal).
 
 ## Is NRG free, and where do I ask for help?
 

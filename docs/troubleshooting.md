@@ -4,6 +4,16 @@ Start with the symptom below. **Configure → …** means **Settings → Devices
 services → NRG Planner → Configure**. The optional administrator dashboard is
 called **NRG Planner settings**.
 
+## A documented feature is missing
+
+Check [feature availability](features.md#which-features-are-in-my-installation)
+before resetting or reinstalling. GitHub main can include unreleased work after
+0.2.0; a HACS stable installation only has its selected release. A development
+snapshot can use the same manifest version, so compare its source/release notes
+and bundled handbook, not just the displayed number. Some forms/cards also hide
+choices for components not installed or enabled for NRG control. Hidden saved
+choices are retained. See [updates](installation.md#updates-and-removal).
+
 ## NRG does not appear in Add integration
 
 1. Confirm that Home Assistant is 2026.10.2 or newer; this version targets 2026.10.2.
@@ -67,7 +77,11 @@ To tolerate brief delays, choose **Configure → Tariff → During ComEd live-pr
 delays → Allow brief published estimates**. This opt-in uses a valid exact-hour
 published forecast for at most 60 minutes from the last verified live observation.
 It keeps Pricing health Degraded, permits normal EV planning and blocks battery
-grid charging. Remaining allowance and forecast age are shown in Pricing health.
+grid charging. Remaining allowance, forecast age and last verified live age are
+shown in Pricing health. In More info, inspect `comed_estimated_price`,
+`last_live_observation`, `live_age_seconds`, `forecast_age_seconds`, `estimate_until`
+and `estimate_seconds_remaining`. `comed_publication_bridge` identifies the short
+new-hour bridge; source `day_ahead` means published forecast, not live.
 It does not change your fallback actions, control permissions, or manual request.
 Forecasts cannot release an already active automatic fallback: wait for confirmed
 fresh live recovery. See [the limits and safeguards](pricing.md#brief-comed-live-data-delays).
@@ -168,7 +182,10 @@ continuously connected session stays overdue instead of quietly moving to tomorr
 Grid charging requires a supported charge action. If charge and hold share the
 same device mode, a separate grid-charge permission switch is needed; otherwise a
 distinct charge-capable mode can work. Missing trustworthy price/solar inputs,
-reserve, and device readiness can also limit moves.
+reserve, and device readiness can also limit moves. During opt-in ComEd
+published-estimate operation, battery grid charging is deliberately blocked even
+with a visible estimated buying price. Inspect Pricing health rather than treating
+that visible price as fresh live authorization.
 
 NRG does not schedule forced battery exports. **Battery** export policy permits
 exports where a control exists; it does not request a timed sale. Without a mapped
@@ -196,15 +213,24 @@ site metering.
 
 NRG integrates covered power samples; HA Energy can use lifetime energy counters.
 Their totals need not match. Fixed fees and unconfigured taxes are outside NRG's
-variable-cost ledger. Changing a rate does not retroactively reprice recorded
-intervals. See [accounting](accounting.md).
+variable-cost ledger. During permitted ComEd bridges/delays, the cost total can
+include separately tracked published-price estimates. **Today's forecast-priced
+coverage** and the cost/coverage attributes `estimated_coverage_hours`,
+`estimated_import_cost` and `estimated_export_credit` identify new estimated
+intervals; they are subsets, not extra charges. Older history is not reclassified.
+Changing a rate does not retroactively reprice recorded intervals. See
+[accounting](accounting.md).
 
 ## Learning or notifications do not seem to work
 
 **Learning:** check the relevant switch and measurement coverage. Household hours
 need 80% valid coverage. Solar needs six valid daylight comparisons. EV sessions
 need at least five percentage points, five minutes, and covered AC energy readings
-from an increasing lifetime counter. Until then, configured fallbacks are expected.
+from an increasing lifetime counter. Optional battery calibration needs AC-side
+power/SOC, three qualifying closed cycles for efficiency and three sustained
+opportunities for each power direction. Ordinary low-load readings do not prove
+maximum capability. Each parameter can still use its own configured fallback.
+Until these qualifications are met, configured fallbacks are expected.
 [Learning](learning.md) explains each requirement. Reset only when you intend to
 discard learned profiles and comparisons.
 
@@ -212,8 +238,11 @@ discard learned profiles and comparisons.
 **Configure → Notifications**. The feature sends stable wait-until advice only
 when its modeled benefit reaches your threshold and quiet hours permit it. A
 two-minute stability requirement prevents immediate messages; the default
-threshold is 25¢ for the reference task. No message is expected just because a
-price changed.
+threshold is 25¢ for the reference task. Incomplete comparison coverage or a limited
+battery-refill estimate suppresses savings messages. Price-data fallback alerts are
+a separate opt-in, independent of that benefit threshold, with a transition-alert
+cooldown. Both message types respect the shared quiet hours and need a selected
+notify service. No message is expected just because a price changed.
 
 ## The handbook looks old after an update
 

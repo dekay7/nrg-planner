@@ -98,19 +98,24 @@ outage, and neither policy guarantees the lowest eventual bill.
 
 **Pricing health** distinguishes Healthy, Degraded, Fallback, and Recovering.
 A failed live fetch is Degraded while the current observation is still usable.
-Automatic fallback starts when current supply or delivery pricing is missing,
-stale or invalid. ComEd live observations must be less than 15 minutes old **and
+With **Use my fallback actions** selected, automatic fallback starts when current
+supply or delivery pricing is missing, stale or invalid and no permitted bridge
+or estimate is usable. Standard protection instead keeps its normal guarded
+planner rules. ComEd live observations must be less than 15 minutes old **and
 belong to the current hour**. The previous hour's live price is never relabeled as
 current.
 
 ComEd normally needs time to publish the first running average of a new hour.
-During the **first ten minutes only**, a valid published forecast for that exact
-hour can bridge the gap without activating fallback. Pricing health explains the
+Under **Strict live pricing**, during the **first ten minutes only**, a valid
+published forecast for that exact hour can bridge the gap without activating
+fallback. Pricing health explains the
 bridge; its attributes and the buying/supply price entities report
 `comed_publication_bridge: true`, with source `day_ahead`, not a live observation.
 The forecast must satisfy the normal 36-hour cache limit. Missing, expired or
 learned-only forecasts cannot bridge the gap. If live pricing is still absent at
-ten past, current pricing becomes unusable and the selected protection applies.
+ten past under Strict live pricing, current pricing becomes unusable and the
+selected protection applies.
+
 The optional **Allow brief published estimates** setting under **Tariff** adds a
 bounded estimated-price mode instead of immediately applying fallback actions.
 It requires a valid forecast for the exact current hour and ends 60 minutes after
@@ -130,11 +135,11 @@ flat/time-of-use rates do not depend on ComEd.
 
 Automatic recovery requires valid observations spanning at least two minutes;
 live sources must supply a distinct observation, not just repeated reads of the
-same cache. Neither the publication bridge nor optional estimated pricing releases an already
-active automatic fallback or counts as fresh live recovery evidence. The
-automatic outage latch is saved so restarting cannot bypass that requirement. A manual request also stays
-active. A fresh plan is required before normal dispatch resumes. Old charging
-settings are not blindly restored. The fallback outlook assumes the selected
+same cache. Neither the publication bridge nor optional estimated pricing releases
+an already active automatic fallback or counts as fresh live recovery evidence.
+The automatic outage latch is saved so restarting cannot bypass that requirement.
+A manual request also stays active. A fresh plan is required before normal dispatch
+resumes. Old charging settings are not blindly restored. The fallback outlook assumes the selected
 baseline continues until recovery; it is not a prediction of outage duration.
 
 **Start manual fallback now** uses the selected baseline immediately, without
@@ -157,8 +162,8 @@ the other device is still attempted; unavailable controls cannot be bypassed by 
 fallback policy. An unmapped reserve/export control must be configured appropriately
 in the equipment itself. Do not map a forced-export mode to self-consumption.
 Command scripts must apply only the requested action and honor readback. During
-fallback their `reserve_soc` context retains a higher reported native reserve
-(or is unknown if that feedback is invalid), and `export_policy` is capped to
+fallback or optional estimated-price operation, their `reserve_soc` context retains
+a higher reported native reserve (or is unknown if that feedback is invalid), and `export_policy` is capped to
 Solar only or No exports; neither is permission to invent a missing control.
 
 The Price-data fallback page separates policy selection, device actions, status
@@ -166,18 +171,36 @@ and manual requests, and links to optional alerts. Observation banners explicitl
 describe a proposal, not executed equipment actions. Operation keeps everyday
 mode/EV overrides and links to this page.
 
-Under **Notifications**, **Household advice messages** and **Price-data fallback
-alerts** are separate opt-ins. The minimum benefit applies only to household
-advice; it does not suppress price-data alerts. Both use the selected notification
-services and shared quiet hours, with a five-minute fallback transition-alert
-cooldown. Select at least one notification service to receive messages. Alert
-permission does not enable fallback or equipment control, and dashboard visibility
-needs no notification permission.
 Missing prices remain unknown in cost accounting and are never filled with a
 made-up emergency rate or claimed savings. Valid published-price estimates used
 by the publication bridge or optional bounded estimate mode are tracked separately
 in forecast-priced coverage, purchase-cost and export-credit attributes. Older
 ledger intervals are not retroactively reclassified.
+
+## Notifications
+
+Under **Configure → Notifications**, **Household advice messages** and
+**Price-data fallback alerts** are separate opt-ins, both initially off.
+
+- Household advice sends a worthwhile **wait-until** recommendation only when
+  dependable comparison confidence and complete task coverage exist, the benefit
+  reaches its notification threshold, and the same recommendation remains stable
+  for at least two minutes. A limited battery-refill estimate suppresses it.
+  NRG deduplicates a delivered window per selected notify service. The planner's
+  separate minimum-improvement setting controls schedule stability, not this
+  notification threshold.
+- Price-data alerts describe custom-fallback activation or recovery, not every
+  failed fetch or Degraded estimate. They are independent of the appliance benefit
+  threshold and use a five-minute transition-alert cooldown. Observation messages
+  describe proposals, not executed equipment commands.
+
+Select at least one existing notify service; none is selected automatically.
+Both message types share these destinations and the configured local quiet hours.
+Equal quiet-hour start/end disables quiet hours; periods crossing midnight are
+supported. No message is expected solely because a price changed. A pending alert
+can wait for quiet hours/cooldown to end; it is not an immediate-delivery guarantee.
+Alert permission does not enable fallback or equipment control, and dashboard
+visibility needs no notification permission.
 
 ## Recovery
 

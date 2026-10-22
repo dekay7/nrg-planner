@@ -17,8 +17,8 @@ exists; it does not itself establish compensation or a timed sale. Credit-bank,
 cash-out and billing-period restrictions are not automatically reconstructed.
 
 Fixed customer fees do not change which hour is cheaper. Capacity charges and
-unconfigured taxes are excluded. The optional seasonal precaution is not an
-invented per-kWh cost or a claimed capacity-dollar saving.
+unconfigured taxes are excluded; there is no modeled capacity-charge saving or
+active seasonal charging heuristic.
 
 ## Observed ledger
 
@@ -43,8 +43,10 @@ published estimates. Cost and coverage entities expose `estimated_coverage_hours
 of the displayed totals, not additional charges. Live/contract-rate coverage is
 total coverage minus estimated coverage. Tracking begins with this update; older
 saved ledger intervals are preserved but cannot be retroactively classified.
-Estimated-price accounting stops at the exact allowance deadline, even between
-samples. Published estimates are not utility settlement prices.
+Estimated-price accounting stops at the earlier of the exact allowance deadline
+or the real hour boundary, even between samples. A previous hour's forecast is
+not carried into the following hour. Published estimates are not utility settlement
+prices.
 
 User rate changes do not retroactively reprice earlier observed intervals.
 
@@ -95,6 +97,12 @@ observed operation and reconcile actual bills.
 Use **`sensor.nrg_import_price_usd`** as the buying-price entity if configuring HA
 Energy costs. It includes the selected supply and delivery methods; do not add
 delivery again. Its availability follows price coverage.
+
+During a permitted ComEd forecast bridge/estimate allowance, these entities can
+publish a forecast-backed price. Their price-source attributes and Pricing health
+identify that provenance; HA Energy using those entities will also be using the
+estimate, not a settled utility rate. NRG's separate estimated-coverage subsets
+are in its own ledger, not a retroactive correction of HA Energy history.
 
 Use `sensor.nrg_export_price_usd` for export compensation. Changing Energy's price
 sources is a separate supported UI action; NRG does not rewrite historical records.
