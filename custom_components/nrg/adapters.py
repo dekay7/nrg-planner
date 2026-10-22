@@ -73,7 +73,7 @@ class Adapters:
         script = self.script(key, action)
         if script:
             reserve, export = self.runtime.config["backup_reserve"], self.runtime.config["export_policy"]
-            if getattr(self.runtime, "_fallback_active", False):
+            if getattr(self.runtime, "_fallback_active", False) or getattr(self.runtime, "_comed_estimated", False):
                 native = self.state("battery_reserve")
                 if native is not None:
                     current = finite(native.state)

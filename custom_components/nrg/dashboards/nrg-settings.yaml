@@ -24,7 +24,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=b8fddb814f32
+        url_path: /nrg-planner/guide.html?v=3165137442b2
       grid_options:
         columns: full
         rows: auto
@@ -138,7 +138,13 @@ views:
         remains active until recovery is confirmed and a new plan is ready.{% endif %}
 
         {% elif is_state(''sensor.nrg_pricing_health'',''Degraded'') %}**Pricing degraded.** {{ state_attr(''sensor.nrg_pricing_health'',''reason'')
-        }}. Check the last valid observation and source status.
+        }}.
+
+        {% if state_attr(''sensor.nrg_pricing_health'',''comed_estimated_price'') %}Published estimate, not a live
+        price. Temporary allowance remaining: {{ ((state_attr(''sensor.nrg_pricing_health'',''estimate_seconds_remaining'')
+        or 0) / 60) | round(0) }} minutes. Forecast fetched {{ ((state_attr(''sensor.nrg_pricing_health'',''forecast_age_seconds'')
+        or 0) / 60) | round(0) }} minutes ago. EV planning can continue; battery grid charging is blocked.{% else
+        %}Check the last valid observation and source status.{% endif %}
 
         {% endif %}
 
@@ -541,7 +547,7 @@ views:
     - type: markdown
       content: Actions begin automatically only when current supply or delivery pricing becomes unusable—not on
         a single failed request with a usable cached price, or just a missing tomorrow forecast. [Read detection
-        and recovery details](/nrg-planner/guide.html?v=b8fddb814f32#operations-detection-and-recovery).
+        and recovery details](/nrg-planner/guide.html?v=3165137442b2#operations-detection-and-recovery).
       grid_options:
         columns: full
         rows: auto
@@ -722,7 +728,13 @@ views:
         remains active until recovery is confirmed and a new plan is ready.{% endif %}
 
         {% elif is_state(''sensor.nrg_pricing_health'',''Degraded'') %}**Pricing degraded.** {{ state_attr(''sensor.nrg_pricing_health'',''reason'')
-        }}. Check the last valid observation and source status.
+        }}.
+
+        {% if state_attr(''sensor.nrg_pricing_health'',''comed_estimated_price'') %}Published estimate, not a live
+        price. Temporary allowance remaining: {{ ((state_attr(''sensor.nrg_pricing_health'',''estimate_seconds_remaining'')
+        or 0) / 60) | round(0) }} minutes. Forecast fetched {{ ((state_attr(''sensor.nrg_pricing_health'',''forecast_age_seconds'')
+        or 0) / 60) | round(0) }} minutes ago. EV planning can continue; battery grid charging is blocked.{% else
+        %}Check the last valid observation and source status.{% endif %}
 
         {% endif %}
 
@@ -1025,6 +1037,26 @@ views:
         entities:
         - entity: select.nrg_supply_plan
           name: Supply plan
+        show_header_toggle: false
+      grid_options:
+        columns: full
+        rows: auto
+    - type: vertical-stack
+      cards:
+      - type: markdown
+        content: '### During ComEd live-price delays
+
+
+          Strict live pricing keeps the existing ten-minute new-hour forecast bridge. Allow brief published estimates
+          uses a valid forecast for the exact current hour for at most 60 minutes from the last verified live observation.
+          Pricing stays Degraded, EV planning can continue, and battery grid charging is blocked. Refreshes and
+          restarts do not renew the allowance. Cold starts without a verified observation get only the ten-minute
+          publication bridge. Your fallback actions still apply when the allowance or coverage ends; this choice
+          does not enable equipment control.'
+      - type: entities
+        entities:
+        - entity: select.nrg_comed_price_resilience
+          name: Live-price delays
         show_header_toggle: false
       grid_options:
         columns: full
@@ -2688,6 +2720,25 @@ views:
         action: none
       icon_tap_action:
         action: more-info
+      grid_options:
+        columns: full
+        rows: auto
+    - type: tile
+      entity: sensor.nrg_estimated_pricing_hours
+      name: Today's forecast-priced coverage
+      tap_action:
+        action: more-info
+      hold_action:
+        action: none
+      icon_tap_action:
+        action: more-info
+      grid_options:
+        columns: full
+        rows: auto
+    - type: markdown
+      content: Cost totals may include published-price estimates. **Forecast-priced coverage** identifies newly
+        tracked estimated intervals; cost entity attributes separate their purchase costs and export credits. These
+        are not settled utility charges.
       grid_options:
         columns: full
         rows: auto

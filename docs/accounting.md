@@ -33,7 +33,19 @@ Configured time-of-use boundaries split observed intervals exactly, including a
 boundary partway through a sampling minute. Current variable-feed rates remain
 contemporaneous estimates, including the explicitly labeled published forecast
 during ComEd's bounded [new-hour publication window](pricing.md#comeds-new-hour-publication-window).
-The bridge does not become a recorded live supply observation for learning.
+The optional [brief-delay estimate mode](pricing.md#brief-comed-live-data-delays)
+can also use an exact-hour published forecast within its fixed allowance. Neither
+forecast path becomes a recorded live supply observation for learning.
+
+**Today's forecast-priced coverage** reports the hours newly accounted using
+published estimates. Cost and coverage entities expose `estimated_coverage_hours`,
+`estimated_import_cost` and `estimated_export_credit`; these amounts are subsets
+of the displayed totals, not additional charges. Live/contract-rate coverage is
+total coverage minus estimated coverage. Tracking begins with this update; older
+saved ledger intervals are preserved but cannot be retroactively classified.
+Estimated-price accounting stops at the exact allowance deadline, even between
+samples. Published estimates are not utility settlement prices.
+
 User rate changes do not retroactively reprice earlier observed intervals.
 
 Missing price/grid data contributes neither cost nor cost coverage. Negative

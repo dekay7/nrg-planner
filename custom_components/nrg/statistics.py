@@ -77,7 +77,11 @@ class Statistics:
             return
         start, old = previous
         self._ev_session(now, values, old, now - start)
-        cuts = sorted(boundaries(start, now, old["_tariffs"], zone)) if old.get("_tariffs") else []
+        cuts = list(boundaries(start, now, old["_tariffs"], zone)) if old.get("_tariffs") else []
+        price_until = old.get("_price_valid_until")
+        if price_until is not None and start < price_until < now:
+            cuts.append(price_until)
+        cuts.sort()
         # Integrate previous sample only; split at real hours and local midnight.
         while start < now:
             hour = int(start // 3600) * 3600
@@ -106,6 +110,8 @@ class Statistics:
                 delivery = period_at(start, tariff["delivery_periods"], zone)[0] if tariff["delivery_plan"] == "Time-of-use delivery" else old.get("delivery_price")
                 buying = supply + delivery if supply is not None and delivery is not None else None
                 selling = export_price(tariff, supply)
+            if price_until is not None and start >= price_until:
+                buying = selling = None
             if old.get("grid_kw") is not None and buying is not None and selling is not None:
                 bought, sold = max(old["grid_kw"], 0) * duration / 3600, max(-old["grid_kw"], 0) * duration / 3600
                 ledger["import_cost"] += bought * buying
@@ -113,6 +119,11 @@ class Statistics:
                 ledger["coverage_hours"] += duration / 3600
                 ledger["import_kwh"] += bought
                 ledger["export_kwh"] += sold
+                if old.get("_price_estimated"):
+                    for key, amount in (("estimated_coverage_hours", duration / 3600),
+                                        ("estimated_import_cost", bought * buying),
+                                        ("estimated_export_credit", sold * selling)):
+                        ledger[key] = ledger.get(key, 0) + amount
             for key in ("solar", "home", "ev"):
                 if old.get(key + "_kw") is not None:
                     ledger[key + "_kwh"] += old[key + "_kw"] * duration / 3600

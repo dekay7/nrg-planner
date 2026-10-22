@@ -80,11 +80,16 @@ class Controller:
             if (key == "battery_grid_charge" and action == "on"
                     or key == "battery_mode" and action in ("charge", "serve") and not fallback_serve):
                 raise RuntimeError("Price-data fallback revoked that battery action")
-        if context.get("active") and key == "battery_reserve":
+        estimated = context.get("comed_estimated_price", False)
+        if estimated and (key == "battery_grid_charge" and action == "on" or key == "battery_mode" and action == "charge"):
+            raise RuntimeError("Published-estimate pricing does not permit battery grid charging")
+        if estimated and key == "battery_export" and action == "Battery":
+            raise RuntimeError("Published-estimate pricing caps export permission to solar only")
+        if (context.get("active") or estimated) and key == "battery_reserve":
             native = self.adapters.state(key)
             current_reserve = finite(native.state) if native else None
             if current_reserve is None or finite(action) is None or action < current_reserve:
-                raise RuntimeError("Fallback cannot lower an existing or unknown battery reserve")
+                raise RuntimeError("Fallback or estimated pricing cannot lower an existing or unknown battery reserve")
         if not revoke and not emergency and not fallback_serve and not self.valid_plan(revision):
             raise RuntimeError("Plan expired before command")
         active = self.plan_now()
@@ -106,7 +111,7 @@ class Controller:
                     raise RuntimeError("Battery grid charging is no longer permitted by current readings")
             elif snapshot["battery_soc"] <= config["backup_reserve"] + .3 or config["hold_battery_for_ev"] and busy:
                 raise RuntimeError("Battery discharge is no longer permitted by current readings")
-        if fallback_serve:
+        if fallback_serve or estimated and key == "battery_mode" and action == "serve":
             reserve_state = self.adapters.state("battery_reserve")
             native_reserve = snapshot.get("battery_native_reserve", finite(reserve_state.state)) if reserve_state else None
             if reserve_state is not None and native_reserve is None:
@@ -255,14 +260,22 @@ class Controller:
 
     async def _battery(self, revision, snapshot):
         config, plan = self.runtime.config, self.plan_now()
+        estimated = self.fallback_context().get("comed_estimated_price", False)
         if not snapshot["battery_ready"]:
             await self.revoke_battery(revision)
             raise RuntimeError("Battery control/feedback is not ready")
         busy = self.ev_busy(snapshot, plan)
         action = "hold" if config["has_ev"] and config["hold_battery_for_ev"] and busy else plan["battery_action"]
-        if not self.price_known_now():
+        if not self.price_known_now() or estimated and action == "charge":
             action = "hold"
-        if snapshot["battery_soc"] <= config["backup_reserve"] + .3 and action == "serve":
+        reserve = config["backup_reserve"]
+        if estimated and self.adapters.state("battery_reserve") is not None:
+            native = snapshot.get("battery_native_reserve")
+            if native is None:
+                await self.revoke_battery(revision)
+                raise RuntimeError("Cannot verify native battery reserve during estimated pricing")
+            reserve = max(reserve, native)
+        if snapshot["battery_soc"] <= reserve + .3 and action == "serve":
             action = "hold"
         target = plan["battery_target_soc"]
         grid = (action == "charge" and not busy and snapshot["battery_soc"] < target - .3
@@ -276,11 +289,13 @@ class Controller:
         self.last["battery_attempt"] = time.time()
         if self.adapters.can("battery_grid_charge", "off"):
             await self.set("battery_grid_charge", "off", revision)
-        if self.adapters.can("battery_reserve", config["backup_reserve"]):
-            await self.set("battery_reserve", config["backup_reserve"], revision)
+        if self.adapters.can("battery_reserve", reserve):
+            await self.set("battery_reserve", reserve, revision)
         await self.set("battery_mode", "charge" if grid else "serve" if action == "serve" else "hold", revision)
         export_price = plan.get("_slot_export_price", self.runtime.live_export)
         export = "No exports" if export_price is not None and export_price < 0 else config["export_policy"]
+        if estimated and export != "No exports":
+            export = "Solar only"
         if self.adapters.can("battery_export", export):
             await self.set("battery_export", export, revision)
         if grid and self.adapters.can("battery_grid_charge", "on"):

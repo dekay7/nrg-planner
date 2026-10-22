@@ -701,15 +701,25 @@ bridge; its attributes and the buying/supply price entities report
 The forecast must satisfy the normal 36-hour cache limit. Missing, expired or
 learned-only forecasts cannot bridge the gap. If live pricing is still absent at
 ten past, current pricing becomes unusable and the selected protection applies.
-A genuine fetch/DNS error remains visible as Degraded while the forecast bridge
+The optional <strong>Allow brief published estimates</strong> setting under <strong>Tariff</strong> adds a
+bounded estimated-price mode instead of immediately applying fallback actions.
+It requires a valid forecast for the exact current hour and ends 60 minutes after
+the last verified live observation. Cold starts without one get only the usual
+ten-minute bridge. Refreshes, hour changes and restarts never renew an existing
+allowance. During this mode Pricing health stays Degraded, EV planning can
+continue, battery grid charging is blocked, and higher native reserves are
+retained. The setting defaults to Strict live pricing for existing and new users;
+other supply plans are unaffected. See <a href="#pricing-brief-comed-live-data-delays">brief live-data delays</a>.</p>
+<p>A genuine fetch/DNS error remains visible as Degraded while the forecast bridge
 or cached live observation is usable. An expected previous-hour response during
 the publication window is not itself a fetch failure.</p>
 <p>Missing tomorrow forecasts alone do not activate fallback; configured
 flat/time-of-use rates do not depend on ComEd.</p>
 <p>Automatic recovery requires valid observations spanning at least two minutes;
 live sources must supply a distinct observation, not just repeated reads of the
-same cache. The publication bridge does not release an already active automatic
-fallback or count as fresh live recovery evidence. A manual request also stays
+same cache. Neither the publication bridge nor optional estimated pricing releases an already
+active automatic fallback or counts as fresh live recovery evidence. The
+automatic outage latch is saved so restarting cannot bypass that requirement. A manual request also stays
 active. A fresh plan is required before normal dispatch resumes. Old charging
 settings are not blindly restored. The fallback outlook assumes the selected
 baseline continues until recovery; it is not a prediction of outage duration.</p>
@@ -746,7 +756,10 @@ cooldown. Select at least one notification service to receive messages. Alert
 permission does not enable fallback or equipment control, and dashboard visibility
 needs no notification permission.
 Missing prices remain unknown in cost accounting and are never filled with a
-made-up emergency rate or claimed savings.</p>
+made-up emergency rate or claimed savings. Valid published-price estimates used
+by the publication bridge or optional bounded estimate mode are tracked separately
+in forecast-priced coverage, purchase-cost and export-credit attributes. Older
+ledger intervals are not retroactively reclassified.</p>
 <h3 id="operations-recovery">Recovery</h3>
 <p>Use an HA backup and a previously reviewed component version when recovering from
 an update. Backups may contain private settings and measurements. Keep them out of
@@ -882,6 +895,7 @@ to prepare a useful report for the
 <ul>
 <li><a href="#pricing-the-prominent-buying-price">The prominent buying price</a></li>
 <li><a href="#pricing-comeds-new-hour-publication-window">ComEd's new-hour publication window</a></li>
+<li><a href="#pricing-brief-comed-live-data-delays">Brief ComEd live-data delays</a></li>
 <li><a href="#pricing-editing-timed-periods-in-ha">Editing timed periods in HA</a><ul>
 <li><a href="#pricing-boundary-and-weekday-rules">Boundary and weekday rules</a></li>
 </ul>
@@ -918,6 +932,41 @@ available, and NRG makes a fresh plan at that handover.</p>
 normal price-data protection applies. A forecast bridge cannot release an already
 active automatic fallback; that still requires fresh live recovery observations.
 See <a href="#operations-detection-and-recovery">detection and recovery</a>.</p>
+<h3 id="pricing-brief-comed-live-data-delays">Brief ComEd live-data delays</h3>
+<p>Under <strong>Configure → Tariff → During ComEd live-price delays</strong>, the default
+<strong>Strict live pricing</strong> preserves the behavior above. Opting into <strong>Allow brief
+published estimates</strong> lets NRG temporarily use the published forecast for the
+<strong>exact current hour</strong> when live pricing is delayed. This is an estimate, not a
+live or settled price. It also works with a mapped ComEd live-price sensor.
+Other supply plans are unaffected.</p>
+<p>The allowance ends <strong>60 minutes after the last verified live observation's
+provider timestamp</strong>, not 60 minutes after discovering the delay. Repeated old
+responses, forecast refreshes, hour changes, settings edits and restarts do not
+renew it. Without a verified observation, only the normal first-ten-minute
+publication bridge is available. Once an existing allowance expires, a new-hour
+bridge cannot extend the outage. A valid exact-hour forecast is always required
+and must satisfy the normal 36-hour cache limit. Missing delivery pricing still
+makes the combined price unusable.</p>
+<p>During estimated operation:</p>
+<ul>
+<li><strong>Pricing health is Degraded</strong>, with <code>comed_estimated_price: true</code>, source
+  <code>day_ahead</code>, last live age, forecast age, fixed deadline and remaining allowance.</li>
+<li>EV planning can continue within its usual permissions, charging limits and
+  departure rules, instead of immediately applying a fallback pause. It may buy
+  at a price different from the forecast.</li>
+<li>Battery grid charging is blocked, including any previously planned grant.
+  Self-consumption/hold decisions remain guarded; a higher native reserve is
+  retained and export permission is capped to solar only or no exports.</li>
+<li>Cost totals include separately tracked forecast-priced intervals, never learned
+  as live supply observations. See <a href="#accounting-observed-ledger">accounting</a>.</li>
+</ul>
+<p>Loss of forecast/delivery coverage or expiry of the allowance invokes the selected
+price-data protection. Forecasts cannot release an already active automatic
+fallback; recovery still requires distinct fresh live observations spanning at
+least two minutes and a new plan. Manual requests remain active until ended.
+The automatic outage latch and verified-observation timestamp survive restarts.
+Switching between live and estimated pricing invalidates the old plan promptly.
+No choice enables equipment control or bypasses Observation/protection guards.</p>
 <h3 id="pricing-editing-timed-periods-in-ha">Editing timed periods in HA</h3>
 <ol>
 <li>Open <strong>Settings → Devices &amp; services → NRG Planner → Configure → Pricing periods</strong>.</li>
@@ -1471,6 +1520,7 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 </li>
 <li><a href="#settings-tariff">Tariff</a><ul>
 <li><a href="#settings-supply-plan">Supply plan</a></li>
+<li><a href="#settings-during-comed-live-price-delays">During ComEd live-price delays</a></li>
 <li><a href="#settings-flat-supply-rate">Flat supply rate</a></li>
 <li><a href="#settings-supply-forecast-attribute">Supply forecast attribute</a></li>
 <li><a href="#settings-delivery-plan">Delivery plan</a></li>
@@ -1597,6 +1647,11 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <p>Choose your provider's supply pricing: a flat rate, your own timed periods, an external HA price sensor/forecast, or the optional ComEd hourly feed. Delivery is configured separately and added once.</p>
 <p>Choices: <strong>Flat supply</strong>, <strong>Time-of-use supply</strong>, <strong>External supply entity</strong>, <strong>Hourly ComEd</strong>.</p>
 <p>Reference key: <code>supply_plan</code>.</p>
+<h4 id="settings-during-comed-live-price-delays">During ComEd live-price delays</h4>
+<p>Default: <strong>Strict live pricing</strong>.</p>
+<p>Strict live pricing keeps the existing ten-minute new-hour forecast bridge. Allow brief published estimates uses a valid forecast for the exact current hour for at most 60 minutes from the last verified live observation. Pricing stays Degraded, EV planning can continue, and battery grid charging is blocked. Refreshes and restarts do not renew the allowance. Cold starts without a verified observation get only the ten-minute publication bridge. Your fallback actions still apply when the allowance or coverage ends; this choice does not enable equipment control.</p>
+<p>Choices: <strong>Strict live pricing</strong>, <strong>Allow brief published estimates</strong>.</p>
+<p>Reference key: <code>comed_price_resilience</code>.</p>
 <h4 id="settings-flat-supply-rate">Flat supply rate</h4>
 <p>Default: <strong>Unset</strong>.</p>
 <p>Your contracted supply price, excluding delivery. Unset means unknown, not free. Enter an explicit zero only if your contract really has a zero supply rate.</p>
@@ -1819,6 +1874,7 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <li><a href="#troubleshooting-the-integration-is-installed-but-no-nrg-dashboards-appear">The integration is installed, but no NRG dashboards appear</a></li>
 <li><a href="#troubleshooting-charts-say-custom-element-does-not-exist-or-are-blank">Charts say Custom element does not exist or are blank</a></li>
 <li><a href="#troubleshooting-electricity-price-is-unknown-too-high-or-100-times-wrong">Electricity price is unknown, too high, or 100 times wrong</a></li>
+<li><a href="#troubleshooting-comed-responds-but-pricing-health-repeatedly-enters-fallback">ComEd responds, but Pricing health repeatedly enters fallback</a></li>
 <li><a href="#troubleshooting-advice-says-waiting-for-dependable-coverage">Advice says Waiting for dependable coverage</a></li>
 <li><a href="#troubleshooting-power-flows-are-missing-reversed-or-inconsistent">Power flows are missing, reversed, or inconsistent</a></li>
 <li><a href="#troubleshooting-the-plan-exists-but-my-car-or-battery-is-not-following-it">The plan exists, but my car or battery is not following it</a></li>
@@ -1885,6 +1941,18 @@ administrators. You can configure and use native entities without these views.</
 </ul>
 <p>Negative supply is not necessarily a negative total after delivery is added.
 See <a href="#pricing">pricing</a> for accepted interval fields and overnight rules.</p>
+<h3 id="troubleshooting-comed-responds-but-pricing-health-repeatedly-enters-fallback">ComEd responds, but Pricing health repeatedly enters fallback</h3>
+<p>An HTTP success is not necessarily fresh data. Open <strong>Pricing health</strong> and check
+its last live observation age. ComEd can return the same old reading repeatedly;
+NRG does not reset its freshness merely because the request succeeded.</p>
+<p>To tolerate brief delays, choose <strong>Configure → Tariff → During ComEd live-price
+delays → Allow brief published estimates</strong>. This opt-in uses a valid exact-hour
+published forecast for at most 60 minutes from the last verified live observation.
+It keeps Pricing health Degraded, permits normal EV planning and blocks battery
+grid charging. Remaining allowance and forecast age are shown in Pricing health.
+It does not change your fallback actions, control permissions, or manual request.
+Forecasts cannot release an already active automatic fallback: wait for confirmed
+fresh live recovery. See <a href="#pricing-brief-comed-live-data-delays">the limits and safeguards</a>.</p>
 <h3 id="troubleshooting-advice-says-waiting-for-dependable-coverage">Advice says Waiting for dependable coverage</h3>
 <p>NRG needs enough trustworthy information to compare a <strong>complete</strong> run of the
 reference task. Check price coverage first, then the forecasts and enabled
@@ -2526,8 +2594,18 @@ Configured time-of-use boundaries split observed intervals exactly, including a
 boundary partway through a sampling minute. Current variable-feed rates remain
 contemporaneous estimates, including the explicitly labeled published forecast
 during ComEd's bounded <a href="#pricing-comeds-new-hour-publication-window">new-hour publication window</a>.
-The bridge does not become a recorded live supply observation for learning.
-User rate changes do not retroactively reprice earlier observed intervals.</p>
+The optional <a href="#pricing-brief-comed-live-data-delays">brief-delay estimate mode</a>
+can also use an exact-hour published forecast within its fixed allowance. Neither
+forecast path becomes a recorded live supply observation for learning.</p>
+<p><strong>Today's forecast-priced coverage</strong> reports the hours newly accounted using
+published estimates. Cost and coverage entities expose <code>estimated_coverage_hours</code>,
+<code>estimated_import_cost</code> and <code>estimated_export_credit</code>; these amounts are subsets
+of the displayed totals, not additional charges. Live/contract-rate coverage is
+total coverage minus estimated coverage. Tracking begins with this update; older
+saved ledger intervals are preserved but cannot be retroactively classified.
+Estimated-price accounting stops at the exact allowance deadline, even between
+samples. Published estimates are not utility settlement prices.</p>
+<p>User rate changes do not retroactively reprice earlier observed intervals.</p>
 <p>Missing price/grid data contributes neither cost nor cost coverage. Negative
 purchase costs and negative export credits remain signed, including adverse native
 exports that occur despite a request to stop them.</p>
@@ -2639,6 +2717,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 <li><a href="#review-advice-correctness-verification-2026-10-22">Advice correctness verification — 2026-10-22</a></li>
 <li><a href="#review-refill-capability-hardening-verification-2026-10-22">Refill-capability hardening verification — 2026-10-22</a></li>
 <li><a href="#review-comed-publication-gap-verification-2026-10-22">ComEd publication-gap verification — 2026-10-22</a></li>
+<li><a href="#review-bounded-comed-estimate-verification-2026-10-22">Bounded ComEd estimate verification — 2026-10-22</a></li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -2806,6 +2885,30 @@ privacy/history checks pass; generated assets reproduce deterministically.</p>
 advisories</strong> documented above. This change adds no dependency overrides or audit
 exclusions. Hosted CI and the code review are recorded on the pull request;
 local verification does not claim live deployment or physical equipment validation.</p>
+<h3 id="review-bounded-comed-estimate-verification-2026-10-22">Bounded ComEd estimate verification — 2026-10-22</h3>
+<p>The opt-in brief-delay policy is verified locally on Python 3.14.8 and Home
+Assistant 2026.10.2 with <strong>395 passing tests</strong>. Invented regressions cover delayed
+HTTP-success responses, the fixed 60-minute cutoff, exact-hour/expired/future
+forecast coverage, cold starts, clock rollback, source changes, restart persistence,
+manual/missing-delivery precedence, and distinct fresh live recovery. Planner and
+command-time tests block estimated-price battery grid charging, preserve higher
+native reserves and protection/permission guards, cap export permission and script
+context, and keep EV departure planning available. Ledger tests distinguish signed
+forecast-priced costs/credits and stop accounting at the exact estimate deadline.
+Native options/select and real HA dashboard-template checks cover the UI.</p>
+<p>Review hardened two boundaries: an expired allowance cannot be renewed by the
+next hour's publication bridge, and a saved automatic outage latch prevents a
+restart from treating a forecast as live recovery evidence. Other supply plans
+ignore the saved ComEd option. Existing settings, learning, ledgers, Observation
+defaults and explicit control permissions are preserved. Strict live pricing
+remains the default; the new policy requires an explicit opt-in.</p>
+<p>Ruff, privacy/history, dependency consistency and deterministic generated assets
+pass. The dependency audit now reports <strong>36 advisories: 35 for Pillow 12.3.0 and
+one for uv 0.12.23</strong>, the same HA-managed packages in the open finding above.
+No requirements or audit exclusions change. Hosted CI and the self-review are
+recorded on the pull request; this local record is not a claim of independent
+review, live deployment, or verified physical equipment response. No release is
+published by this change.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as
