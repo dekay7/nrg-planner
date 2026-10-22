@@ -90,6 +90,8 @@ class NRGSensor(NRGEntity, SensorEntity):
                 components = data.get("price_components", {})
                 source = components.get("supply_source" if key == "supply_price" else "delivery_source")
                 known = components.get("export_known") if key.startswith("export_price") else source in ("flat","time_of_use","running_average","external_live","external_forecast")
+                if key == "supply_price" and components.get("comed_publication_bridge"):
+                    known = True
                 value = components.get(key.removesuffix("_usd"))
                 return round(value * (1 if key.endswith("_usd") else 100), 5) if known and value is not None else None
             return round(price[key.replace("_usd", "")] * (1 if key.endswith("usd") else 100), 5) if price else None
@@ -189,6 +191,10 @@ class NRGSensor(NRGEntity, SensorEntity):
     @property
     def extra_state_attributes(self):
         data, plan = self.coordinator.data or {}, self.fresh_plan
+        if self.key in ("supply_price", "import_price", "import_price_usd"):
+            components = data.get("price_components", {})
+            return {"source": components.get("supply_source" if self.key == "supply_price" else "price_source"),
+                    "comed_publication_bridge": components.get("comed_publication_bridge", False)}
         if self.key == "plan":
             return {"plan": plan, "basis": "Modeled feasible plans, not guaranteed savings or an export watt setpoint.", "operating_mode": self.coordinator.config["mode"]}
         if self.key == "advice":

@@ -691,12 +691,26 @@ outage, and neither policy guarantees the lowest eventual bill.</p>
 A failed live fetch is Degraded while the current observation is still usable.
 Automatic fallback starts when current supply or delivery pricing is missing,
 stale or invalid. ComEd live observations must be less than 15 minutes old <strong>and
-belong to the current hour</strong>. Published/learned estimates do not substitute for a
-missing ComEd live price. Missing tomorrow forecasts alone do not activate it;
-configured flat/time-of-use rates do not depend on ComEd.</p>
+belong to the current hour</strong>. The previous hour's live price is never relabeled as
+current.</p>
+<p>ComEd normally needs time to publish the first running average of a new hour.
+During the <strong>first ten minutes only</strong>, a valid published forecast for that exact
+hour can bridge the gap without activating fallback. Pricing health explains the
+bridge; its attributes and the buying/supply price entities report
+<code>comed_publication_bridge: true</code>, with source <code>day_ahead</code>, not a live observation.
+The forecast must satisfy the normal 36-hour cache limit. Missing, expired or
+learned-only forecasts cannot bridge the gap. If live pricing is still absent at
+ten past, current pricing becomes unusable and the selected protection applies.
+A genuine fetch/DNS error remains visible as Degraded while the forecast bridge
+or cached live observation is usable. An expected previous-hour response during
+the publication window is not itself a fetch failure.</p>
+<p>Missing tomorrow forecasts alone do not activate fallback; configured
+flat/time-of-use rates do not depend on ComEd.</p>
 <p>Automatic recovery requires valid observations spanning at least two minutes;
 live sources must supply a distinct observation, not just repeated reads of the
-same cache. A fresh plan is required before normal dispatch resumes. Old charging
+same cache. The publication bridge does not release an already active automatic
+fallback or count as fresh live recovery evidence. A manual request also stays
+active. A fresh plan is required before normal dispatch resumes. Old charging
 settings are not blindly restored. The fallback outlook assumes the selected
 baseline continues until recovery; it is not a prediction of outage duration.</p>
 <p><strong>Start manual fallback now</strong> uses the selected baseline immediately, without
@@ -867,6 +881,7 @@ to prepare a useful report for the
 <a href="#security">security policy</a> to report suspected vulnerabilities privately.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="pricing" aria-label="Electricity pricing"><h2 id="pricing-supply-delivery-and-time-of-use-plans">Supply, delivery and time-of-use plans</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Electricity pricing topics"><div class="toc">
 <ul>
 <li><a href="#pricing-the-prominent-buying-price">The prominent buying price</a></li>
+<li><a href="#pricing-comeds-new-hour-publication-window">ComEd's new-hour publication window</a></li>
 <li><a href="#pricing-editing-timed-periods-in-ha">Editing timed periods in HA</a><ul>
 <li><a href="#pricing-boundary-and-weekday-rules">Boundary and weekday rules</a></li>
 </ul>
@@ -887,6 +902,22 @@ supply source; it is never used as a fallback for another provider's missing rat
 Negative rates remain signed. A −2¢ supply price plus 6¢ delivery still costs 4¢ to import.
 These are illustrative numbers, not defaults. All numeric rate inputs start unset;
 unknown rates remain unknown until supplied. Enter zero explicitly if applicable.</p>
+<h3 id="pricing-comeds-new-hour-publication-window">ComEd's new-hour publication window</h3>
+<p>The first live running average is not necessarily available at the hour boundary.
+For the first ten minutes, NRG can use the <strong>published forecast for that exact
+hour</strong> while awaiting live pricing. It does not reuse the previous hour's live
+price or invent a rate from learned history. The forecast must be within its
+normal 36-hour freshness limit.</p>
+<p>This short bridge is labeled <code>day_ahead</code> in price-source attributes and charts;
+<code>comed_publication_bridge</code> identifies it in Pricing health and the buying/supply
+price entities. A normal publication gap alone keeps Pricing health Healthy;
+a transport failure still shows Degraded. Neither status activates fallback
+while the price remains usable. Live pricing takes priority as soon as it is
+available, and NRG makes a fresh plan at that handover.</p>
+<p>Without a valid published forecast, or if the live gap continues beyond ten past,
+normal price-data protection applies. A forecast bridge cannot release an already
+active automatic fallback; that still requires fresh live recovery observations.
+See <a href="#operations-detection-and-recovery">detection and recovery</a>.</p>
 <h3 id="pricing-editing-timed-periods-in-ha">Editing timed periods in HA</h3>
 <ol>
 <li>Open <strong>Settings → Devices &amp; services → NRG Planner → Configure → Pricing periods</strong>.</li>
@@ -2493,8 +2524,10 @@ net cost      = purchase cost − export credit
 <p>The previous observed power is integrated only over gaps of at most three minutes.
 Configured time-of-use boundaries split observed intervals exactly, including a
 boundary partway through a sampling minute. Current variable-feed rates remain
-contemporaneous running estimates. User rate changes do not retroactively reprice
-earlier observed intervals.</p>
+contemporaneous estimates, including the explicitly labeled published forecast
+during ComEd's bounded <a href="#pricing-comeds-new-hour-publication-window">new-hour publication window</a>.
+The bridge does not become a recorded live supply observation for learning.
+User rate changes do not retroactively reprice earlier observed intervals.</p>
 <p>Missing price/grid data contributes neither cost nor cost coverage. Negative
 purchase costs and negative export credits remain signed, including adverse native
 exports that occur despite a request to stop them.</p>
@@ -2605,6 +2638,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 </li>
 <li><a href="#review-advice-correctness-verification-2026-10-22">Advice correctness verification — 2026-10-22</a></li>
 <li><a href="#review-refill-capability-hardening-verification-2026-10-22">Refill-capability hardening verification — 2026-10-22</a></li>
+<li><a href="#review-comed-publication-gap-verification-2026-10-22">ComEd publication-gap verification — 2026-10-22</a></li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -2758,6 +2792,20 @@ The dependency audit still reports the same <strong>25 HA-pinned Pillow/uv advis
 above; requirements and advisory handling are unchanged. Hosted results are recorded
 on the pull request. These checks do not claim globally optimal schedules, promised
 chronological refills or verified physical equipment response.</p>
+<h3 id="review-comed-publication-gap-verification-2026-10-22">ComEd publication-gap verification — 2026-10-22</h3>
+<p>The bounded new-hour forecast bridge is verified locally on the current mainline
+with Python 3.14.8 and Home Assistant 2026.10.2: <strong>355 tests pass</strong>. Invented
+regressions cover uninterrupted hourly handover, the exact ten-minute cutoff,
+missing/expired forecasts, missing delivery prices, manual and automatic fallback,
+distinct live recovery observations, transport failures, DST transitions, price
+provenance, and cost coverage without learning forecasts as live observations.
+Observation defaults, control permissions, settings and learning formats are unchanged.
+The generated handbook/dashboards, Ruff checks, dependency consistency and
+privacy/history checks pass; generated assets reproduce deterministically.</p>
+<p>The dependency audit still reports the <strong>25 existing HA-pinned Pillow/uv
+advisories</strong> documented above. This change adds no dependency overrides or audit
+exclusions. Hosted CI and the code review are recorded on the pull request;
+local verification does not claim live deployment or physical equipment validation.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as

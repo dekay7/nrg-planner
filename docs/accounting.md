@@ -31,8 +31,10 @@ net cost      = purchase cost − export credit
 The previous observed power is integrated only over gaps of at most three minutes.
 Configured time-of-use boundaries split observed intervals exactly, including a
 boundary partway through a sampling minute. Current variable-feed rates remain
-contemporaneous running estimates. User rate changes do not retroactively reprice
-earlier observed intervals.
+contemporaneous estimates, including the explicitly labeled published forecast
+during ComEd's bounded [new-hour publication window](pricing.md#comeds-new-hour-publication-window).
+The bridge does not become a recorded live supply observation for learning.
+User rate changes do not retroactively reprice earlier observed intervals.
 
 Missing price/grid data contributes neither cost nor cost coverage. Negative
 purchase costs and negative export credits remain signed, including adverse native

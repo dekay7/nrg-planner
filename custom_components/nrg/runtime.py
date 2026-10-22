@@ -17,7 +17,7 @@ from .const import DOMAIN, MAPPINGS
 from .adapters import Adapters
 from .tariffs import usd_price, external_intervals
 from .control import Controller
-from .forecast import aggregate_solar, parse_comed, price_at, solar_response, known_nights
+from .forecast import aggregate_solar, parse_comed, price_at, solar_response, known_nights, comed_publication_window
 from .fallback import PriceFallback, KNOWN_SOURCES, live_valid
 from .planner import plan
 from .statistics import Statistics
@@ -249,7 +249,8 @@ class NRGRuntime(DataUpdateCoordinator):
         current = price_at(now, now, config, self.prices, live, self.stats.price_prior)
         missing = [kind for kind in ("supply", "delivery")
                    if current[kind + "_source"] not in KNOWN_SOURCES
-                   or kind == "supply" and config["supply_plan"] == "Hourly ComEd" and live is None]
+                   or kind == "supply" and config["supply_plan"] == "Hourly ComEd" and live is None
+                   and not current["comed_publication_bridge"]]
         observations = {}
         token = []
         for kind in ("supply", "delivery"):
@@ -258,6 +259,9 @@ class NRGRuntime(DataUpdateCoordinator):
             external = config[kind + "_plan"].startswith("External") or config[kind + "_plan"] == "Hourly ComEd"
             stamp = (state.last_reported.timestamp() if state else (
                 self.live_cache["time"] if kind == "supply" and config["supply_plan"] == "Hourly ComEd" and self.live_cache else None)) if external else None
+            if kind == "supply" and current["comed_publication_bridge"]:
+                stamp = next(r["fetched_at"] for r in self.prices if r["start"] <= now < r["start"] + 3600
+                             and 0 <= now - r["fetched_at"] <= 36 * 3600)
             identity = (kind, config[kind + "_plan"], self.mappings.get("live_" + kind), self.mappings.get(kind + "_forecast"))
             if kind not in missing and stamp is not None:
                 self.last_valid_prices[identity] = stamp
@@ -271,8 +275,12 @@ class NRGRuntime(DataUpdateCoordinator):
         enabled = config["price_fallback"] == "Custom fallback"
         degraded = bool(config["supply_plan"] == "Hourly ComEd" and not self.mappings.get("live_supply")
                         and self.forecast_status.get("live_price"))
-        active = self.fallback.update(now, enabled=enabled, known=current["price_known"],
-                                      degraded=degraded, observation=tuple(token) if token else now, allow_recovery=allow_recovery)
+        # A publication bridge prevents a healthy system entering fallback; it
+        # must not count as fresh live evidence for an already active outage.
+        recovery_known = current["price_known"] and not (current["comed_publication_bridge"] and self.fallback.automatic)
+        active = self.fallback.update(now, enabled=enabled, known=recovery_known,
+                                      degraded=degraded, observation=tuple(token) if token else now,
+                                      allow_recovery=allow_recovery)
         self._fallback_active = active
         if active != old_active:
             self.plan = {}
@@ -281,13 +289,18 @@ class NRGRuntime(DataUpdateCoordinator):
             self.fallback_notice = (active, "Price-data fallback activated" if active else "Price-data fallback released; a fresh plan is required")
         result = {"state": self.fallback.state, "active": active, "enabled": enabled, "price_known": current["price_known"],
                   "manual": self.fallback.manual, "missing": missing, "observations": observations,
+                  "comed_publication_bridge": current["comed_publication_bridge"],
                   "recovery_since": self.fallback.recovery_since,
                   "ev_policy": config["fallback_ev"], "battery_policy": config["fallback_battery"],
                   "charge_now_override": active and self.charge_now,
                   "reason": "Manual activation" if self.fallback.manual and active else
                             "Missing, stale or invalid current pricing: " + ", ".join(missing) if missing else
+                            "Waiting for fresh ComEd live pricing before releasing automatic fallback" if active and current["comed_publication_bridge"] else
                             "Confirming stable fresh pricing" if active else
-                            "Live fetch failed; the current cached observation is still usable" if degraded else "Current import pricing is usable"}
+                            "Live fetch failed; the published current-hour forecast is still usable" if degraded and current["comed_publication_bridge"] else
+                            "Live fetch failed; the current cached observation is still usable" if degraded else
+                            "Using the published current-hour forecast while ComEd live pricing is being published" if current["comed_publication_bridge"] else
+                            "Current import pricing is usable"}
         if publish:
             # Publishing a command-time check must not reset the coordinator's
             # polling timer: the writer runs more often than the price poll.
@@ -385,10 +398,18 @@ class NRGRuntime(DataUpdateCoordinator):
                         raise ValueError("Invalid ComEd live response")
                     row = rows[0]
                     stamp, cents = finite(row.get("millisUTC")), finite(row.get("price"))
-                    if (stamp is None or cents is None or not live_valid(stamp / 1000, time.time(), hourly=True)
-                            or not -1000 <= cents <= 500):
+                    if stamp is None or cents is None or not -1000 <= cents <= 500:
+                        raise ValueError("Invalid ComEd live price")
+                    observed, received = stamp / 1000, time.time()
+                    if live_valid(observed, received, hourly=True):
+                        self.live_cache = {"time": observed, "supply": cents / 100}
+                    elif (comed_publication_window(received)
+                          and int(observed // 3600) == int(received // 3600) - 1):
+                        # A normal publication delay, not a current-hour live price.
+                        # Only a separately valid current-hour forecast can bridge it.
+                        pass
+                    else:
                         raise ValueError("Invalid or stale ComEd live price")
-                    self.live_cache = {"time": stamp / 1000, "supply": cents / 100}
                     self.forecast_status.pop("live_price", None)
                 except (ClientError, TimeoutError, ValueError, TypeError, KeyError, IndexError) as error:
                     self.forecast_status["live_price"] = f"Live ComEd unavailable ({type(error).__name__})"
@@ -420,7 +441,8 @@ class NRGRuntime(DataUpdateCoordinator):
             self.solar_signature = signature
         current = price_at(now, now, config, self.prices, live, self.stats.price_prior)
         previous_rate = (self.data or {}).get("price") or {}
-        if any(previous_rate.get(key) != current.get(key) for key in ("supply_period", "delivery_period")):
+        if any(previous_rate.get(key) != current.get(key)
+               for key in ("supply_period", "delivery_period", "price_known", "comed_publication_bridge")):
             self.force_plan = True
         self.current_price_known = current["price_known"]
         self.last_sample_at = now
@@ -428,7 +450,7 @@ class NRGRuntime(DataUpdateCoordinator):
         values = snapshot | {"supply": live if config["supply_plan"] == "Hourly ComEd" else None,
                              "import_price": current["import_price"] if self.current_price_known else None,
                              "export_price": self.live_export,
-                             "supply_price": current["supply_price"] if current["supply_source"] in ("flat","time_of_use","running_average","external_live","external_forecast") else None,
+                             "supply_price": current["supply_price"] if current["comed_publication_bridge"] or current["supply_source"] in ("flat","time_of_use","running_average","external_live","external_forecast") else None,
                              "delivery_price": current["delivery_price"] if current["delivery_source"] in ("flat","time_of_use","external_live","external_forecast") else None,
                              "_tariffs": {key:config[key] for key in ("supply_plan","delivery_plan","supply_periods","delivery_periods","export_rate","export_adder_cents","flat_export_cents")}}
         if not snapshot["ev_learning_valid"]:
