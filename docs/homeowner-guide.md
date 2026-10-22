@@ -47,6 +47,15 @@ Solar can have an export-credit opportunity cost, and stored energy has losses a
 future value. NRG considers applicable equipment rather than assuming all solar or
 battery electricity is free. Homes without that equipment need no such assumptions.
 
+**Battery-backed use** can be suggested even when grid electricity is expensive:
+the model expects stored energy to supply the task. The green graph segment is
+therefore not necessarily the cheapest grid-price window. **Why this advice?** shows
+the reference task, modeled appliance cost, the window's average grid price and the
+end of dependable comparison coverage. Costs include battery losses and remaining
+energy value; missing later prices do not make replacement energy free. If coverage
+cannot support the full task, NRG waits for dependable information instead of
+claiming a saving.
+
 ## Current power flow: the Sankey diagram
 
 The Home Energy tab shows Home Assistant's built-in **power Sankey card**, the

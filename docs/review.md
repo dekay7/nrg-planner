@@ -86,6 +86,26 @@ When a compatible upstream HA release resolves these findings, update the tested
 version and rerun dependency resolution, the full suite, and the audit. Recheck
 the documented minimum HA version and `hacs.json` if the supported baseline changes.
 
+## Advice correctness verification — 2026-10-22
+
+The dependable-horizon fix is verified locally with Python 3.14.8 and Home Assistant
+2026.10.2: **307 tests pass**, including invented missing-export-price regressions,
+baseline-mode/score invariance beyond coverage gaps, storage losses and wear,
+explicit zero credit, prohibited exports, battery constraints, EV feasibility,
+DST durations, notification confidence and real HA dashboard-template rendering.
+The original planner reproduces a falsely free evening window on the invented
+regression; the corrected planner does not. Ruff's configured `F` checks, dependency
+consistency, privacy/history checks and deterministic UI/brand builds pass.
+Hosted validation results remain recorded on the pull request; local verification
+is not a claim of live equipment validation or deployment.
+
+A fresh isolated audit now reports **25 advisories: 24 for Pillow 12.3.0 and one
+for uv 0.12.23**. These are the same HA-pinned packages described in the open
+finding above, with additional published Pillow advisories. The reported fixed
+versions remain Pillow 13.0.0 and uv 0.13.4. This fix changes no dependency pins,
+adds no advisory exclusions and does not resolve that upstream finding. An audit
+failure remains visible rather than being reported as a fully green validation.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public

@@ -24,7 +24,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=9dc32f9d5b05
+        url_path: /nrg-planner/guide.html?v=d49550192a1b
       grid_options:
         columns: full
         rows: auto
@@ -236,7 +236,7 @@ views:
       update_interval: 1min
       header:
         show: true
-        title: When to use energy · supply + delivery
+        title: Grid prices · suggested appliance window
       now:
         show: true
         label: Now
@@ -541,7 +541,7 @@ views:
     - type: markdown
       content: Actions begin automatically only when current supply or delivery pricing becomes unusable—not on
         a single failed request with a usable cached price, or just a missing tomorrow forecast. [Read detection
-        and recovery details](/nrg-planner/guide.html?v=9dc32f9d5b05#operations-detection-and-recovery).
+        and recovery details](/nrg-planner/guide.html?v=d49550192a1b#operations-detection-and-recovery).
       grid_options:
         columns: full
         rows: auto
@@ -2604,8 +2604,8 @@ views:
         {% for c in p.get(''candidate_costs'',[]) %}**{{ c.name }}**
 
 
-        Modeled horizon cost: {{ (''~'' if p.get(''cost_includes_estimates'') else '''') ~ ''$'' ~ (c.modeled_cost
-        | round(2)) if c.modeled_cost is number else ''Rates needed'' }}
+        Modeled cost through dependable coverage: {{ ''$'' ~ (c.modeled_cost | round(2)) if c.modeled_cost is number
+        else ''Dependable coverage needed'' }}
 
 
         EV shortfall: {{ c.shortfall_kwh | round(2) }} kWh
@@ -2619,8 +2619,12 @@ views:
 
         {% endfor %}
 
-        Includes remaining-energy value and any configured cycling cost. This is a model comparison, not measured
-        savings.'
+        {% if p.get(''economic_until'') is number %}Economic comparison ends {{ p.economic_until | timestamp_custom(''%a
+        %I:%M %p %Z'') }}. The longer outlook still tracks EV feasibility and physical energy, not dependable savings.
+
+
+        {% endif %}Includes remaining-energy value and any configured cycling cost. This is a model comparison,
+        not measured savings.'
       grid_options:
         columns: full
         rows: auto

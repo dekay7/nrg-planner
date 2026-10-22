@@ -508,6 +508,7 @@ class NRGRuntime(DataUpdateCoordinator):
     async def notify(self, now):
         config, advice = self.config, self.plan.get("household", {})
         if (not config["notifications"] or self.plan.get("expires_at", 0) <= now or advice.get("category") != "wait"
+                or advice.get("confidence") != "forecast"
                 or (advice.get("saving") or 0) * 100 < config["notification_saving_cents"]):
             self.pending_advice = None
             return
@@ -523,6 +524,8 @@ class NRGRuntime(DataUpdateCoordinator):
         if now - self.pending_advice[1] < 120:
             return
         message = f"{advice['summary']}. Estimated benefit: {advice['saving'] * 100:.0f} cents for {config['flexible_load_kwh']:g} kWh. "
+        basis = {"grid": "Grid-supplied use", "solar": "Direct solar use", "battery": "Battery-backed use", "mixed": "Mixed energy sources"}
+        message += basis.get(advice.get("cost_basis"), "Modeled appliance cost") + "; not necessarily the cheapest grid-price window. "
         message += "Proposed schedule (Observation)." if config["mode"] == "Observation" else "Solar, battery and car outlook considered."
         for target in self.entry.options.get("notification_targets", []):
             if not isinstance(target, str) or not target.startswith("notify.") or self.delivered.get(target) == key:

@@ -373,7 +373,7 @@ def price_chart():
                        "stroke_width": width, "stroke_dash": dash, "unit": "¢/kWh", "float_precision": 2, "extend_to": False,
                        "show": {"in_header": False, "legend_value": False}, "data_generator": price_generator(kind)})
     return {"type": "custom:apexcharts-card", "graph_span": "24h", "span": {"start": "minute"}, "cache": False,
-            "update_interval": "1min", "header": {"show": True, "title": "When to use energy · supply + delivery"},
+            "update_interval": "1min", "header": {"show": True, "title": "Grid prices · suggested appliance window"},
             "now": {"show": True, "label": "Now"}, "series": series,
             "yaxis": [{"decimals": 1, "apex_config": {"title": {"text": "¢/kWh"}}}],
             "apex_config": {"chart": {"height": 290, "animations": {"enabled": False},
@@ -472,6 +472,8 @@ def build():
 {% else %}Gathering a dependable price, solar and charging outlook.{% endif %}
 
 {% set benefit = state_attr('sensor.nrg_advice', 'saving') %}{% if category == 'wait' and benefit is number %}Estimated benefit for the reference appliance: **{{ (benefit * 100) | round(1) }}¢**.{% endif %}
+{% set basis = state_attr('sensor.nrg_advice', 'cost_basis') %}
+{% if basis %}**{{ {'grid': 'Grid-supplied use', 'solar': 'Direct solar use', 'battery': 'Battery-backed use', 'mixed': 'Mixed energy sources'}.get(basis, 'Modeled appliance cost') }}** · not necessarily the cheapest grid-price window.{% endif %}
 
 {% set controlled = is_state('binary_sensor.nrg_ev_control','on') or is_state('binary_sensor.nrg_battery_control','on') %}
 {{ 'Advice only; devices follow their own controls.' if not controlled else ('Observation: schedules are suggestions.' if state_attr('sensor.nrg_plan','operating_mode') == 'Observation' else 'NRG controls the enabled devices when their checks pass.') }}
@@ -487,7 +489,16 @@ def build():
             conditional("cost_metered", metric("net_cost_today")), conditional("cost_metered", metric("cost_coverage")),
             conditional("cost_metered", markdown("Net cost is purchases minus export credits using observed power and your supply + delivery rates. Fixed charges and unconfigured taxes are excluded. Low coverage means the day is incomplete.")),
             conditional("cost_metered", markdown("Connect a grid or whole-home meter in Settings to track net energy cost. Price advice works without one."), False)]]),
-        view("Why?", "why", [[advice, markdown("{{ state_attr('sensor.nrg_advice','reason') or 'Waiting for a current explanation.' }}"), markdown("""## What the recommendation means
+        view("Why?", "why", [[advice, markdown("{{ state_attr('sensor.nrg_advice','reason') or 'Waiting for a current explanation.' }}"), markdown("""{% set p = state_attr('sensor.nrg_plan','plan') or {} %}{% set a = p.get('household', {}) %}
+{% if a.get('best_cost') is number %}### Selected appliance window
+{% if a.get('reference_kwh') is number and a.get('reference_minutes') is number %}**Reference appliance:** {{ a.reference_kwh | round(2) }} kWh over {{ a.reference_minutes | round(0) }} minutes.{% endif %}
+
+**Modeled appliance cost:** {{ (a.best_cost * 100) | round(2) }}¢.
+
+{% if a.get('grid_import_price') is number %}**Grid buying price during the window:** {{ (a.grid_import_price * 100) | round(2) }}¢/kWh (time-weighted average, supply + delivery).{% endif %}
+{% endif %}
+{% if a.get('forecast_until') is number %}**Dependable comparison coverage ends:** {{ a.forecast_until | timestamp_custom('%a %I:%M %p %Z') }}. Later outlook values do not establish savings for this advice.{% endif %}
+"""), markdown("""## What the recommendation means
 The green graph segment is a suggested window for your reference appliance. The line is the grid buying price, not a claim that solar or stored energy is free.
 
 **Good time:** now is among the better opportunities. **Use as usual:** moving the load is not worth the difference. **Wait:** a sufficiently cheaper complete window is available.
@@ -611,7 +622,7 @@ The administrator can change the reference appliance, rates, schedules and reser
 
 {% for c in p.get('candidate_costs',[]) %}**{{ c.name }}**
 
-Modeled horizon cost: {{ ('~' if p.get('cost_includes_estimates') else '') ~ '$' ~ (c.modeled_cost | round(2)) if c.modeled_cost is number else 'Rates needed' }}
+Modeled cost through dependable coverage: {{ '$' ~ (c.modeled_cost | round(2)) if c.modeled_cost is number else 'Dependable coverage needed' }}
 
 EV shortfall: {{ c.shortfall_kwh | round(2) }} kWh
 
@@ -620,7 +631,9 @@ EV shortfall: {{ c.shortfall_kwh | round(2) }} kWh
 {% endif %}{% else %}Waiting for compared schedules.
 
 {% endfor %}
-Includes remaining-energy value and any configured cycling cost. This is a model comparison, not measured savings."""),
+{% if p.get('economic_until') is number %}Economic comparison ends {{ p.economic_until | timestamp_custom('%a %I:%M %p %Z') }}. The longer outlook still tracks EV feasibility and physical energy, not dependable savings.
+
+{% endif %}Includes remaining-energy value and any configured cycling cost. This is a model comparison, not measured savings."""),
         ], [heading("Costs and estimates"),
         *(metric(k) for k in ("import_cost_today", "export_credit_today", "net_cost_today", "cost_coverage")),
         conditional("has_ev", metric("ev_energy_estimate", "EV energy per SOC point")), conditional("has_ev", metric("ev_power_estimate", "EV power at max current")),

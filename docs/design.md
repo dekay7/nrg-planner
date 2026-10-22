@@ -88,7 +88,14 @@ for deadline calculations is not displayed as a known tariff or a free hour.
 
 ## Battery search
 
-For each EV candidate, search supported **hold, serve the home, grid charge** modes.
+For each EV candidate, search supported **hold, serve the home, grid charge** modes
+only through the contiguous dependable economic horizon: known import and applicable
+export prices, plus solar coverage when solar is configured. Stop at the first gap;
+a later island of known prices cannot justify an earlier economic action. The longer
+outlook retains EV feasibility and physical energy with battery hold after that
+boundary. An active price-data fallback instead retains its explicitly selected
+baseline. Replanning can extend the economic horizon as coverage improves.
+
 No battery, monitoring-only battery, missing controls or invalid SOC yields no
 discretionary battery trajectory. No charge-capable mode/switch means grid charging
 is excluded rather than invented. Unknown current prices/solar permit hold only.
@@ -114,8 +121,9 @@ energy is carried inside bins and never rounded up. The least modeled-cost path 
 bin survives. This approximate search is not a global-optimum claim. Numerical ties
 favor less battery throughput, avoiding artificial flat-rate cycling.
 
-Remaining energy receives a common replacement value from the cheapest known grid
-and solar refill opportunities, with losses and finite charging power. Refill is
+Energy remaining at the dependable boundary receives a common replacement value
+from known grid and solar refill opportunities within that same horizon, with
+losses and finite charging power. Refill is
 weighted up to usable capacity: a tiny solar surplus does not make the whole battery
 free to refill. Insufficient known refill energy uses the mean known buying rate
 for the remainder. Calendar degradation does not imply a cycling cost; optional
@@ -129,9 +137,21 @@ otherwise it is modeled as curtailed. Native response is checked separately.
 ## Household advice and execution
 
 Replay the selected modes with the reference appliance starting now or at each
-15-minute boundary in the next day. Include its complete duration, foregone exports
-and end-of-horizon energy value. Only the contiguous trusted-price horizon competes.
-Tentative/gap prices remain distinguishable. Advice never operates an appliance.
+15-minute boundary in the next day. Both the baseline and appliance scenario end at
+the same dependable boundary and include foregone exports, losses, wear and the
+value of their remaining battery energy there. The complete appliance duration must
+fit inside that horizon. Missing future export compensation must not turn a later
+solar refill into free energy or erase the cost of an earlier battery discharge.
+Explicit zero credit and prohibited exports remain distinct from unknown credit.
+
+Advice identifies the modeled appliance supply as grid, direct solar, battery or
+mixed. Its grid-price attribute is a time-weighted supply-plus-delivery rate for
+the selected window, not the appliance's modeled cost. Battery-backed use can be
+worthwhile during an expensive grid hour; it is not necessarily a cheap-grid window.
+These are incremental costs under the selected modes, not a separate globally
+reoptimized appliance schedule. Incomplete equipment information limits confidence;
+only dependable advice can send savings notifications. Tentative/gap outlook values
+remain distinguishable. Advice never operates an appliance.
 
 Plans expire after seven minutes and replan every five minutes/on important changes.
 The serialized writer runs every thirty seconds and selects the applicable dated
