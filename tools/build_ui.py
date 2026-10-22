@@ -259,7 +259,8 @@ def status_card(key, name):
 
 
 def pricing_health_note():
-    return markdown("""{% set active = state_attr('sensor.nrg_pricing_health','active') %}
+    # Hide the card itself when its template has no warning or saved request.
+    return {**markdown("""{% set active = state_attr('sensor.nrg_pricing_health','active') %}
 {% set observation = state_attr('sensor.nrg_pricing_health','operating_mode') == 'Observation' %}
 {% if active %}**{{ 'Proposed price-data fallback · Observation only' if observation else 'Price-data fallback active · verify device results' }}.**
 {{ state_attr('sensor.nrg_pricing_health','reason') }}.
@@ -268,7 +269,10 @@ def pricing_health_note():
 {% elif is_state('sensor.nrg_pricing_health','Degraded') %}**Pricing degraded.** {{ state_attr('sensor.nrg_pricing_health','reason') }}. Check the last valid observation and source status.
 {% endif %}
 {% if is_state('binary_sensor.nrg_fallback_manual','on') %}**Manual request saved.** It persists across restarts until ended, even if prices recover. {% if is_state('binary_sensor.nrg_fallback_enabled','off') %}It is currently inactive under Standard protection; end it before selecting fallback again if you do not want it to resume.{% endif %}{% endif %}
-{% if active or is_state('sensor.nrg_pricing_health','Degraded') %}[Review price-data fallback](/nrg-settings/fallback).{% endif %}""")
+{% if active or is_state('sensor.nrg_pricing_health','Degraded') %}[Review price-data fallback](/nrg-settings/fallback).{% endif %}"""), "visibility": [{"condition": "or", "conditions": [
+        {"condition": "state", "entity": "sensor.nrg_pricing_health", "state": ["Degraded", "Fallback", "Recovering"]},
+        {"condition": "state", "entity": "binary_sensor.nrg_fallback_manual", "state": "on"},
+    ]}]}
 
 
 def price_fallback_view(config_link):
