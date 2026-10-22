@@ -64,6 +64,44 @@ Choices: **Observation**, **Control**.
 
 Reference key: `mode`.
 
+## Price-data fallback
+
+Choose the protection policy under Configure → Price-data fallback. This is separate from equipment permissions and operating mode.
+
+### When current prices are unavailable
+
+Default: **Standard protection (default)**.
+
+Standard protection keeps the normal planner rules: no discretionary battery use without dependable prices, but EV charging may continue to meet departure. Use my fallback actions instead applies the device actions you review before saving. If prices are already unusable and Control is authorized, saving can apply them immediately. A failed fetch alone does not trigger those actions while the current price is still usable. Neither choice enables device control or overrides Observation or protection guards.
+
+Choices: **Standard protection (default)**, **Use my fallback actions**.
+
+Reference key: `price_fallback`.
+
+## Fallback device actions
+
+The next screen after choosing Use my fallback actions shows only devices enabled for NRG control. Hidden choices are retained, not reset. The dashboard groups these settings on its Price-data fallback page.
+
+### EV action when prices are unavailable
+
+Default: **Pause scheduled charging**.
+
+Used only with Use my fallback actions and EV control enabled. Pause scheduled charging can leave the car below its target at departure. Charge for departure uses the available charging window and may buy at an unknown price; it is not a completion guarantee. Charge now explicitly overrides the pause, but not equipment checks.
+
+Choices: **Pause scheduled charging**, **Charge for departure (price unknown)**.
+
+Reference key: `fallback_ev`.
+
+### Battery action when prices are unavailable
+
+Default: **Save battery energy**.
+
+Used only with Use my fallback actions and battery control enabled. Save battery energy holds stored energy for later. Power home above reserve requests self-consumption, not forced export. Both turn off grid charging where supported, retain a higher native reserve, and respect protection guards. Preserve battery during EV charging still takes priority.
+
+Choices: **Save battery energy**, **Power home above reserve (self-consumption)**.
+
+Reference key: `fallback_battery`.
+
 ## Tariff
 
 Set your supply, delivery, and export pricing. For timed rates, use [Pricing periods](pricing.md#editing-timed-periods-in-ha).
@@ -440,7 +478,7 @@ Reference key: `battery_wear_cents`.
 
 ## Notifications
 
-Advice messages are opt-in. Select existing notify services in Configure → Notifications.
+Household advice and price-data fallback alerts are independently opt-in. Both use the notification services and quiet hours in Configure → Notifications; only advice uses the minimum-benefit threshold.
 
 ### Send household advice notifications
 
@@ -450,15 +488,23 @@ Opt in to stable, worthwhile wait-until recommendations. Choose notify services 
 
 Reference key: `notifications`.
 
-### Minimum notification benefit
+### Minimum benefit for household advice
 
 Default: **25 ¢**.
 
-Notify only when delaying the reference appliance is expected to save at least this amount and the recommendation stays stable for two minutes.
+Applies only to household advice notifications, not price-data fallback messages. Notify when delaying the reference appliance is expected to save at least this amount and the advice stays stable for two minutes.
 
 Accepted range: **0 to 1000 ¢**; adjustable in increments of **1 ¢**.
 
 Reference key: `notification_saving_cents`.
+
+### Send price-data fallback alerts
+
+Default: **Off**.
+
+Optional entry and recovery alerts for Use my fallback actions, independent of household advice notifications and their savings threshold. Both message types share the selected notification services and quiet hours. This switch does not enable fallback or equipment control. Observation alerts describe a proposal, not equipment execution.
+
+Reference key: `fallback_notifications`.
 
 ### Notification quiet hours start
 

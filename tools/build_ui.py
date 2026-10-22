@@ -17,10 +17,10 @@ import markdown as md
 ROOT = Path(__file__).resolve().parents[1]
 INTEGRATION = ROOT / "custom_components/nrg"
 sys.path.insert(0, str(ROOT))
-from custom_components.nrg.const import MAPPINGS, SETTINGS, CONTROL_VALUES, COMMAND_SCRIPTS, VERSION
+from custom_components.nrg.const import MAPPINGS, SETTINGS, CONTROL_VALUES, COMMAND_SCRIPTS, VERSION, option_label
 from custom_components.nrg.sensor import METRICS
 
-DISPLAY = {"ev": "EV"}
+DISPLAY = {"ev": "EV", "fallback": "Price-data fallback", "fallback_actions": "Fallback device actions"}
 
 
 def write_yaml(path, value, guide_version=None):
@@ -232,7 +232,9 @@ def setting_card(key):
         "house_kw": "House demand", "flexible_load_kwh": "Energy",
         "flexible_load_minutes": "Duration", "minimum_saving_cents": "Improvement",
         "battery_wear_cents": "Cycling cost",
-        "notifications": "Send notifications", "notification_saving_cents": "Minimum benefit",
+        "price_fallback": "Protection policy", "fallback_ev": "EV action", "fallback_battery": "Battery action",
+        "notifications": "Household advice", "notification_saving_cents": "Advice benefit",
+        "fallback_notifications": "Price-data alerts",
         "quiet_start": "Quiet hours start", "quiet_end": "Quiet hours end",
         "grid_power_inverted": "Reverse grid reading", "battery_power_inverted": "Reverse battery reading",
         "home_includes_ev": "Home meter includes EV",
@@ -254,6 +256,61 @@ def status_card(key, name):
     """Textual status can be several sentences; unlike tiles, Markdown wraps it."""
     return {**markdown("### " + name + "\n\n{{ states('sensor.nrg_" + key + "') }}"),
             "tap_action": {"action": "more-info", "entity": "sensor.nrg_" + key}}
+
+
+def pricing_health_note():
+    return markdown("""{% set active = state_attr('sensor.nrg_pricing_health','active') %}
+{% set observation = state_attr('sensor.nrg_pricing_health','operating_mode') == 'Observation' %}
+{% if active %}**{{ 'Proposed price-data fallback · Observation only' if observation else 'Price-data fallback active · verify device results' }}.**
+{{ state_attr('sensor.nrg_pricing_health','reason') }}.
+{% if observation %}No equipment commands are sent.{% else %}Configured permissions and protection guards still apply; an active policy does not mean every device command succeeded.{% endif %}
+{% if is_state('sensor.nrg_pricing_health','Recovering') %}Fresh prices have returned, but fallback remains active until recovery is confirmed and a new plan is ready.{% endif %}
+{% elif is_state('sensor.nrg_pricing_health','Degraded') %}**Pricing degraded.** {{ state_attr('sensor.nrg_pricing_health','reason') }}. Check the last valid observation and source status.
+{% endif %}
+{% if is_state('binary_sensor.nrg_fallback_manual','on') %}**Manual request saved.** It persists across restarts until ended, even if prices recover. {% if is_state('binary_sensor.nrg_fallback_enabled','off') %}It is currently inactive under Standard protection; end it before selecting fallback again if you do not want it to resume.{% endif %}{% endif %}
+{% if active or is_state('sensor.nrg_pricing_health','Degraded') %}[Review price-data fallback](/nrg-settings/fallback).{% endif %}""")
+
+
+def price_fallback_view(config_link):
+    def manual_button(key, name, text):
+        return {"type": "button", "entity": "button.nrg_" + key, "name": name, "show_icon": False,
+                "tap_action": {"action": "perform-action", "perform_action": "button.press",
+                               "target": {"entity_id": "button.nrg_" + key}, "confirmation": {"text": text}}}
+
+    page = settings_view("Price-data fallback", "fallback", [
+        [heading("1. Choose the protection policy"),
+         markdown("A price-feed outage is not evidence of an electricity outage or a high price. **Standard protection** keeps the normal guarded planner rules; it is not an all-charging-off setting. Choose **Use my fallback actions** to set a different baseline. Saving a policy does not start a manual request or enable equipment control."),
+         markdown("**Selected policy:** {{ states('select.nrg_price_fallback') }}\n\nOpen **Configure → Price-data fallback** using the button below to choose a policy and review device actions before saving. **Saving can apply them immediately** if current prices are unusable and Control is authorized. In Observation no commands are sent."),
+         {**config_link, "name": "Configure price-data protection and actions"},
+         markdown("Actions begin automatically only when current supply or delivery pricing becomes unusable—not on a single failed request with a usable cached price, or just a missing tomorrow forecast. [Read detection and recovery details](/nrg-planner/guide.html#operations-detection-and-recovery).")],
+        [heading("2. Choose actions for NRG-controlled devices"),
+         markdown("These actions apply **only** with Use my fallback actions. Changes here take effect immediately if fallback is active and Control is authorized. Only devices enabled for NRG control are shown. In Observation the choices are proposals, not commands. Configure installed equipment and permissions on [Components](/nrg-settings/components)."),
+         conditional("ev_control", setting_card("fallback_ev")),
+         conditional("has_ev", conditional("ev_control", markdown("**EV is monitoring only.** No fallback charging commands will be sent. Its saved action is retained; enable EV control on Components to review it."), False)),
+         conditional("battery_control", setting_card("fallback_battery")),
+         conditional("has_battery", conditional("battery_control", markdown("**Battery is monitoring only.** No fallback battery commands will be sent. Its saved action is retained; enable battery control on Components to review it."), False)),
+         conditional("has_ev", conditional("has_battery", markdown("No EV or home battery is selected. No device actions are available; select only equipment you actually have on Components."), False), False),
+         conditional("battery_control", markdown("Uses the existing [battery backup reserve](/nrg-settings/battery), retaining a higher native reserve. There is no separate emergency reserve to keep in sync.")),
+         conditional("ev_control", conditional("battery_control", markdown("The existing **Preserve battery during EV charging** setting on [EV](/nrg-settings/ev) still applies. Charge now can override an EV pause, but cannot override equipment protections.")))],
+        [heading("3. Status and manual requests"), metric("pricing_health"), pricing_health_note(),
+         markdown("Automatic fallback releases after fresh observations span at least two minutes and a new plan is ready. A **manual request** instead stays saved until you end it. Ending that request does not force normal operation while automatic fallback or its recovery checks still apply."),
+         conditional("fallback_enabled", conditional("fallback_manual", manual_button("activate_fallback", "Start manual fallback now", "Apply the selected fallback actions now? Observation sends no commands. This request stays saved across restarts and price recovery until you end it."), False)),
+         conditional("fallback_manual", manual_button("release_fallback", "End manual fallback request", "End the saved manual request? Automatic fallback may remain active while prices are unusable or recovery is being confirmed. This does not force charging to resume.")),
+         status_card("control_status", "Actual control status"),
+         markdown("""{% set f = state_attr('sensor.nrg_pricing_health','device_results') or {} %}
+{% for device, result in f.items() %}**{{ device | title }} requested:** {{ result.get('requested') }}
+
+**Result:** {{ result.get('result') }}
+
+{% endfor %}
+{% if state_attr('sensor.nrg_pricing_health','charge_now_override') %}**Charge now overrides the EV pause; prices may be unknown.**{% endif %}
+{% if state_attr('sensor.nrg_pricing_health','departure_at_risk') %}**EV departure target is at risk under this plan.**{% endif %}
+Command readback is not proof of measured power delivery. Check observed device power too.""")],
+        [heading("4. Optional alerts"),
+         markdown("Entry and recovery alerts are configured on [Notifications](/nrg-settings/notifications), separately from household advice. Both message types share notification services and quiet hours. Alerts do not enable this policy or equipment control."), config_link],
+    ])
+    page["sections"][1]["visibility"] = [{"condition": "state", "entity": "binary_sensor.nrg_fallback_enabled", "state": "on"}]
+    return page
 
 
 def price_generator(kind):
@@ -299,8 +356,8 @@ def power_flow():
             "collection_key": "energy_dashboard"}
 
 
-def conditional(flag, card, enabled=True):
-    return {"type": "conditional", "conditions": [{"entity": "binary_sensor.nrg_" + flag, "state": "on" if enabled else "off"}], "card": card}
+def conditional(flag, card, enabled=True, *, domain="binary_sensor"):
+    return {"type": "conditional", "conditions": [{"entity": domain + ".nrg_" + flag, "state": "on" if enabled else "off"}], "card": card}
 
 
 def price_chart():
@@ -358,18 +415,21 @@ def accuracy_chart():
 def translations():
     steps = {}
     display = DISPLAY
-    for name in ("components", "operation", "tariff", "solar", "battery", "ev", "planning", "notifications", "measurements"):
+    for name in ("components", "operation", "fallback", "fallback_actions", "tariff", "solar", "battery", "ev", "planning", "notifications", "measurements"):
         subset = {k: f for k, f in SETTINGS.items() if f.section == name}
         steps[name] = {"title": display.get(name, name.title()), "description": "Changes persist across restarts. {error}",
                        "data": {k: f.name for k, f in subset.items()},
                        "data_description": {k: f.description for k, f in subset.items()}}
+    steps["fallback"]["description"] = "Choose what should happen when current supply or delivery prices are unusable. Standard protection is not 'all controls off': EV departure charging may continue. Choose Use my fallback actions to review device actions on the next screen. Only devices enabled for NRG control have action choices; with none enabled, the choice is saved without device actions. Saving can apply the actions immediately if current prices are unusable and Control is authorized. Observation always remains command-free. {error}"
+    steps["fallback_actions"]["description"] = "Used only with Use my fallback actions. Only devices enabled for NRG control are shown; other saved device choices are kept unchanged. Pausing the EV can miss its departure target; charging for departure can buy at an unknown price. Battery reserve, Preserve battery during EV charging, and protection guards still apply. In Observation these are proposals only. Saving can apply these actions immediately when prices are unusable and Control is authorized. Recovery is automatic after stable fresh observations and a new plan; manual requests must be ended separately. {error}"
+    steps["notifications"]["description"] = "Two independent message types share the notification services and quiet hours below. The minimum benefit applies only to household advice. Price-data alerts do not enable fallback; configure its actions under Price-data fallback. {error}"
     steps["ev"]["data"]["departure_override"] = "One-off departure"
     steps["ev"]["data_description"]["departure_override"] = "Optional local date and time, overriding the daily departure. Clear when no longer needed."
     steps["notifications"]["data"]["notification_targets"] = "Notification services"
-    steps["notifications"]["data_description"]["notification_targets"] = "Choose the existing notify services for household phones. No recipients are hard-coded."
+    steps["notifications"]["data_description"]["notification_targets"] = "Used for both household advice and price-data fallback alerts. Select at least one existing notify service to receive messages; no services are chosen automatically."
     steps["mappings"] = {"title": "Measurements and controls", "description": "Choose entities from any integration. Local readings are preferred when available. Only enabled components are shown. Read-only feedback can be paired with command scripts under Control adapters. {error}",
                          "data": {k: v[0] for k, v in MAPPINGS.items()}, "data_description": {k: v[2] for k, v in MAPPINGS.items()}}
-    steps["init"] = {"title": "NRG Planner settings", "menu_options": {k: display.get(k, k.replace("_", " ").title()) for k in ("components", "operation", "tariff", "pricing_periods", "solar", "battery", "ev", "planning", "notifications", "mappings", "measurements", "controls", "sources")}}
+    steps["init"] = {"title": "NRG Planner settings", "menu_options": {k: display.get(k, k.replace("_", " ").title()) for k in ("components", "operation", "fallback", "tariff", "pricing_periods", "solar", "battery", "ev", "planning", "notifications", "mappings", "measurements", "controls", "sources")}}
     steps["init"]["menu_options"]["measurements"] = "Meter conventions"
     steps["init"]["menu_options"]["controls"] = "Control adapters"
     steps["sources"] = {"title": "Solar forecast sources", "menu_options": {"add_source": "Add forecast", "edit_source": "Edit forecast", "remove_source": "Remove forecast"}}
@@ -413,7 +473,7 @@ def build():
 {{ 'Advice only; devices follow their own controls.' if not controlled else ('Observation: schedules are suggestions.' if state_attr('sensor.nrg_plan','operating_mode') == 'Observation' else 'NRG controls the enabled devices when their checks pass.') }}
 [Why this advice?](/nrg-home/why)""")
     home = {"title": "NRG Planner", "views": [
-        view("Home Energy", "now", [[price, grid([metric("supply_price"), metric("delivery_price")]), advice, price_chart()], [
+        view("Home Energy", "now", [[price, metric("pricing_health"), pricing_health_note(), grid([metric("supply_price"), metric("delivery_price")]), advice, price_chart()], [
             power_flow(), markdown("The same live power-flow Sankey as the Energy dashboard's Now tab. Configure your power meters in the Energy dashboard; NRG never substitutes an estimated flow."),
             grid([conditional("has_solar", metric("solar_power")), metric("home_power"), metric("grid_power"), conditional("has_ev", metric("ev_power"))]),
             grid([conditional("has_battery", {"type": "gauge", "entity": "sensor.nrg_battery_soc", "name": "Home battery", "min": 0, "max": 100}),
@@ -443,6 +503,7 @@ The administrator can change the reference appliance, rates, schedules and reser
         markdown("Enable only the components this home has, and choose separately whether NRG may control them."),
         handbook_button("Household handbook and settings reference"),
         setting_card("mode"),
+        markdown("Price-feed outage behavior has its own [Price-data fallback page](/nrg-settings/fallback). It is separate from operating mode and EV overrides."),
         {"type": "entities", "show_header_toggle": False, "entities": [{"entity":"button.nrg_refresh","name":"Refresh forecasts"}]},
         conditional("ev_control", {"type": "vertical-stack", "cards": [
             heading("EV overrides"),
@@ -451,6 +512,7 @@ The administrator can change the reference appliance, rates, schedules and reser
              "tap_action": {"action": "more-info"}, "icon_tap_action": {"action": "more-info"}, "hold_action": {"action": "none"}},
             {"type": "entities", "show_header_toggle": False, "entities": [{"entity": "button.nrg_clear_departure", "name": "Clear one-off departure"}]},
         ]})], [heading("Status and readiness"), status_card("control_status", "Control status"),
+        metric("pricing_health"), pricing_health_note(),
         conditional("has_ev", status_card("ev_status", "Car plan")), conditional("has_battery", status_card("battery_action", "Battery plan")),
         {"type": "entities", "show_header_toggle": False, "entities": [
             {"entity": "binary_sensor.nrg_writer_authorized", "name": "Writer authorized"},
@@ -460,6 +522,7 @@ The administrator can change the reference appliance, rates, schedules and reser
             {"type": "conditional", "conditions": [{"entity": "binary_sensor.nrg_battery_control", "state": "on"}],
              "row": {"entity": "binary_sensor.nrg_battery_ready", "name": "Battery ready"}},
         ]}], [heading("Price outlook"), price_chart()], [heading("Energy outlook"), timeline(), battery_forecast_note()]])]
+    admin_views.append(price_fallback_view(config_link))
     # Sections collapse to one column on phones; grouping related settings into
     # their own sections keeps each group intact on mobile and pairs them on desktop.
     groups = {
@@ -478,14 +541,18 @@ The administrator can change the reference appliance, rates, schedules and reser
         "planning": (("Household demand learning", ("house_learning", "house_kw")),
                      ("Flexible-load advice", ("flexible_load_kwh", "flexible_load_minutes", "minimum_saving_cents")),
                       ("Battery cycling", ("battery_wear_cents",))),
-        "notifications": (("Opt-in and threshold", ("notifications", "notification_saving_cents")),
-                          ("Quiet hours", ("quiet_start", "quiet_end"))),
+        "notifications": (("Household advice messages", ("notifications", "notification_saving_cents")),
+                          ("Price-data fallback alerts", ("fallback_notifications",)),
+                          ("Shared delivery and quiet hours", ("quiet_start", "quiet_end"))),
     }
     for name, section_groups in groups.items():
         label = DISPLAY.get(name, name.title())
         sections = []
         for title, keys in section_groups:
-            sections.append([heading(title), *(setting_card(key) for key in keys)])
+            sections.append([heading(title), *(conditional("notifications", setting_card(key), domain="switch") if key == "notification_saving_cents" else setting_card(key) for key in keys)])
+        if name == "notifications":
+            sections[1].append(markdown("Independent of household advice and its savings threshold. These alerts apply to **Use my fallback actions**; [configure the actions separately](/nrg-settings/fallback). Both message types respect the shared quiet hours."))
+            sections[2].extend([markdown("Choose **Configure → Notifications → Notification services** for both message types. No messages can be delivered until you select a service. Quiet hours also defer fallback alerts."), config_link])
         if name == "tariff":
             sections.insert(0, [heading("Pricing setup"), markdown("### Independent supply and delivery\n\nChoose each pricing method separately. To add Morning / Peak / Evening / Overnight or weekday/weekend rates, open **Configure → Pricing periods**. Missing hours/rates stay unknown; they are not treated as free."),
                 config_link, status_card("tariff_status", "Pricing schedule coverage")])
@@ -576,12 +643,14 @@ Includes remaining-energy value and any configured cycling cost. This is a model
     setting_groups = {
         "components": ("Components", "Select the equipment you have. Monitoring and command permission are separate."),
         "operation": ("Operation", "Choose whether schedules remain proposals or can operate enabled equipment."),
+        "fallback": ("Price-data fallback", "Choose the protection policy under Configure → Price-data fallback. This is separate from equipment permissions and operating mode."),
+        "fallback_actions": ("Fallback device actions", "The next screen after choosing Use my fallback actions shows only devices enabled for NRG control. Hidden choices are retained, not reset. The dashboard groups these settings on its Price-data fallback page."),
         "tariff": ("Tariff", "Set your supply, delivery, and export pricing. For timed rates, use [Pricing periods](pricing.md#editing-timed-periods-in-ha)."),
         "solar": ("Solar", "Only relevant when solar is enabled. These settings adjust predictions, not measured production."),
         "battery": ("Battery", "Only relevant when a home battery is enabled. Review the generic assumptions against your equipment."),
         "ev": ("EV", "Only relevant when an EV is enabled. Review charging limits and times for your own vehicle and routine."),
         "planning": ("Planning", "Set household-demand estimates, reference-appliance advice, and optional planning preferences."),
-        "notifications": ("Notifications", "Advice messages are opt-in. Select existing notify services in Configure → Notifications."),
+        "notifications": ("Notifications", "Household advice and price-data fallback alerts are independently opt-in. Both use the notification services and quiet hours in Configure → Notifications; only advice uses the minimum-benefit threshold."),
         "measurements": ("Meter conventions", "Normalize the readings reported by your existing integrations."),
     }
     for group, (label, description) in setting_groups.items():
@@ -592,12 +661,12 @@ Includes remaining-energy value and any configured cycling cost. This is a model
             if isinstance(field.default, bool):
                 default = "On" if field.default else "Off"
             else:
-                default = str(field.default) if field.default is not None else "Unset"
+                default = str(option_label(key, field.default)) if field.default is not None else "Unset"
             if field.unit and field.default is not None:
                 default += " " + field.unit
             reference.extend([f"### {field.name}", "", f"Default: **{default}**.", "", field.description, ""])
             if field.choices:
-                reference.extend(["Choices: " + ", ".join(f"**{choice}**" for choice in field.choices) + ".", ""])
+                reference.extend(["Choices: " + ", ".join(f"**{option_label(key, choice)}**" for choice in field.choices) + ".", ""])
             if field.kind == "number":
                 reference.extend([f"Accepted range: **{field.low:g} to {field.high:g} {field.unit or ''}**; "
                                   f"adjustable in increments of **{field.step:g} {field.unit or ''}**.", ""])

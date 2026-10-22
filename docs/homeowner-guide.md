@@ -11,12 +11,31 @@ change at the configured boundaries. Solid forecast lines represent published
 outlooks; dashed lines are estimates. A gap means price information is missing,
 not that energy is free.
 
+## Pricing health and missing-price protection
+
+- **Healthy:** current import pricing is usable.
+- **Degraded:** a fetch failed or some current pricing is unusable. A usable cached
+  price may still be used; this status alone does not mean custom fallback began.
+- **Fallback:** the administrator's selected missing-price actions apply. In
+  **Observation**, the banner explicitly describes a proposal and no equipment
+  commands are sent.
+- **Recovering:** fresh prices returned, but fallback stays active while recovery
+  is confirmed and a new plan is prepared.
+
+These are pricing-data states, not reports of a power outage or unusually high
+prices. The administrator configures actions and checks device results on
+**Energy Settings → Price-data fallback**. An active policy does not prove every
+command succeeded. A manual request persists until ended; fresh prices alone do
+not end that request. See [fallback operation](operations.md#price-data-fallback).
+
 ## The recommendation
 
 - **Good time to use energy:** now is among the better modeled opportunities.
 - **Use energy as usual:** shifting the reference task is not worth the difference.
 - **Wait until …:** a sufficiently cheaper complete window is available.
 - **Waiting for dependable coverage:** the information cannot support a full comparison.
+- **Price-data fallback active:** economic advice is paused; review the selected
+  device baseline rather than assuming a price-based schedule.
 
 The green segment marks a recommended window for the administrator's reference
 appliance, initially **1 kWh over one hour**. The benefit concerns that task, not
@@ -52,7 +71,9 @@ separately.
 With NRG EV control enabled, planned start/readiness aim for the selected limit by
 departure. The vehicle target is never raised by NRG. A shortfall means the model
 cannot meet that target under current assumptions. The administrator can use
-charge-now or a one-off departure override.
+charge-now or a one-off departure override. An explicitly selected missing-price
+EV pause can leave the car below its target at departure; Charge now can override
+that pause, but not equipment protection checks.
 
 Battery percentage is measured. Available kWh uses the configured age-adjusted
 capacity and reserve, rather than claiming a measured battery-health test.

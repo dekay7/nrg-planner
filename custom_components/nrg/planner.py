@@ -203,6 +203,11 @@ def battery_search(slots, ev, initial, config, capacity, terminal, available):
                 modes.append("serve")
             if not car and config.get("allow_grid_charge", True):
                 modes.append("charge")
+        if config.get("_fallback_active"):
+            # Model the baseline for as long as fallback lasts, not price arbitrage.
+            serve = (available and config["fallback_battery"] == "Self-consumption"
+                     and (not car or not config["hold_battery_for_ev"]))
+            modes = ["serve" if serve else "hold"]
         next_nodes = {}
         for node in nodes.values():
             for action in modes:
@@ -289,6 +294,8 @@ def household_advice(slots, ev, actions, initial, config, capacity, terminal, av
 def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous=None, charge_now=False):
     battery_model = stats.battery.model(config, now)
     config = config | battery_model | {"zone": zone}
+    if config.get("_fallback_active") and telemetry.get("battery_native_reserve") is not None:
+        config["backup_reserve"] = max(config["backup_reserve"], telemetry["battery_native_reserve"])
     previous = previous or {}
     managed_ev = config["has_ev"] and config["ev_control"]
     due = deadline(now, config, zone, telemetry, previous) if managed_ev else now + 48 * 3600
@@ -296,6 +303,8 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
     capacity = effective_capacity(config, datetime.fromtimestamp(now, zone).date()) if config["has_battery"] else 0
     soc = telemetry.get("battery_soc") if config["has_battery"] else None
     available = config["has_battery"] and config["battery_control"] and soc is not None and telemetry.get("battery_ready", False)
+    if config.get("_fallback_active") and telemetry.get("battery_reserve_mapped") and telemetry.get("battery_native_reserve") is None:
+        available = False
     config["allow_grid_charge"] = telemetry.get("can_grid_charge", True)
     initial = capacity * soc / 100 if soc is not None else 0
     ev_soc, limit = telemetry.get("ev_soc"), telemetry.get("ev_limit")
@@ -314,7 +323,11 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
     urgent = bool(need and now + need / power * 3600 >= due - config["completion_buffer"] * 60)
     forced = charge_now or urgent or due <= now
     candidates = []
-    if not managed_ev:
+    fallback_pause = (config.get("_fallback_active") and config["fallback_ev"] == "Pause scheduled charging"
+                      and not charge_now and managed_ev)
+    if fallback_pause:
+        candidates.append(("fallback pause", [0.0] * len(slots), [0] * len(slots), need or 0))
+    elif not managed_ev:
         # Extrapolate only an already observed charge to its known target. This
         # is a background load, not permission to command the vehicle.
         remaining = need or 0
@@ -328,13 +341,13 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
     elif not connected or need is None or need <= .001:
         candidates.append(("none", [0.0] * len(slots), [0] * len(slots), need or 0))
     else:
-        for kind in (["earliest"] if forced else ["cheapest", "solar", "earliest", "latest"]):
+        for kind in (["earliest"] if forced else ["latest"] if config.get("_fallback_active") else ["cheapest", "solar", "earliest", "latest"]):
             ev, amps, missing = allocate(slots, need, power, max(due, slots[-1]["end"]) if charge_now or due <= now else cutoff, config, kind, all_time)
             candidates.append((kind, ev, amps, missing))
         # Previous schedule competes only after revalidating deadline, availability,
         # current limits and needed energy against today's telemetry.
         old = previous.get("slots", [])
-        if not forced and old and previous.get("deadline") == due:
+        if not forced and not config.get("_fallback_active") and old and previous.get("deadline") == due:
             ev, amps = [], []
             remaining = need
             for slot in slots:
@@ -365,7 +378,7 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
     active = [s for s in slots if s["ev_kwh"] > .001]
     ev_status = ("not_installed" if not config["has_ev"] else "monitor_only" if not managed_ev else "unplugged" if not connected else "telemetry_missing" if need is None else "ready" if need <= .001
                  else "blocked" if not telemetry.get("ev_ready", True)
-                 else "charge_now" if charge_now else "deadline" if urgent or due <= now
+                 else "fallback_paused" if fallback_pause else "charge_now" if charge_now else "deadline" if urgent or due <= now
                  else "charging" if slots[0]["ev_kwh"] else "waiting")
     first = slots[0]
     next_charge = active[0]["start"] if active and managed_ev else None
@@ -396,6 +409,11 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
         battery_reason = "Ask the home battery to save its energy while the EV charges."
     if available and (not first["price_known"] or not first["export_known"] or not first["solar_known"]):
         battery_reason = "Current forecast coverage is incomplete; keep discretionary grid charging off."
+    if config.get("_fallback_active"):
+        if available:
+            battery_reason = "Price-data fallback baseline: " + config["fallback_battery"] + "; grid charging disabled and backup reserve retained. Outlook assumes fallback continues until recovery."
+        advice = {"category": "limited", "summary": "Price-data fallback active",
+                  "reason": "Economic advice is paused. Missing prices are unknown; this outlook assumes fallback continues until recovery.", "windows": []}
     # Do not publish feasibility-only numerical placeholders as tariff data.
     for slot in slots:
         slot.pop("_model_import_price", None)

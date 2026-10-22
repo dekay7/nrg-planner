@@ -33,6 +33,9 @@ SETTINGS = {
     "ev_control": Setting("Let NRG control EV charging", "components", "switch", False, "Optional. Enable after mapping your charging switch/current controls or HA command scripts. With this off, NRG monitors the car and leaves its charging to your existing system."),
     "battery_control": Setting("Let NRG control the home battery", "components", "switch", False, "Optional. Enable after mapping the battery's operating controls or command scripts. With this off, the battery remains monitored and NRG does not assume it can schedule its energy."),
     "mode": Setting("Operating mode", "operation", "select", "Observation", "Observation calculates without equipment commands. Control authorizes only the components you enabled for NRG control. Switching to Observation does not restore settings already saved in your equipment.", choices=("Observation", "Control")),
+    "price_fallback": Setting("When current prices are unavailable", "fallback", "select", "Existing behavior", "Standard protection keeps the normal planner rules: no discretionary battery use without dependable prices, but EV charging may continue to meet departure. Use my fallback actions instead applies the device actions you review before saving. If prices are already unusable and Control is authorized, saving can apply them immediately. A failed fetch alone does not trigger those actions while the current price is still usable. Neither choice enables device control or overrides Observation or protection guards.", choices=("Existing behavior", "Custom fallback")),
+    "fallback_ev": Setting("EV action when prices are unavailable", "fallback_actions", "select", "Pause scheduled charging", "Used only with Use my fallback actions and EV control enabled. Pause scheduled charging can leave the car below its target at departure. Charge for departure uses the available charging window and may buy at an unknown price; it is not a completion guarantee. Charge now explicitly overrides the pause, but not equipment checks.", choices=("Pause scheduled charging", "Maintain departure readiness")),
+    "fallback_battery": Setting("Battery action when prices are unavailable", "fallback_actions", "select", "Preserve battery", "Used only with Use my fallback actions and battery control enabled. Save battery energy holds stored energy for later. Power home above reserve requests self-consumption, not forced export. Both turn off grid charging where supported, retain a higher native reserve, and respect protection guards. Preserve battery during EV charging still takes priority.", choices=("Preserve battery", "Self-consumption")),
     "supply_plan": Setting("Supply plan", "tariff", "select", "Flat supply", "Choose your provider's supply pricing: a flat rate, your own timed periods, an external HA price sensor/forecast, or the optional ComEd hourly feed. Delivery is configured separately and added once.", choices=("Flat supply", "Time-of-use supply", "External supply entity", "Hourly ComEd")),
     "flat_supply_cents": Setting("Flat supply rate", "tariff", "number", None, "Your contracted supply price, excluding delivery. Unset means unknown, not free. Enter an explicit zero only if your contract really has a zero supply rate.", "¢/kWh", -100, 100, .001),
     "external_supply_attribute": Setting("Supply forecast attribute", "tariff", "text", "forecast", "For an external provider, name the attribute containing forecast intervals. Each interval needs start, end and price (or the documented aliases). Units are read from the row or price entity. An external current price alone does not invent future prices."),
@@ -72,7 +75,8 @@ SETTINGS = {
     "minimum_saving_cents": Setting("Minimum worthwhile plan improvement", "planning", "number", 2, "Prefer a stable existing feasible plan unless a replacement improves modeled horizon cost by at least this amount. Also used for generic household advice.", "¢", 0, 500, 1),
     "battery_wear_cents": Setting("Optional battery cycling cost", "planning", "number", 0, "Optional estimated wear cost per AC kWh discharged. Calendar degradation above does not establish a cycling cost; zero makes no invented wear charge.", "¢/kWh", 0, 50, .1),
     "notifications": Setting("Send household advice notifications", "notifications", "switch", False, "Opt in to stable, worthwhile wait-until recommendations. Choose notify services in Configure → Notifications. Notifications do not command equipment."),
-    "notification_saving_cents": Setting("Minimum notification benefit", "notifications", "number", 25, "Notify only when delaying the reference appliance is expected to save at least this amount and the recommendation stays stable for two minutes.", "¢", 0, 1000, 1),
+    "notification_saving_cents": Setting("Minimum benefit for household advice", "notifications", "number", 25, "Applies only to household advice notifications, not price-data fallback messages. Notify when delaying the reference appliance is expected to save at least this amount and the advice stays stable for two minutes.", "¢", 0, 1000, 1),
+    "fallback_notifications": Setting("Send price-data fallback alerts", "notifications", "switch", False, "Optional entry and recovery alerts for Use my fallback actions, independent of household advice notifications and their savings threshold. Both message types share the selected notification services and quiet hours. This switch does not enable fallback or equipment control. Observation alerts describe a proposal, not equipment execution."),
     "quiet_start": Setting("Notification quiet hours start", "notifications", "time", "21:00:00", "Local start of quiet hours. Advice remains available on the dashboard."),
     "quiet_end": Setting("Notification quiet hours end", "notifications", "time", "08:00:00", "Local end of quiet hours. Equal start/end disables the quiet-hours restriction."),
     "grid_power_inverted": Setting("Grid meter reports export as positive", "measurements", "switch", False, "Enable when your provider reports positive export and negative import. NRG reverses that reading so its normalized grid power always means positive buying and negative selling."),
@@ -112,6 +116,18 @@ MAPPINGS = {
     "ev_current": ("EV current setting / feedback", ("number", "sensor", "input_number"), "Current setting in A. Number/input_number controls work directly. A read-only sensor needs an EV current script under Control adapters."),
     "ev_charge": ("EV charging control / feedback", ("switch", "binary_sensor", "sensor", "input_boolean"), "Switches work directly. Read-only state feedback needs start/stop scripts. Set its charging/paused state values under Control adapters if they are not on/off."),
 }
+
+# Friendly UI labels do not change saved values or control-policy comparisons.
+OPTION_LABELS = {
+    "price_fallback": {"Existing behavior": "Standard protection (default)", "Custom fallback": "Use my fallback actions"},
+    "fallback_ev": {"Pause scheduled charging": "Pause scheduled charging", "Maintain departure readiness": "Charge for departure (price unknown)"},
+    "fallback_battery": {"Preserve battery": "Save battery energy", "Self-consumption": "Power home above reserve (self-consumption)"},
+}
+
+
+def option_label(key, value):
+    return OPTION_LABELS.get(key, {}).get(value, value)
+
 
 DEFAULTS = {key: field.default for key, field in SETTINGS.items()}
 OPTIONAL_RATES = frozenset({"flat_supply_cents", "delivery_cents", "export_adder_cents", "flat_export_cents"})

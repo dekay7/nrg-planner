@@ -151,6 +151,28 @@
           "mode": "Observation calculates without equipment commands. Control authorizes only the components you enabled for NRG control. Switching to Observation does not restore settings already saved in your equipment."
         }
       },
+      "fallback": {
+        "title": "Price-data fallback",
+        "description": "Choose what should happen when current supply or delivery prices are unusable. Standard protection is not 'all controls off': EV departure charging may continue. Choose Use my fallback actions to review device actions on the next screen. Only devices enabled for NRG control have action choices; with none enabled, the choice is saved without device actions. Saving can apply the actions immediately if current prices are unusable and Control is authorized. Observation always remains command-free. {error}",
+        "data": {
+          "price_fallback": "When current prices are unavailable"
+        },
+        "data_description": {
+          "price_fallback": "Standard protection keeps the normal planner rules: no discretionary battery use without dependable prices, but EV charging may continue to meet departure. Use my fallback actions instead applies the device actions you review before saving. If prices are already unusable and Control is authorized, saving can apply them immediately. A failed fetch alone does not trigger those actions while the current price is still usable. Neither choice enables device control or overrides Observation or protection guards."
+        }
+      },
+      "fallback_actions": {
+        "title": "Fallback device actions",
+        "description": "Used only with Use my fallback actions. Only devices enabled for NRG control are shown; other saved device choices are kept unchanged. Pausing the EV can miss its departure target; charging for departure can buy at an unknown price. Battery reserve, Preserve battery during EV charging, and protection guards still apply. In Observation these are proposals only. Saving can apply these actions immediately when prices are unusable and Control is authorized. Recovery is automatic after stable fresh observations and a new plan; manual requests must be ended separately. {error}",
+        "data": {
+          "fallback_ev": "EV action when prices are unavailable",
+          "fallback_battery": "Battery action when prices are unavailable"
+        },
+        "data_description": {
+          "fallback_ev": "Used only with Use my fallback actions and EV control enabled. Pause scheduled charging can leave the car below its target at departure. Charge for departure uses the available charging window and may buy at an unknown price; it is not a completion guarantee. Charge now explicitly overrides the pause, but not equipment checks.",
+          "fallback_battery": "Used only with Use my fallback actions and battery control enabled. Save battery energy holds stored energy for later. Power home above reserve requests self-consumption, not forced export. Both turn off grid charging where supported, retain a higher native reserve, and respect protection guards. Preserve battery during EV charging still takes priority."
+        }
+      },
       "tariff": {
         "title": "Tariff",
         "description": "Changes persist across restarts. {error}",
@@ -271,20 +293,22 @@
       },
       "notifications": {
         "title": "Notifications",
-        "description": "Changes persist across restarts. {error}",
+        "description": "Two independent message types share the notification services and quiet hours below. The minimum benefit applies only to household advice. Price-data alerts do not enable fallback; configure its actions under Price-data fallback. {error}",
         "data": {
           "notifications": "Send household advice notifications",
-          "notification_saving_cents": "Minimum notification benefit",
+          "notification_saving_cents": "Minimum benefit for household advice",
+          "fallback_notifications": "Send price-data fallback alerts",
           "quiet_start": "Notification quiet hours start",
           "quiet_end": "Notification quiet hours end",
           "notification_targets": "Notification services"
         },
         "data_description": {
           "notifications": "Opt in to stable, worthwhile wait-until recommendations. Choose notify services in Configure → Notifications. Notifications do not command equipment.",
-          "notification_saving_cents": "Notify only when delaying the reference appliance is expected to save at least this amount and the recommendation stays stable for two minutes.",
+          "notification_saving_cents": "Applies only to household advice notifications, not price-data fallback messages. Notify when delaying the reference appliance is expected to save at least this amount and the advice stays stable for two minutes.",
+          "fallback_notifications": "Optional entry and recovery alerts for Use my fallback actions, independent of household advice notifications and their savings threshold. Both message types share the selected notification services and quiet hours. This switch does not enable fallback or equipment control. Observation alerts describe a proposal, not equipment execution.",
           "quiet_start": "Local start of quiet hours. Advice remains available on the dashboard.",
           "quiet_end": "Local end of quiet hours. Equal start/end disables the quiet-hours restriction.",
-          "notification_targets": "Choose the existing notify services for household phones. No recipients are hard-coded."
+          "notification_targets": "Used for both household advice and price-data fallback alerts. Select at least one existing notify service to receive messages; no services are chosen automatically."
         }
       },
       "measurements": {
@@ -370,6 +394,7 @@
         "menu_options": {
           "components": "Components",
           "operation": "Operation",
+          "fallback": "Price-data fallback",
           "tariff": "Tariff",
           "pricing_periods": "Pricing Periods",
           "solar": "Solar",

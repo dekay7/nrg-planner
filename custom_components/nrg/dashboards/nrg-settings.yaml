@@ -24,7 +24,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=6e529147ba46
+        url_path: /nrg-planner/guide.html?v=9dc32f9d5b05
       grid_options:
         columns: full
         rows: auto
@@ -41,6 +41,12 @@ views:
         - entity: select.nrg_mode
           name: Operating mode
         show_header_toggle: false
+      grid_options:
+        columns: full
+        rows: auto
+    - type: markdown
+      content: Price-feed outage behavior has its own [Price-data fallback page](/nrg-settings/fallback). It is
+        separate from operating mode and EV overrides.
       grid_options:
         columns: full
         rows: auto
@@ -100,6 +106,49 @@ views:
       tap_action:
         action: more-info
         entity: sensor.nrg_control_status
+      grid_options:
+        columns: full
+        rows: auto
+    - type: tile
+      entity: sensor.nrg_pricing_health
+      name: Pricing health
+      tap_action:
+        action: more-info
+      hold_action:
+        action: none
+      icon_tap_action:
+        action: more-info
+      grid_options:
+        columns: full
+        rows: auto
+    - type: markdown
+      content: '{% set active = state_attr(''sensor.nrg_pricing_health'',''active'') %}
+
+        {% set observation = state_attr(''sensor.nrg_pricing_health'',''operating_mode'') == ''Observation'' %}
+
+        {% if active %}**{{ ''Proposed price-data fallback · Observation only'' if observation else ''Price-data
+        fallback active · verify device results'' }}.**
+
+        {{ state_attr(''sensor.nrg_pricing_health'',''reason'') }}.
+
+        {% if observation %}No equipment commands are sent.{% else %}Configured permissions and protection guards
+        still apply; an active policy does not mean every device command succeeded.{% endif %}
+
+        {% if is_state(''sensor.nrg_pricing_health'',''Recovering'') %}Fresh prices have returned, but fallback
+        remains active until recovery is confirmed and a new plan is ready.{% endif %}
+
+        {% elif is_state(''sensor.nrg_pricing_health'',''Degraded'') %}**Pricing degraded.** {{ state_attr(''sensor.nrg_pricing_health'',''reason'')
+        }}. Check the last valid observation and source status.
+
+        {% endif %}
+
+        {% if is_state(''binary_sensor.nrg_fallback_manual'',''on'') %}**Manual request saved.** It persists across
+        restarts until ended, even if prices recover. {% if is_state(''binary_sensor.nrg_fallback_enabled'',''off'')
+        %}It is currently inactive under Standard protection; end it before selecting fallback again if you do not
+        want it to resume.{% endif %}{% endif %}
+
+        {% if active or is_state(''sensor.nrg_pricing_health'',''Degraded'') %}[Review price-data fallback](/nrg-settings/fallback).{%
+        endif %}'
       grid_options:
         columns: full
         rows: auto
@@ -437,6 +486,351 @@ views:
         columns: full
         rows: auto
   dense_section_placement: false
+- title: Price-data fallback
+  path: fallback
+  type: sections
+  max_columns: 2
+  sections:
+  - type: grid
+    cards:
+    - type: heading
+      heading: 1. Choose the protection policy
+      heading_style: title
+      grid_options:
+        columns: full
+        rows: auto
+    - type: markdown
+      content: A price-feed outage is not evidence of an electricity outage or a high price. **Standard protection**
+        keeps the normal guarded planner rules; it is not an all-charging-off setting. Choose **Use my fallback
+        actions** to set a different baseline. Saving a policy does not start a manual request or enable equipment
+        control.
+      grid_options:
+        columns: full
+        rows: auto
+    - type: markdown
+      content: '**Selected policy:** {{ states(''select.nrg_price_fallback'') }}
+
+
+        Open **Configure → Price-data fallback** using the button below to choose a policy and review device actions
+        before saving. **Saving can apply them immediately** if current prices are unusable and Control is authorized.
+        In Observation no commands are sent.'
+      grid_options:
+        columns: full
+        rows: auto
+    - type: button
+      name: Configure price-data protection and actions
+      show_icon: false
+      tap_action: &id001
+        action: navigate
+        navigation_path: /config/integrations/integration/nrg
+      grid_options:
+        columns: full
+        rows: 1
+    - type: markdown
+      content: Actions begin automatically only when current supply or delivery pricing becomes unusable—not on
+        a single failed request with a usable cached price, or just a missing tomorrow forecast. [Read detection
+        and recovery details](/nrg-planner/guide.html?v=9dc32f9d5b05#operations-detection-and-recovery).
+      grid_options:
+        columns: full
+        rows: auto
+  - type: grid
+    cards:
+    - type: heading
+      heading: 2. Choose actions for NRG-controlled devices
+      heading_style: title
+      grid_options:
+        columns: full
+        rows: auto
+    - type: markdown
+      content: These actions apply **only** with Use my fallback actions. Changes here take effect immediately if
+        fallback is active and Control is authorized. Only devices enabled for NRG control are shown. In Observation
+        the choices are proposals, not commands. Configure installed equipment and permissions on [Components](/nrg-settings/components).
+      grid_options:
+        columns: full
+        rows: auto
+    - type: conditional
+      conditions:
+      - entity: binary_sensor.nrg_ev_control
+        state: 'on'
+      card:
+        type: vertical-stack
+        cards:
+        - type: markdown
+          content: '### EV action when prices are unavailable
+
+
+            Used only with Use my fallback actions and EV control enabled. Pause scheduled charging can leave the
+            car below its target at departure. Charge for departure uses the available charging window and may buy
+            at an unknown price; it is not a completion guarantee. Charge now explicitly overrides the pause, but
+            not equipment checks.'
+        - type: entities
+          entities:
+          - entity: select.nrg_fallback_ev
+            name: EV action
+          show_header_toggle: false
+      grid_options:
+        columns: full
+        rows: auto
+    - type: conditional
+      conditions:
+      - entity: binary_sensor.nrg_has_ev
+        state: 'on'
+      card:
+        type: conditional
+        conditions:
+        - entity: binary_sensor.nrg_ev_control
+          state: 'off'
+        card:
+          type: markdown
+          content: '**EV is monitoring only.** No fallback charging commands will be sent. Its saved action is retained;
+            enable EV control on Components to review it.'
+      grid_options:
+        columns: full
+        rows: auto
+    - type: conditional
+      conditions:
+      - entity: binary_sensor.nrg_battery_control
+        state: 'on'
+      card:
+        type: vertical-stack
+        cards:
+        - type: markdown
+          content: '### Battery action when prices are unavailable
+
+
+            Used only with Use my fallback actions and battery control enabled. Save battery energy holds stored
+            energy for later. Power home above reserve requests self-consumption, not forced export. Both turn off
+            grid charging where supported, retain a higher native reserve, and respect protection guards. Preserve
+            battery during EV charging still takes priority.'
+        - type: entities
+          entities:
+          - entity: select.nrg_fallback_battery
+            name: Battery action
+          show_header_toggle: false
+      grid_options:
+        columns: full
+        rows: auto
+    - type: conditional
+      conditions:
+      - entity: binary_sensor.nrg_has_battery
+        state: 'on'
+      card:
+        type: conditional
+        conditions:
+        - entity: binary_sensor.nrg_battery_control
+          state: 'off'
+        card:
+          type: markdown
+          content: '**Battery is monitoring only.** No fallback battery commands will be sent. Its saved action
+            is retained; enable battery control on Components to review it.'
+      grid_options:
+        columns: full
+        rows: auto
+    - type: conditional
+      conditions:
+      - entity: binary_sensor.nrg_has_ev
+        state: 'off'
+      card:
+        type: conditional
+        conditions:
+        - entity: binary_sensor.nrg_has_battery
+          state: 'off'
+        card:
+          type: markdown
+          content: No EV or home battery is selected. No device actions are available; select only equipment you
+            actually have on Components.
+      grid_options:
+        columns: full
+        rows: auto
+    - type: conditional
+      conditions:
+      - entity: binary_sensor.nrg_battery_control
+        state: 'on'
+      card:
+        type: markdown
+        content: Uses the existing [battery backup reserve](/nrg-settings/battery), retaining a higher native reserve.
+          There is no separate emergency reserve to keep in sync.
+      grid_options:
+        columns: full
+        rows: auto
+    - type: conditional
+      conditions:
+      - entity: binary_sensor.nrg_ev_control
+        state: 'on'
+      card:
+        type: conditional
+        conditions:
+        - entity: binary_sensor.nrg_battery_control
+          state: 'on'
+        card:
+          type: markdown
+          content: The existing **Preserve battery during EV charging** setting on [EV](/nrg-settings/ev) still
+            applies. Charge now can override an EV pause, but cannot override equipment protections.
+      grid_options:
+        columns: full
+        rows: auto
+    visibility:
+    - condition: state
+      entity: binary_sensor.nrg_fallback_enabled
+      state: 'on'
+  - type: grid
+    cards:
+    - type: heading
+      heading: 3. Status and manual requests
+      heading_style: title
+      grid_options:
+        columns: full
+        rows: auto
+    - type: tile
+      entity: sensor.nrg_pricing_health
+      name: Pricing health
+      tap_action:
+        action: more-info
+      hold_action:
+        action: none
+      icon_tap_action:
+        action: more-info
+      grid_options:
+        columns: full
+        rows: auto
+    - type: markdown
+      content: '{% set active = state_attr(''sensor.nrg_pricing_health'',''active'') %}
+
+        {% set observation = state_attr(''sensor.nrg_pricing_health'',''operating_mode'') == ''Observation'' %}
+
+        {% if active %}**{{ ''Proposed price-data fallback · Observation only'' if observation else ''Price-data
+        fallback active · verify device results'' }}.**
+
+        {{ state_attr(''sensor.nrg_pricing_health'',''reason'') }}.
+
+        {% if observation %}No equipment commands are sent.{% else %}Configured permissions and protection guards
+        still apply; an active policy does not mean every device command succeeded.{% endif %}
+
+        {% if is_state(''sensor.nrg_pricing_health'',''Recovering'') %}Fresh prices have returned, but fallback
+        remains active until recovery is confirmed and a new plan is ready.{% endif %}
+
+        {% elif is_state(''sensor.nrg_pricing_health'',''Degraded'') %}**Pricing degraded.** {{ state_attr(''sensor.nrg_pricing_health'',''reason'')
+        }}. Check the last valid observation and source status.
+
+        {% endif %}
+
+        {% if is_state(''binary_sensor.nrg_fallback_manual'',''on'') %}**Manual request saved.** It persists across
+        restarts until ended, even if prices recover. {% if is_state(''binary_sensor.nrg_fallback_enabled'',''off'')
+        %}It is currently inactive under Standard protection; end it before selecting fallback again if you do not
+        want it to resume.{% endif %}{% endif %}
+
+        {% if active or is_state(''sensor.nrg_pricing_health'',''Degraded'') %}[Review price-data fallback](/nrg-settings/fallback).{%
+        endif %}'
+      grid_options:
+        columns: full
+        rows: auto
+    - type: markdown
+      content: Automatic fallback releases after fresh observations span at least two minutes and a new plan is
+        ready. A **manual request** instead stays saved until you end it. Ending that request does not force normal
+        operation while automatic fallback or its recovery checks still apply.
+      grid_options:
+        columns: full
+        rows: auto
+    - type: conditional
+      conditions:
+      - entity: binary_sensor.nrg_fallback_enabled
+        state: 'on'
+      card:
+        type: conditional
+        conditions:
+        - entity: binary_sensor.nrg_fallback_manual
+          state: 'off'
+        card:
+          type: button
+          entity: button.nrg_activate_fallback
+          name: Start manual fallback now
+          show_icon: false
+          tap_action:
+            action: perform-action
+            perform_action: button.press
+            target:
+              entity_id: button.nrg_activate_fallback
+            confirmation:
+              text: Apply the selected fallback actions now? Observation sends no commands. This request stays saved
+                across restarts and price recovery until you end it.
+      grid_options:
+        columns: full
+        rows: auto
+    - type: conditional
+      conditions:
+      - entity: binary_sensor.nrg_fallback_manual
+        state: 'on'
+      card:
+        type: button
+        entity: button.nrg_release_fallback
+        name: End manual fallback request
+        show_icon: false
+        tap_action:
+          action: perform-action
+          perform_action: button.press
+          target:
+            entity_id: button.nrg_release_fallback
+          confirmation:
+            text: End the saved manual request? Automatic fallback may remain active while prices are unusable or
+              recovery is being confirmed. This does not force charging to resume.
+      grid_options:
+        columns: full
+        rows: auto
+    - type: markdown
+      content: '### Actual control status
+
+
+        {{ states(''sensor.nrg_control_status'') }}'
+      tap_action:
+        action: more-info
+        entity: sensor.nrg_control_status
+      grid_options:
+        columns: full
+        rows: auto
+    - type: markdown
+      content: '{% set f = state_attr(''sensor.nrg_pricing_health'',''device_results'') or {} %}
+
+        {% for device, result in f.items() %}**{{ device | title }} requested:** {{ result.get(''requested'') }}
+
+
+        **Result:** {{ result.get(''result'') }}
+
+
+        {% endfor %}
+
+        {% if state_attr(''sensor.nrg_pricing_health'',''charge_now_override'') %}**Charge now overrides the EV
+        pause; prices may be unknown.**{% endif %}
+
+        {% if state_attr(''sensor.nrg_pricing_health'',''departure_at_risk'') %}**EV departure target is at risk
+        under this plan.**{% endif %}
+
+        Command readback is not proof of measured power delivery. Check observed device power too.'
+      grid_options:
+        columns: full
+        rows: auto
+  - type: grid
+    cards:
+    - type: heading
+      heading: 4. Optional alerts
+      heading_style: title
+      grid_options:
+        columns: full
+        rows: auto
+    - type: markdown
+      content: Entry and recovery alerts are configured on [Notifications](/nrg-settings/notifications), separately
+        from household advice. Both message types share notification services and quiet hours. Alerts do not enable
+        this policy or equipment control.
+      grid_options:
+        columns: full
+        rows: auto
+    - type: button
+      name: Open NRG Planner configuration
+      show_icon: false
+      tap_action: *id001
+      grid_options:
+        columns: full
+        rows: 1
+  dense_section_placement: false
 - title: Components
   path: components
   type: sections
@@ -572,9 +966,7 @@ views:
     - type: button
       name: Open NRG Planner configuration
       show_icon: false
-      tap_action: &id001
-        action: navigate
-        navigation_path: /config/integrations/integration/nrg
+      tap_action: *id001
       grid_options:
         columns: full
         rows: 1
@@ -1490,7 +1882,7 @@ views:
   - type: grid
     cards:
     - type: heading
-      heading: Opt-in and threshold
+      heading: Household advice messages
       heading_style: title
       grid_options:
         columns: full
@@ -1506,31 +1898,70 @@ views:
       - type: entities
         entities:
         - entity: switch.nrg_notifications
-          name: Send notifications
+          name: Household advice
         show_header_toggle: false
       grid_options:
         columns: full
         rows: auto
-    - type: vertical-stack
-      cards:
-      - type: markdown
-        content: '### Minimum notification benefit
+    - type: conditional
+      conditions:
+      - entity: switch.nrg_notifications
+        state: 'on'
+      card:
+        type: vertical-stack
+        cards:
+        - type: markdown
+          content: '### Minimum benefit for household advice
 
 
-          Notify only when delaying the reference appliance is expected to save at least this amount and the recommendation
-          stays stable for two minutes.'
-      - type: entities
-        entities:
-        - entity: number.nrg_notification_saving_cents
-          name: Minimum benefit
-        show_header_toggle: false
+            Applies only to household advice notifications, not price-data fallback messages. Notify when delaying
+            the reference appliance is expected to save at least this amount and the advice stays stable for two
+            minutes.'
+        - type: entities
+          entities:
+          - entity: number.nrg_notification_saving_cents
+            name: Advice benefit
+          show_header_toggle: false
       grid_options:
         columns: full
         rows: auto
   - type: grid
     cards:
     - type: heading
-      heading: Quiet hours
+      heading: Price-data fallback alerts
+      heading_style: title
+      grid_options:
+        columns: full
+        rows: auto
+    - type: vertical-stack
+      cards:
+      - type: markdown
+        content: '### Send price-data fallback alerts
+
+
+          Optional entry and recovery alerts for Use my fallback actions, independent of household advice notifications
+          and their savings threshold. Both message types share the selected notification services and quiet hours.
+          This switch does not enable fallback or equipment control. Observation alerts describe a proposal, not
+          equipment execution.'
+      - type: entities
+        entities:
+        - entity: switch.nrg_fallback_notifications
+          name: Price-data alerts
+        show_header_toggle: false
+      grid_options:
+        columns: full
+        rows: auto
+    - type: markdown
+      content: Independent of household advice and its savings threshold. These alerts apply to **Use my fallback
+        actions**; [configure the actions separately](/nrg-settings/fallback). Both message types respect the shared
+        quiet hours.
+      grid_options:
+        columns: full
+        rows: auto
+  - type: grid
+    cards:
+    - type: heading
+      heading: Shared delivery and quiet hours
       heading_style: title
       grid_options:
         columns: full
@@ -1579,6 +2010,19 @@ views:
       grid_options:
         columns: full
         rows: auto
+    - type: markdown
+      content: Choose **Configure → Notifications → Notification services** for both message types. No messages
+        can be delivered until you select a service. Quiet hours also defer fallback alerts.
+      grid_options:
+        columns: full
+        rows: auto
+    - type: button
+      name: Open NRG Planner configuration
+      show_icon: false
+      tap_action: *id001
+      grid_options:
+        columns: full
+        rows: 1
   dense_section_placement: false
 - title: Pricing periods
   path: periods
