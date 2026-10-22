@@ -29,6 +29,9 @@ The calculation uses up to 168 recent covered daylight hours within the retained
 history, excludes tiny/nighttime forecasts, and bounds the factor to **0.5–1.5**.
 Mean absolute error in Details indicates how far the saved hourly forecasts missed.
 Cloud changes can still cause surprises: this corrects a persistent bias, not weather.
+Only explicitly covered forecast hours qualify. A daily total does not fill missing
+daylight with zero; a covered zero-output time series remains valid. Incomplete
+edge hours are excluded rather than scaled into complete predictions.
 
 It does not infer individual-roof accuracy from one whole-system meter. Changing
 sources or age settings clears the old solar comparisons. Turning calibration off
@@ -55,7 +58,9 @@ energy estimate. Covered charging power divided by measured/set current also giv
 power per amp; a conservative lower-percentile value helps avoid promising a finish
 time based on an unusually fast session. Details shows the effective estimates.
 
-Missing meters, gaps and counter resets do not create learned sessions. Without a
+Missing meters, gaps, counter resets and SOC reversals do not create learned sessions.
+A decrease anywhere within a session discards that candidate, even if the final
+counter/SOC reading later recovers to a plausible total. Without a
 valid estimate—or with the switch off—NRG uses the fallback kWh/point and charging
 power you entered. **No EV battery degradation percentage or health estimate is made.**
 
@@ -69,12 +74,17 @@ it subtracts car charging; otherwise it can learn while the car is known not to 
 charging. A home without an EV uses the whole-home reading directly.
 
 An hour needs at least **80% valid coverage**. Missing time is not learned as zero.
+Already covered portions on either side of an observation gap can still qualify;
+the gap itself adds neither energy nor coverage. Restart discards the unfinished
+hour rather than resuming it with a new sample.
 Impossible/inconsistent meter combinations pause the relevant learning rather than
 creating a false zero-house baseline.
 
 It keeps up to **28 days** of hourly summaries, compares matching clock hours, and
 gives each older matching observation **0.9×** the weight of the next newer one.
 After three matching observations, weekdays/weekends can have their own profile.
+The 28-day limit uses elapsed time, so extended downtime expires old hourly demand,
+price-history and solar-calibration observations rather than keeping them forever.
 
 Example: if evenings repeatedly use more power than afternoons, the forecast
 reserves more energy for those evenings. An unfamiliar hour still uses your fallback.

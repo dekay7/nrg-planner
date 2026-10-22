@@ -1,6 +1,7 @@
 """Home Assistant boundary: sampling, cached forecasts, persistence and execution."""
 from datetime import datetime, timedelta, time as local_time
 import logging
+import math
 import time
 import json
 from zoneinfo import ZoneInfo
@@ -160,7 +161,7 @@ class NRGRuntime(DataUpdateCoordinator):
         balance = solar + grid + battery - home if all(v is not None for v in (solar, grid, battery, home)) else None
         balance_ok = balance is None or abs(balance) <= max(.3, (home or 0) * .05)
         ev_valid = ev is not None and (home is None or ev <= home + .2) and balance_ok
-        house_valid = house_meter is not None or home is not None and ev_valid
+        house_valid = balance_ok and (house_meter is not None or home is not None and ev_valid)
         quality = ("Some home/site measurements are unavailable" if home is None or ev is None else
                    "Meters disagree; inconsistent learning paused" if not balance_ok or not ev_valid else "Measurements consistent")
         guard_roles = [("grid_connected", "on")]
@@ -187,7 +188,8 @@ class NRGRuntime(DataUpdateCoordinator):
         current_min = finite(current.attributes.get("min"), config["ev_min_amps"]) if current else None
         current_max = finite(current.attributes.get("max"), config["ev_max_amps"]) if current else None
         ev_bounds = (current_min is not None and current_max is not None
-                     and current_min <= self.config["ev_max_amps"] and current_max >= self.config["ev_min_amps"])
+                     and max(math.ceil(current_min), math.ceil(config["ev_min_amps"]))
+                     <= min(math.floor(current_max), math.floor(config["ev_max_amps"])))
         battery_controls = self.state("battery_mode") is not None and adapters.can("battery_mode", "hold") and adapters.can("battery_mode", "serve")
         grid_switch = self.state("battery_grid_charge") is not None and adapters.can("battery_grid_charge", "on") and adapters.can("battery_grid_charge", "off")
         can_grid_charge = (battery_controls and adapters.can("battery_mode", "charge")
@@ -202,7 +204,7 @@ class NRGRuntime(DataUpdateCoordinator):
                         and adapters.matches("battery_mode", "charge"))
         battery_valid = config["has_battery"] and battery is not None and battery_soc is not None and balance_ok and native
         return {"solar_kw": solar, "home_kw": home, "ev_kw": ev,
-                "house_kw": house_meter if house_meter is not None else max(home - ev, 0) if house_valid else None,
+                "house_kw": (house_meter if house_meter is not None else max(home - ev, 0)) if house_valid else None,
                 "grid_kw": grid, "battery_kw": battery, "balance_kw": balance,
                 "measurement_quality": quality, "ev_learning_valid": ev_valid,
                 "battery_learning_valid": battery_valid,
@@ -512,10 +514,12 @@ class NRGRuntime(DataUpdateCoordinator):
         current_control = self.state("ev_current", None if config["ev_allow_saved_readings"] and snapshot["local_connected"] else 300)
         model_config = dict(config)
         if current_control:
-            ceiling = finite(current_control.attributes.get("max"))
-            if ceiling is not None and 0 < ceiling < config["ev_max_amps"]:
+            ceiling = math.floor(min(config["ev_max_amps"], finite(current_control.attributes.get("max"), config["ev_max_amps"])))
+            if ceiling > 0:
                 model_config["ev_kw_at_max"] *= ceiling / config["ev_max_amps"]
                 model_config["ev_max_amps"] = ceiling
+                floor = math.ceil(max(config["ev_min_amps"], finite(current_control.attributes.get("min"), config["ev_min_amps"])))
+                model_config["ev_min_amps"] = min(floor, ceiling)
         if self.force_plan or now - self.plan.get("generated_at", 0) >= 300:
             self.force_plan = False
             # Planner works on snapshots off the event loop. A changed configuration

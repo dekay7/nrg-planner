@@ -24,7 +24,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=81442ebb90e0
+        url_path: /nrg-planner/guide.html?v=c9fbb40c1080
       grid_options:
         columns: full
         rows: auto
@@ -547,7 +547,7 @@ views:
     - type: markdown
       content: Actions begin automatically only when current supply or delivery pricing becomes unusable—not on
         a single failed request with a usable cached price, or just a missing tomorrow forecast. [Read detection
-        and recovery details](/nrg-planner/guide.html?v=81442ebb90e0#operations-detection-and-recovery).
+        and recovery details](/nrg-planner/guide.html?v=c9fbb40c1080#operations-detection-and-recovery).
       grid_options:
         columns: full
         rows: auto
@@ -1690,8 +1690,8 @@ views:
 
 
           Generic starting limit: enter a current supported by your charger and circuit. Also bounded by the control
-          entity''s maximum. Script adapters need the real supported limit here. NRG never raises the vehicle''s
-          selected charge limit.'
+          entity''s maximum, rounded down to whole amps for planning and commands. Script adapters need the real
+          supported limit here. NRG never raises the vehicle''s selected charge limit.'
       - type: entities
         entities:
         - entity: number.nrg_ev_max_amps
@@ -1706,8 +1706,9 @@ views:
         content: '### Minimum stable EV current
 
 
-          Smallest current used for solar-aware charging. Below this the car is paused. Must be no greater than
-          your maximum current.'
+          Smallest current used for solar-aware charging. NRG also honors the control entity''s minimum, rounded
+          up to whole amps. Below the effective minimum the car is paused. Must be no greater than your maximum
+          current.'
       - type: entities
         entities:
         - entity: number.nrg_ev_min_amps

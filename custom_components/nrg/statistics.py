@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from statistics import mean, median
 
 from .battery_learning import BatteryLearning
-from .config import export_price
+from .config import export_price, finite
 from .tariffs import boundaries, period_at
 
 
@@ -70,9 +70,21 @@ class Statistics:
         self.issued = {k: v for k, v in self.issued.items() if now - 2 * 3600 <= float(k) <= now + 49 * 3600}
 
     def observe(self, now: float, values: dict, zone) -> None:
+        # The row-count cap alone can retain months-old patterns after downtime.
+        self.hours = [h for h in self.hours if (stamp := finite(h.get("start"))) is not None
+                      and 0 <= now - stamp <= 28 * 86400]
         previous, self.previous = self.previous, (now, values.copy())
-        if previous is None or not 0 < now - previous[0] <= 180:
+        if previous is None or now <= previous[0]:
             self.bucket = None
+            self.session = None
+            return
+        if now - previous[0] > 180:
+            # Keep already covered portions, but never integrate the missing gap.
+            # A completed bucket can still meet 80% coverage on either side of it.
+            if self.bucket and now >= self.bucket["start"] + 3600:
+                if now - self.bucket["start"] <= 28 * 86400:
+                    self._finish(zone)
+                self.bucket = None
             self.session = None
             return
         start, old = previous
@@ -146,8 +158,13 @@ class Statistics:
         self.hours = self.hours[-24 * 28:]
 
     def _ev_session(self, now: float, values: dict, old: dict, elapsed: float) -> None:
-        soc, energy = values.get("ev_soc"), values.get("ev_energy")
-        if soc is None or energy is None or values.get("ev_kw") is None:
+        soc, energy = finite(values.get("ev_soc")), finite(values.get("ev_energy"))
+        old_soc, old_energy = finite(old.get("ev_soc")), finite(old.get("ev_energy"))
+        if (soc is None or energy is None or not 0 <= soc <= 100 or energy < 0
+                or values.get("ev_kw") is None
+                or old_soc is not None and soc < old_soc
+                or old_energy is not None and energy < old_energy):
+            # A later recovered counter must not hide a reset inside a session.
             self.session = None
             return
         if values.get("ev_kw", 0) is not None and values.get("ev_kw", 0) > .2:

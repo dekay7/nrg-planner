@@ -139,8 +139,15 @@ Cached solar expires after three hours; failures retain the original age. A vali
 alternative can cover a failed estimate for the same panels, but a missing entire
 array is not a confident whole-system zero. Astronomically dark intervals are known
 zero even when the provider drops the completed day after sunset. Missing daylight
-stays unknown. Startup/source updates trigger a cache read; failed sources retry
-after five minutes, normal refresh after thirty.
+stays unknown. Coverage and alternative selection are checked for each hour, not
+just the presence of a daily total. A covered zero-output hour is valid; missing or
+partial edge hours remain unknown. Long daytime power-shape gaps and malformed
+responses are rejected instead of redistributing their energy into other hours.
+These conservative boundaries can shorten the dependable comparison horizon,
+including near sunrise/sunset; EV deadline feasibility remains available. A failed
+refresh keeps the previous valid cache only until its original three-hour expiry.
+Startup/source updates trigger a cache read; failed sources retry after five
+minutes, normal refresh after thirty.
 
 Turn age correction off for a source already configured to current aged output.
 Actual measured production is never reduced. Disable solar entirely for a home

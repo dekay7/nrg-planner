@@ -197,6 +197,93 @@ asset reproduction pass. The unchanged HA-pinned dependency audit still reports
 no pricing, planning, control, storage, dependency or version behavior change.
 Hosted CI/self-review are recorded on its PR; no new release is published.
 
+## Modeling and forecasting robustness audit — unreleased
+
+Reviewed the modeling/forecasting pipeline, its measurement boundaries and its
+existing tests. This is a local source-and-test audit of unreleased development,
+not an independent review, a deployment or an empirical forecast-accuracy study.
+Observation defaults, explicit control permissions, manual settings, completed
+valid learning and ledger formats remain unchanged. No release is published.
+
+### Algorithm inventory and coverage
+
+| Area | Implementation and verification |
+| --- | --- |
+| Input normalization and measurement quality | `config.py`, `runtime.py`: finite/unit/sign/range checks, unknown versus absent hardware, independent site balance, house-only and EV subtraction, device current bounds. Native HA regressions cover these boundaries. |
+| Tariff and price forecasts | `tariffs.py`, `forecast.py`, `fallback.py`: independent supply/delivery/export, overnight schedules, explicit dated external intervals, ComEd labels/freshness/publication allowances, recovery and provenance. Existing pricing/fallback suites plus new second-by-second DST oracles pass. |
+| Solar forecast modeling | `forecast.py`: trapezoidal power integration, local-day normalization, cache expiry, alternative weighting versus distinct arrays, age adjustment, explicitly covered hours, known astronomical night. New missing/zero/malformed/gapped and non-whole-hour timezone regressions pass. |
+| Household demand and solar bias | `statistics.py`: previous-sample integration, 80% hourly coverage, EV exclusion, elapsed-time retention, recency/day-type demand estimates, frozen-before-hour solar residuals and bounded correction. Gap/retention regressions and existing no-hindsight tests pass. |
+| EV energy, power and schedules | `statistics.py`, `planner.py`: conservative session percentiles, invalid-session rejection, deadlines/buffers/windows, four candidate allocations, prior-plan stability, fractional stops and observed-only charging. New independent feasibility checks cover 200 randomized cases across all four allocation strategies. |
+| Passive battery calibration | `battery_learning.py`: closed SOC cycles, paired counters or AC power integration, sustained independent opportunities, outlier rejection, per-parameter minimum samples, 30-day expiry and manual fallbacks. The full existing cycle/opportunity/native HA suite passes; no calibration formula is changed. |
+| Battery capacity and dispatch | `config.py`, `planner.py`: compounded age, square-root losses, capacity/reserve/power constraints, mode permissions, bounded-bin search and no fictional battery sales. New checks cover 1,200 randomized physical transitions and 80 short searches against exhaustive feasible-mode oracles. |
+| Refill valuation and household advice | `planner.py`: common candidate/advice value, permitted finite refill, conservative uncovered reference, trusted contiguous horizon and incremental replay. Existing permission/tail-invariance suites pass; 100 randomized grid-only appliance scenarios match an independent overlap-cost oracle. |
+| Measured accounting and execution boundary | `statistics.py`, `runtime.py`, `control.py`: signed variable costs, exact tariff/estimate/hour boundaries, unobserved gaps, stale-plan revocation and guarded writer. New repeated-hour ledger regressions and the existing control/integration suites pass. |
+
+### Confirmed findings and corrections
+
+- **Unknown solar was being reported as zero.** A cache's daily date no longer
+  establishes coverage for every hour. Alternatives are selected per covered hour;
+  uncovered arrays remain unknown. Missing applicable solar also leaves an
+  interval's displayed modeled cost unknown, even with known prices.
+- **Broken solar shapes could concentrate a daily total into surviving hours.**
+  Long daytime gaps are rejected. Malformed containers, duplicate instants and
+  implausible daily totals produce handled validation errors; a failed refresh
+  retains only the original, still-fresh cache. Partial edge hours are excluded
+  rather than treated as complete coverage. Astronomical darkness remains the
+  only basis for filling missing night with zero.
+- **Explicit zero solar could disappear.** Covered all-zero series with zero
+  energy now remain valid zero forecasts rather than returning an empty series.
+- **Normalization crossed local midnight incorrectly in fractional-hour zones.**
+  Integration now splits at local midnight before applying each day's energy
+  normalization; complete UTC bins can contain contributions from both days.
+- **Solar weight validation was inconsistent.** Scope/duplicate/finite-positive
+  weight validation is shared by settings and aggregation. Relative-weight scaling
+  avoids overflow without changing the weighted-average interpretation.
+- **DST intervals missed repeated boundaries and clock jumps.** Tariff and EV
+  windows now split at both real occurrences, as well as the offset change itself.
+  This fixes exact ledger pricing and window availability for non-quarter-hour,
+  skipped and half-hour transitions. Daily departure retains its documented first-
+  occurrence / spring-forward resolution.
+- **EV sessions could hide intermediate counter resets or SOC reversals.** Either
+  decrease now breaks the candidate even when later totals recover. Valid completed
+  observations and the conservative percentile formulas are retained.
+- **Hourly learning retained stale history and lost valid covered portions.**
+  Old summaries expire after 28 elapsed days, including after downtime. Covered
+  portions around an observation gap can still qualify at 80%; missing time adds
+  neither coverage nor energy. Unfinished EV/battery sessions still break at gaps,
+  and restarts still discard unfinished in-memory observations.
+- **House-only learning bypassed the site-balance gate.** Inconsistent independent
+  site meters now pause that profile just as they pause whole-home/EV learning.
+- **EV predictions ignored the device current floor.** Planning now intersects
+  configured/device minimum and maximum in whole amps, scaling fallback power to
+  the effective ceiling. Unsupported ranges fail readiness; user values are not
+  rewritten and command-time bounds are still independently checked.
+
+### Verification and remaining limits
+
+The baseline suite passed **427 tests**. The new permanent audit module adds
+**39 cases**: when run against an isolated copy of the original commit, **30 fail
+and nine pass**; against the corrected implementation all pass. The full suite
+passes **466 tests**, including native HA integration and executable chart tests.
+The deterministic randomized checks use invented fixtures and fixed seeds, not
+household traces. They check feasibility/accounting and independent oracles, not
+just snapshots of the implementation's output.
+
+Ruff's configured `F` rules, dependency consistency, privacy/history checks,
+generated UI/brand reproducibility and whitespace checks pass. The dependency
+audit still fails on the same **36 HA-pinned Pillow/uv advisories** documented
+above. No dependency override or advisory exclusion is introduced.
+
+Remaining limits are explicit: battery binning and the small EV candidate set
+are approximate, not globally optimal. Solar power is interpolated between valid
+provider points; hourly demand and bounded calibration do not predict weather or
+unusual household behavior. Conservative partial solar-edge coverage can shorten
+advice, including near sunrise/sunset, while EV deadline feasibility remains
+available. Sample-based calibration depends on AC measurement boundaries, coverage
+and SOC precision; it is not a health/capacity measurement. Refill potential is not
+a promise of a chronological refill. No real-home forecast backtest, future saving,
+physical command response or live deployment was validated by this audit.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public
