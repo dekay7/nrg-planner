@@ -16,10 +16,32 @@ Negative rates remain signed. A −2¢ supply price plus 6¢ delivery still cost
 These are illustrative numbers, not defaults. All numeric rate inputs start unset;
 unknown rates remain unknown until supplied. Enter zero explicitly if applicable.
 
+## ComEd price sources and freshness
+
+ComEd is an optional supply adapter, not a fallback provider for other tariffs.
+It combines the public current-hour-average API with dated published forecasts.
+ComEd forecast labels use Central hour-ending times; the parser converts them to
+real hour starts rather than treating the website's `Date.UTC` label as UTC.
+Ambiguous/nonexistent DST labels and incomplete forecasts are rejected rather
+than guessed. A previously valid cache or current live observation may still be
+usable independently.
+
+| Source | Meaning and limits |
+|---|---|
+| `running_average` | A live observation less than **15 minutes** old that belongs to the current real hour; not a final settlement price. A recent prior-hour reading is still not a current-hour price. |
+| `day_ahead` | A published exact-hour forecast with a **36-hour** cache limit. Dependable as a forecast for planning, but substitutes for missing current live pricing only under the bounded policies below. |
+| `recorded_estimate` | A tentative estimate from this installation's previously recorded live observations for the matching Central clock hour. Dashed in charts; no embedded household profile, no current-live authorization and no permission for discretionary battery economics. |
+
+Repeated successful HTTP responses containing the same old timestamp do not
+refresh the underlying live observation. A mapped **Current supply price** sensor
+can replace the live API; its HA report timestamp and declared units are validated.
+That report is not proof that the upstream provider took a new measurement.
+
 ## ComEd's new-hour publication window
 
-The first live running average is not necessarily available at the hour boundary.
-For the first ten minutes, NRG can use the **published forecast for that exact
+With the default **Strict live pricing** policy, the first live running average
+is not necessarily available at the hour boundary. For the first ten minutes,
+NRG can use the **published forecast for that exact
 hour** while awaiting live pricing. It does not reuse the previous hour's live
 price or invent a rate from learned history. The forecast must be within its
 normal 36-hour freshness limit.
@@ -46,7 +68,8 @@ live or settled price. It also works with a mapped ComEd live-price sensor.
 Other supply plans are unaffected.
 
 The allowance ends **60 minutes after the last verified live observation's
-provider timestamp**, not 60 minutes after discovering the delay. Repeated old
+timestamp**, not 60 minutes after discovering the delay. The API uses ComEd's
+provider timestamp; a mapped sensor uses its HA report timestamp. Repeated old
 responses, forecast refreshes, hour changes, settings edits and restarts do not
 renew it. Without a verified observation, only the normal first-ten-minute
 publication bridge is available. Once an existing allowance expires, a new-hour

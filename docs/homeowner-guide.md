@@ -14,8 +14,10 @@ not that energy is free.
 ## Pricing health and missing-price protection
 
 - **Healthy:** current import pricing is usable.
-- **Degraded:** a fetch failed or some current pricing is unusable. A usable cached
-  price may still be used; this status alone does not mean custom fallback began.
+- **Degraded:** a fetch failed, current pricing is limited, or the administrator
+  enabled temporary published-estimate operation during a ComEd delay. A usable
+  cached price or permitted estimate may still be used; this status alone does
+  not mean custom fallback began.
 - **Fallback:** the administrator's selected missing-price actions apply. In
   **Observation**, the banner explicitly describes a proposal and no equipment
   commands are sent.
@@ -24,9 +26,23 @@ not that energy is free.
 
 These are pricing-data states, not reports of a power outage or unusually high
 prices. The administrator configures actions and checks device results on
-**Energy Settings → Price-data fallback**. An active policy does not prove every
+**NRG Planner settings → Price-data fallback**. An active policy does not prove every
 command succeeded. A manual request persists until ended; fresh prices alone do
 not end that request. See [fallback operation](operations.md#price-data-fallback).
+
+For ComEd, Strict live pricing permits a short published-forecast bridge during
+the first ten minutes of a new hour. The separate opt-in **Allow brief published
+estimates** mode can continue for at most 60 minutes from the last verified live
+observation, not from the time an error is noticed. Its Degraded explanation shows
+last live age, forecast age and remaining allowance. EV planning can continue;
+battery grid charging is blocked and reserve/protection checks remain. Repeated
+old readings or restarting do not renew it. An already active automatic fallback
+still needs confirmed fresh live recovery. See [pricing resilience](pricing.md#brief-comed-live-data-delays).
+
+A published estimate remains on the solid **Published outlook** graph line. It is
+not the dashed **Tentative estimate** learned from historical local observations.
+Check Pricing health and the source attributes rather than assuming every visible
+current price is live.
 
 ## The recommendation
 
@@ -120,6 +136,13 @@ exceed purchases over the covered time; it does not establish a cash payout.
 Coverage matters. First days, restarts and missing readings are partial, not free.
 Fixed fees, capacity charges and unconfigured taxes are excluded. A home with no
 site power meter gets price advice but no claimed metered daily cost.
+
+Totals can include published-price estimates during an allowed ComEd bridge or
+brief delay. **NRG Planner settings → Details → Today's forecast-priced coverage**
+shows the newly tracked estimated hours; cost/coverage entity attributes separate
+`estimated_import_cost`, `estimated_export_credit` and `estimated_coverage_hours`.
+These are subsets of the totals, not additional charges. Old ledger history is
+not retroactively classified. See [accounting](accounting.md#observed-ledger).
 
 Use **Why?** and the linked complete handbook for explanations. The homeowner
 dashboard has no equipment or configuration controls.

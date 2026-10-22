@@ -23,8 +23,12 @@ Supply and delivery are evaluated independently at every boundary, then added on
 Both support flat, timed and external prices; supply additionally supports ComEd.
 External current observations are not extrapolated as future rates. Missing foreign
 utility data never receives a ComEd historical fallback. See [pricing](pricing.md).
-Flat rates also start unset. The optional ComEd estimate uses only observations
-learned by the current installation; no historical profile is embedded.
+Flat rates also start unset. ComEd's live running average, published exact-hour
+forecast and tentative estimate from locally recorded observations are distinct.
+Only the documented publication bridge or opt-in bounded estimate allowance can
+substitute a published forecast for missing current live pricing; learned-history
+estimates cannot authorize it. No historical household profile is embedded.
+See [sources and freshness](pricing.md#comed-price-sources-and-freshness).
 
 For daily departure on a DST change, the first occurrence of an ambiguous local
 time is used. A nonexistent spring time shifts forward by the DST jump.
@@ -101,8 +105,9 @@ discretionary battery trajectory. No charge-capable mode/switch means grid charg
 is excluded rather than invented. Unknown current prices/solar permit hold only.
 
 Grid charging is not scheduled alongside EV charging. The preserve-battery option
-also excludes serving the car from storage. The optional seasonal peak precaution
-is separate from tariff prices and starts off for non-ComEd configurations.
+also excludes serving the car from storage. There is no active seasonal charging
+heuristic: the former summer restriction was removed. Actual configured tariffs,
+coverage, equipment permissions and protections determine the permitted modes.
 
 For round-trip efficiency `r`:
 
@@ -125,7 +130,9 @@ Energy remaining at the dependable boundary receives a common replacement value
 from permitted grid and solar refill potential within that same horizon. Valuation
 and dispatch share one mode-permission function. Grid refill requires a supported
 charge mode and either a reversible grid-permission switch or distinct force-charge
-mode; it is excluded during EV charging and price-data fallback. Solar surplus is
+mode; it is excluded during EV charging, price-data fallback and current intervals
+using the opt-in published estimate. Estimate-backed operation retains a higher
+reported native reserve and caps export permission to solar only or no exports. Solar surplus is
 calculated after house and EV demand. If hold prevents solar charging, solar is
 counted only where another permitted mode accepts it. Unavailable/monitor-only
 batteries claim no scheduled refill potential.
@@ -175,6 +182,14 @@ These are incremental costs under the selected modes, not a separate globally
 reoptimized appliance schedule. Incomplete equipment information limits confidence;
 only dependable advice can send savings notifications. Tentative/gap outlook values
 remain distinguishable. Advice never operates an appliance.
+
+Current pricing health is reevaluated at command boundaries as well as coordinator
+updates. Moving into or out of estimated pricing, entering/releasing fallback,
+or changing assumptions invalidates the old plan. A ComEd estimate deadline is
+an exact slot boundary; commands cannot extend it using an old charging grant.
+The last verified live timestamp and automatic-outage latch persist across
+restarts, without persisting an unfinished live-recovery confirmation.
+See [price resilience](pricing.md#brief-comed-live-data-delays).
 
 Plans expire after seven minutes and replan every five minutes/on important changes.
 The serialized writer runs every thirty seconds and selects the applicable dated

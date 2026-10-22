@@ -629,7 +629,7 @@ views:
         Missing data is never treated as free electricity.
 
 
-        The administrator can change the reference appliance, rates, schedules and reserve in Energy Settings.
+        The administrator can change the reference appliance, rates, schedules and reserve in NRG Planner settings.
 
         '
       grid_options:
@@ -639,7 +639,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=811c79e7a371
+        url_path: /nrg-planner/guide.html?v=81442ebb90e0
       grid_options:
         columns: full
   - type: grid

@@ -559,3 +559,82 @@ Default: **On**.
 Enable for a whole-home load meter that includes the car. Disable for a house-only circuit meter; NRG then adds separately measured EV power for the Home total while learning the house-only reading directly.
 
 Reference key: `home_includes_ev`.
+
+## Configuration beyond catalogue fields
+
+The forms also store the structured choices below. Use Configure or the native entities; do not edit HA storage files. These choices persist across restarts, unlike Charge now.
+
+| Configuration | Initial value and behavior | Guide |
+|---|---|---|
+| `supply_periods`, `delivery_periods` | Empty independent schedules; the optional template leaves rates blank. | [Period editor](pricing.md#editing-timed-periods-in-ha) |
+| `mappings` | No entities selected on fresh setup; only relevant roles are shown, and hidden choices are retained. | [Measurements](integrations.md#provider-neutral-measurements) |
+| `solar_sources` | No forecasts selected; use Add/Edit/Remove for entity, label, physical group, weight and age correction. | [Solar sources](integrations.md#solar-forecasts-and-alternatives) |
+| `departure_override` | Unset; one-off local date/time takes precedence over daily departure. | [Everyday controls](operations.md#everyday-controls) |
+| `notification_targets` | No notify services selected; shared by the two independent message types. | [Notifications](operations.md#notifications) |
+| `control_values` | Device-state examples below, not detected compatibility. | [Control adapters](integrations.md#direct-controls-and-option-names) |
+| `command_scripts` | No scripts selected; each selected command path still requires mapped feedback. | [Script adapters](integrations.md#script-adapters) |
+
+## Measurement and control entity mappings
+
+Configure → Mappings selects ordinary entities from your existing integrations. Mapping a control never enables equipment commands. Input helpers retain their saved settings; other readings follow the documented freshness checks.
+
+| Reference key | HA role | Accepted entity domains | Description |
+|---|---|---|---|
+| `home_power` | Whole-home power | `sensor` | Total AC household demand including the EV, from any provider, W or kW. |
+| `grid_power` | Signed grid power | `sensor` | Grid meter: positive import, negative export, W or kW. |
+| `grid_connected` | Grid connected (optional) | `binary_sensor` | Optional protection input: on while connected. If selected, missing/off prevents equipment commands. |
+| `live_supply` | Current supply price (optional) | `sensor` | External supply-price sensor in cents/kWh or USD/kWh. Also usable instead of the live ComEd API in ComEd mode. |
+| `supply_forecast` | External supply forecast (optional) | `sensor` | Sensor with a list of price intervals in its configured forecast attribute. May be the same as the current-price sensor. |
+| `live_delivery` | Current delivery price (optional) | `sensor` | External delivery-price sensor for External delivery entity mode. |
+| `delivery_forecast` | External delivery forecast (optional) | `sensor` | Independent delivery-price interval list. Missing intervals remain unknown. |
+| `solar_power` | Actual solar power | `sensor` | Solar production from any integration, W or kW. Prefer a local meter when available. |
+| `battery_power` | Signed battery power | `sensor` | AC-side battery meter: positive discharge, negative charging, W or kW. DC battery-terminal power is not suitable for AC flows or battery calibration. |
+| `battery_soc` | Battery charge | `sensor` | Home battery percentage, independent of manufacturer or integration. |
+| `battery_charge_energy` | Battery lifetime AC charging energy (optional) | `sensor` | Increasing AC kWh received by the battery system, not stored DC energy or a resetting daily/session counter. Select both battery energy counters or neither; both must use the same AC boundary as battery power. |
+| `battery_discharge_energy` | Battery lifetime AC discharged energy (optional) | `sensor` | Increasing AC kWh delivered by the battery system. Pair with lifetime AC charging energy; missing/resetting selected counters pause efficiency learning rather than switching measurement methods. |
+| `battery_mode` | Battery mode control / feedback | `select`, `sensor`, `input_select` | Select/input_select controls work directly. Read-only feedback needs a script adapter. Configure the device's actual hold/serve/charge option names. |
+| `battery_reserve` | Battery reserve control / feedback (optional) | `number`, `sensor`, `input_number` | Optional device backup-reserve setting. Read-only feedback can be paired with a script adapter. |
+| `battery_grid_charge` | Grid-charge permission (optional) | `switch`, `binary_sensor`, `sensor`, `input_boolean` | Optional permission switch. A separate force-charge operating mode can be used instead; no grid-charge commands are invented for unsupported devices. |
+| `battery_export` | Export policy control / feedback (optional) | `select`, `sensor`, `input_select` | Optional export-permission control. Configure option names under Control adapters. If omitted, set the policy in the device's own app. |
+| `storm_watch` | Protection event active (optional) | `binary_sensor` | Optional active protection event, e.g. Storm Watch or a manufacturer override. On or missing blocks commands when selected. |
+| `grid_services` | Grid services active (optional) | `binary_sensor` | Optional utility/grid-services event. On or missing blocks commands when selected. |
+| `grid_services_enabled` | External controller priority (optional) | `binary_sensor` | Optional ownership/protection flag: while on, an external controller has priority. |
+| `ev_connected` | EV plugged in | `binary_sensor` | Plug/connection sensor from any provider. If it identifies this home's charger, location need not also be mapped. |
+| `ev_location` | EV at home (optional) | `device_tracker`, `binary_sensor`, `sensor` | Optional additional home check: home for a tracker/sensor or on for a binary sensor. Omit when the connection sensor already identifies the home charger. |
+| `ev_soc` | Vehicle charge | `sensor` | Vehicle battery percentage, e.g. TeslaMate, Teslemetry, Tessie or another EV integration. |
+| `ev_limit` | Selected vehicle charge limit | `number`, `sensor`, `input_number` | Selected target percentage. Read only: NRG never raises it. |
+| `ev_power` | EV charging power | `sensor` | AC charging power from a charger or vehicle integration. Local meters are preferred, not required. |
+| `ev_energy` | EV lifetime AC energy | `sensor` | Increasing AC kWh counter for charging, not a resetting session counter. Optional; EV calibration needs it. |
+| `ev_measured_current` | EV measured current | `sensor` | Optional actual charging current in amperes. Otherwise the configured current-setting entity is used for power calibration. |
+| `ev_current` | EV current setting / feedback | `number`, `sensor`, `input_number` | Current setting in A. Number/input_number controls work directly. A read-only sensor needs an EV current script under Control adapters. |
+| `ev_charge` | EV charging control / feedback | `switch`, `binary_sensor`, `sensor`, `input_boolean` | Switches work directly. Read-only state feedback needs start/stop scripts. Set its charging/paused state values under Control adapters if they are not on/off. |
+
+## Control-state names and command scripts
+
+Configure → Control adapters matches these example values to the actual device. They are not manufacturer detection or permission to issue commands. Match hold/serve/charge behavior before transferring control; never map serve-home to forced export.
+
+| Control value key | Default device-state example |
+|---|---|
+| `battery_hold` | `backup` |
+| `battery_serve` | `self_consumption` |
+| `battery_charge` | `backup` |
+| `export_solar` | `pv_only` |
+| `export_battery` | `battery_ok` |
+| `export_none` | `never` |
+| `ev_on` | `on` |
+| `ev_off` | `off` |
+| `grid_charge_on` | `on` |
+| `grid_charge_off` | `off` |
+
+Script selections start empty and use available `script.*` entities. The form field is `script_` plus the role; it is stored under `command_scripts`. See [script variables and feedback limits](integrations.md#script-adapters), including reserve/export restrictions during fallback and estimated pricing.
+
+| Script role key | Selection field |
+|---|---|
+| `ev_current` | `script_ev_current` |
+| `ev_start` | `script_ev_start` |
+| `ev_stop` | `script_ev_stop` |
+| `battery_mode` | `script_battery_mode` |
+| `battery_export` | `script_battery_export` |
+| `battery_reserve` | `script_battery_reserve` |
+| `grid_charge_on` | `script_grid_charge_on` |
+| `grid_charge_off` | `script_grid_charge_off` |

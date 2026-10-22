@@ -143,7 +143,7 @@ def test_handbook_has_accessible_navigation_and_complete_user_help():
     assert page.tags.count("h1") == 1
     assert page.tags.count("main") == 1
     assert "#content" in page.links
-    assert {"overview", "installation", "quick-start", "homeowner-guide", "operations",
+    assert {"overview", "features", "installation", "quick-start", "homeowner-guide", "operations",
             "faq", "pricing", "integrations", "learning", "settings", "troubleshooting",
             "glossary", "privacy", "security", "design", "accounting", "alternatives", "review"} <= set(page.ids)
     assert page.tables

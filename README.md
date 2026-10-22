@@ -7,12 +7,11 @@ optional EV/battery/solar support, and controls mapped to existing HA entities.
 [project review](docs/review.md) for current validation results and open release
 items. NRG Planner is not included in the default HACS catalog.
 
-> **ComEd hourly pricing status — October 21, 2026:** ComEd hourly pricing
-> returned to normal at around 9:15 p.m. after a temporary service issue. The
-> [ComEd hourly pricing site](https://hourlypricing.comed.com/),
-> [live-price API](https://hourlypricing.comed.com/api?type=currenthouraverage),
-> and [published forecast feed](https://hourlypricing.comed.com/rrtp/ServletFeed?type=daynexttoday)
-> are available again.
+> **Documentation scope:** this branch includes unreleased work after 0.2.0.
+> A stable HACS installation may not contain every feature described here. See
+> [the feature guide and development milestones](docs/features.md) for coverage
+> from the original planner onward, and [pricing resilience](docs/pricing.md#brief-comed-live-data-delays)
+> for current ComEd delay-handling rules—not a live provider-status claim.
 
 ## What it does
 
@@ -25,7 +24,11 @@ items. NRG Planner is not included in the default HACS catalog.
 - Use compatible HA numbers, switches, selects, or user-supplied command scripts.
 - Start in **Observation** with equipment control and notifications disabled.
 - Provide optional homeowner/admin dashboards, a local handbook, and bounded
-  learning based on each installation's own measurements.
+  household, EV, solar and opt-in battery calibration from local measurements.
+- Offer guarded price-data fallback, an opt-in bounded published-estimate mode
+  for ComEd delays, and separate household-advice/fallback notifications.
+- Explain dependable comparison coverage, feasible battery refill value and
+  forecast-priced cost subsets rather than claiming guaranteed savings.
 
 Supply, delivery, and export-rate fields start **unset**. They are not copied from
 an example household. Unset is unknown; enter zero explicitly when applicable.
@@ -86,6 +89,8 @@ See [updates](docs/installation.md#updates-and-removal) and the
 - **[User wiki and complete documentation](docs/README.md)** — plain-language
   overview, setup paths, everyday use, and a guide to every topic. Also bundled
   as a self-contained, script-free page at `/nrg-planner/guide.html` in HA.
+- **[Feature guide and development history](docs/features.md)** — all feature areas,
+  setup links, retired behavior, and released versus unreleased milestones.
 - [Quick start](docs/quick-start.md) · [Installation and dashboards](docs/installation.md)
 - [Pricing](docs/pricing.md) · [Every setting](docs/settings.md)
 - [Integrations and adapters](docs/integrations.md) · [Learning](docs/learning.md)
@@ -112,6 +117,13 @@ git diff --check
 Node.js is used for executable chart tests. Generated UI assets are committed so
 users need no build tools. The builders use only repository source and generic
 documentation, never a live HA instance or household data files.
+
+For each feature or behavior change, update its user-facing guide and the
+[feature index](docs/features.md), including permissions, defaults, failure/recovery
+behavior and release availability. Keep mappings/control/script help in the generated
+settings reference; edit its builder/catalogue, not generated files. Regenerate the
+handbook and dashboards together. Documentation tests check chapter inclusion, local
+links, catalogue coverage and feature entry points so future additions do not drift.
 
 ## Releases
 

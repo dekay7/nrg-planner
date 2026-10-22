@@ -114,6 +114,14 @@ search and Print to save a PDF; reading a loaded copy needs no internet connecti
 
 ## Updates and removal
 
+Check the [feature guide and milestones](features.md#development-milestones-since-creation)
+when comparing the online docs with your installation. The latest stable release
+is 0.2.0; later main-branch work is unreleased until a new release is explicitly
+published. A manually installed development snapshot may still report 0.2.0, so
+keep its source commit with your private deployment record. The bundled handbook
+travels with the installed component rather than silently following GitHub main.
+Do not move a published tag to make its contents match development docs.
+
 Routine development commits do not offer updates to users following stable
 releases. A published stable GitHub Release makes a new version available in HACS;
 install it when convenient unless you have configured automatic updates. Review
@@ -125,6 +133,11 @@ check its compatibility with your current HA version and stored data first.
 For manual updates, replace only the component directory with a reviewed newer
 copy and restart. HACS updates follow the same component boundary. Integration
 options, learning, and ledgers use HA storage, not files inside the component.
+Completed battery calibration, saved fallback requests/outage latches and ComEd
+continuity timestamps are retained too. New opt-in features do not automatically
+enable controls, battery calibration, custom fallback, or brief published estimates.
+The retired summer-heuristic option/entity is cleaned up automatically and no longer
+blocks charging. No manual storage-file migration is required.
 
 Before removing NRG, release its control and establish the desired device baseline
 as described in [operations](operations.md). Remove the integration through Devices

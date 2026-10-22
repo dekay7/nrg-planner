@@ -172,6 +172,31 @@ recorded on the pull request; this local record is not a claim of independent
 review, live deployment, or verified physical equipment response. No release is
 published by this change.
 
+## Full feature documentation audit — 2026-10-22
+
+Audited the original implementation and each subsequent feature/behavior change
+through the bounded-estimate work against the current source and user guides.
+The [feature guide](features.md) now indexes the complete feature areas and
+separates original/0.1.0, 0.2.0 and unreleased development. It explicitly marks the
+summer charging heuristic as retired. Removed its stale active-feature claims,
+replaced the dated provider-availability banner with durable pricing guidance,
+and aligned homeowner/setup/FAQ/troubleshooting, pricing, notification, script,
+privacy, accounting and update instructions with current behavior.
+
+The generated settings reference covers all **56 catalogue settings, 28 mapping
+roles, 10 control-state examples and eight command-script roles**, plus structured
+period/source/departure/notification choices. All documentation chapters are
+bundled into the local handbook. New regression checks verify chapter inclusion,
+source-derived defaults/help, mapping/control/script coverage, Markdown link
+fragments, original/new feature entry points, and release/retirement clarity.
+
+**427 tests pass** on Python 3.14.8 / HA 2026.10.2, including 31 new documentation
+checks. Ruff, privacy/history, dependency consistency, local links and generated
+asset reproduction pass. The unchanged HA-pinned dependency audit still reports
+**36 Pillow/uv advisories** as detailed above; none is suppressed. This audit adds
+no pricing, planning, control, storage, dependency or version behavior change.
+Hosted CI/self-review are recorded on its PR; no new release is published.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public
