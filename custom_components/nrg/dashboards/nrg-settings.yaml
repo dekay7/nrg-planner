@@ -24,7 +24,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=3165137442b2
+        url_path: /nrg-planner/guide.html?v=811c79e7a371
       grid_options:
         columns: full
         rows: auto
@@ -547,7 +547,7 @@ views:
     - type: markdown
       content: Actions begin automatically only when current supply or delivery pricing becomes unusable—not on
         a single failed request with a usable cached price, or just a missing tomorrow forecast. [Read detection
-        and recovery details](/nrg-planner/guide.html?v=3165137442b2#operations-detection-and-recovery).
+        and recovery details](/nrg-planner/guide.html?v=811c79e7a371#operations-detection-and-recovery).
       grid_options:
         columns: full
         rows: auto
