@@ -65,16 +65,49 @@ def period_at(stamp, periods, zone):
     return (finite(match.get("rate_cents")) / 100 if finite(match.get("rate_cents")) is not None else None, match["label"]) if match else (None, None)
 
 
-def boundaries(now, end, config, zone):
-    """Include exact non-quarter-hour tariff changes, with real elapsed DST time."""
+def wall_instants(local, zone):
+    """All real occurrences of a wall time; nonexistent clock times have none."""
+    naive = local.replace(tzinfo=None)
     result = set()
+    for fold in (0, 1):
+        stamp = naive.replace(tzinfo=zone, fold=fold).timestamp()
+        if datetime.fromtimestamp(stamp, zone).replace(tzinfo=None) == naive:
+            result.add(stamp)
+    return result
+
+
+def clock_changes(now, end, zone):
+    """Find offset jumps so skipped/repeated tariff and EV windows split exactly."""
+    result = set()
+    cursor = int(now)
+    while cursor < end:
+        following = min(cursor + 3600, end)
+        offset = datetime.fromtimestamp(cursor, zone).utcoffset()
+        if datetime.fromtimestamp(following, zone).utcoffset() != offset:
+            low, high = cursor, int(following)
+            while high - low > 1:
+                middle = (low + high) // 2
+                if datetime.fromtimestamp(middle, zone).utcoffset() == offset:
+                    low = middle
+                else:
+                    high = middle
+            if now < high < end:
+                result.add(high)
+        cursor = following
+    return result
+
+
+def boundaries(now, end, config, zone):
+    """Include both DST folds, offset jumps and exact non-quarter-hour changes."""
+    result = clock_changes(now, end, zone)
     first = datetime.fromtimestamp(now, zone).date() - timedelta(days=1)
     periods = []
     if config["supply_plan"] == "Time-of-use supply":
         periods += config.get("supply_periods", [])
     if config["delivery_plan"] == "Time-of-use delivery":
         periods += config.get("delivery_periods", [])
-    for offset in range(5):
+    last = datetime.fromtimestamp(end, zone).date()
+    for offset in range((last - first).days + 1):
         day = first + timedelta(days=offset)
         for period in periods:
             if WEEKDAYS[day.weekday()] not in period.get("days", WEEKDAYS):
@@ -82,7 +115,7 @@ def boundaries(now, end, config, zone):
             a = datetime.combine(day, time.fromisoformat(period["start"]), zone)
             # This is a wall-clock boundary; each interval is still integrated in UTC.
             b = datetime.combine(day + timedelta(days=1 if seconds(period["end"]) <= seconds(period["start"]) else 0), time.fromisoformat(period["end"]), zone)
-            for stamp in (a.timestamp(), b.timestamp()):
+            for stamp in wall_instants(a, zone) | wall_instants(b, zone):
                 if now < stamp < end:
                     result.add(stamp)
     for key in ("_external_supply", "_external_delivery"):

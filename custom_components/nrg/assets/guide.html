@@ -451,7 +451,7 @@ update another installation automatically. See <a href="#installation-updates-an
 <tbody>
 <tr>
 <td>Meter normalization and quality</td>
-<td>W/kW conversion, grid/battery sign switches, house-only versus whole-home meters, derived site flows, balance checks and unknown-versus-absent equipment. <a href="#integrations-provider-neutral-measurements">Measurements</a>.</td>
+<td>W/kW conversion, grid/battery sign switches, house-only versus whole-home meters, derived site flows, balance checks (including house-only learning) and unknown-versus-absent equipment. <a href="#integrations-provider-neutral-measurements">Measurements</a>.</td>
 </tr>
 <tr>
 <td>Forecast.Solar sources and alternatives</td>
@@ -459,7 +459,7 @@ update another installation automatically. See <a href="#installation-updates-an
 </tr>
 <tr>
 <td>Household-demand learning</td>
-<td>Covered hours, EV subtraction, recency weighting, weekday/weekend matching and explicit fallback demand. <a href="#learning-learn-household-demand">Demand learning</a>.</td>
+<td>Covered hours retained around observation gaps without filling missing time, elapsed-time expiry, EV subtraction, recency weighting, weekday/weekend matching and explicit fallback demand. <a href="#learning-learn-household-demand">Demand learning</a>.</td>
 </tr>
 <tr>
 <td>Solar forecast calibration</td>
@@ -467,7 +467,11 @@ update another installation automatically. See <a href="#installation-updates-an
 </tr>
 <tr>
 <td>EV calibration</td>
-<td>Covered AC energy/SOC sessions and conservative energy-per-point/power-per-amp estimates, with independent configured fallbacks. <a href="#learning-calibrate-ev-charging-estimates">EV learning</a>.</td>
+<td>Covered AC energy/SOC sessions, counter-reset/SOC-reversal rejection and conservative energy-per-point/power-per-amp estimates, with independent configured fallbacks. <a href="#learning-calibrate-ev-charging-estimates">EV learning</a>.</td>
+</tr>
+<tr>
+<td>Modeling robustness audit</td>
+<td>Per-hour solar coverage/alternatives, explicit zero versus unknown, local-midnight normalization, exact repeated/skipped DST boundaries, device current bounds and independent physical/cost oracles. <a href="#review-modeling-and-forecasting-robustness-audit-unreleased">Audit evidence and limits</a>.</td>
 </tr>
 <tr>
 <td>Passive battery calibration</td>
@@ -549,7 +553,7 @@ There is no separately calculated capacity-charge saving. See
 </tr>
 <tr>
 <td><strong>Unreleased development after 0.2.0</strong></td>
-<td>Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs.</td>
+<td>Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs; modeling/forecasting robustness fixes and permanent independent-oracle regressions.</td>
 </tr>
 </tbody>
 </table></div>
@@ -1752,8 +1756,15 @@ No calibration identifies individual-roof error from one combined meter.</p>
 alternative can cover a failed estimate for the same panels, but a missing entire
 array is not a confident whole-system zero. Astronomically dark intervals are known
 zero even when the provider drops the completed day after sunset. Missing daylight
-stays unknown. Startup/source updates trigger a cache read; failed sources retry
-after five minutes, normal refresh after thirty.</p>
+stays unknown. Coverage and alternative selection are checked for each hour, not
+just the presence of a daily total. A covered zero-output hour is valid; missing or
+partial edge hours remain unknown. Long daytime power-shape gaps and malformed
+responses are rejected instead of redistributing their energy into other hours.
+These conservative boundaries can shorten the dependable comparison horizon,
+including near sunrise/sunset; EV deadline feasibility remains available. A failed
+refresh keeps the previous valid cache only until its original three-hour expiry.
+Startup/source updates trigger a cache read; failed sources retry after five
+minutes, normal refresh after thirty.</p>
 <p>Turn age correction off for a source already configured to current aged output.
 Actual measured production is never reduced. Disable solar entirely for a home
 without panels; no Forecast.Solar setup is then required.</p>
@@ -1797,7 +1808,10 @@ correction. If actual output is consistently higher, the factor can exceed 1.</p
 <p>The calculation uses up to 168 recent covered daylight hours within the retained
 history, excludes tiny/nighttime forecasts, and bounds the factor to <strong>0.5–1.5</strong>.
 Mean absolute error in Details indicates how far the saved hourly forecasts missed.
-Cloud changes can still cause surprises: this corrects a persistent bias, not weather.</p>
+Cloud changes can still cause surprises: this corrects a persistent bias, not weather.
+Only explicitly covered forecast hours qualify. A daily total does not fill missing
+daylight with zero; a covered zero-output time series remains valid. Incomplete
+edge hours are excluded rather than scaled into complete predictions.</p>
 <p>It does not infer individual-roof accuracy from one whole-system meter. Changing
 sources or age settings clears the old solar comparisons. Turning calibration off
 uses the source forecast and configured age correction without the learned multiplier.</p>
@@ -1815,7 +1829,9 @@ SOC change give:</p>
 energy estimate. Covered charging power divided by measured/set current also gives
 power per amp; a conservative lower-percentile value helps avoid promising a finish
 time based on an unusually fast session. Details shows the effective estimates.</p>
-<p>Missing meters, gaps and counter resets do not create learned sessions. Without a
+<p>Missing meters, gaps, counter resets and SOC reversals do not create learned sessions.
+A decrease anywhere within a session discards that candidate, even if the final
+counter/SOC reading later recovers to a plausible total. Without a
 valid estimate—or with the switch off—NRG uses the fallback kWh/point and charging
 power you entered. <strong>No EV battery degradation percentage or health estimate is made.</strong></p>
 <h3 id="learning-learn-household-demand">Learn household demand</h3>
@@ -1825,11 +1841,16 @@ can work around daily life.</p>
 it subtracts car charging; otherwise it can learn while the car is known not to be
 charging. A home without an EV uses the whole-home reading directly.</p>
 <p>An hour needs at least <strong>80% valid coverage</strong>. Missing time is not learned as zero.
+Already covered portions on either side of an observation gap can still qualify;
+the gap itself adds neither energy nor coverage. Restart discards the unfinished
+hour rather than resuming it with a new sample.
 Impossible/inconsistent meter combinations pause the relevant learning rather than
 creating a false zero-house baseline.</p>
 <p>It keeps up to <strong>28 days</strong> of hourly summaries, compares matching clock hours, and
 gives each older matching observation <strong>0.9×</strong> the weight of the next newer one.
-After three matching observations, weekdays/weekends can have their own profile.</p>
+After three matching observations, weekdays/weekends can have their own profile.
+The 28-day limit uses elapsed time, so extended downtime expires old hourly demand,
+price-history and solar-calibration observations rather than keeping them forever.</p>
 <p>Example: if evenings repeatedly use more power than afternoons, the forecast
 reserves more energy for those evenings. An unfamiliar hour still uses your fallback.
 It predicts patterns rather than identifying individual appliances or controlling
@@ -2231,12 +2252,12 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <p>Reference key: <code>completion_buffer</code>.</p>
 <h4 id="settings-maximum-ev-charging-current">Maximum EV charging current</h4>
 <p>Default: <strong>16 A</strong>.</p>
-<p>Generic starting limit: enter a current supported by your charger and circuit. Also bounded by the control entity's maximum. Script adapters need the real supported limit here. NRG never raises the vehicle's selected charge limit.</p>
+<p>Generic starting limit: enter a current supported by your charger and circuit. Also bounded by the control entity's maximum, rounded down to whole amps for planning and commands. Script adapters need the real supported limit here. NRG never raises the vehicle's selected charge limit.</p>
 <p>Accepted range: <strong>5 to 80 A</strong>; adjustable in increments of <strong>1 A</strong>.</p>
 <p>Reference key: <code>ev_max_amps</code>.</p>
 <h4 id="settings-minimum-stable-ev-current">Minimum stable EV current</h4>
 <p>Default: <strong>6 A</strong>.</p>
-<p>Smallest current used for solar-aware charging. Below this the car is paused. Must be no greater than your maximum current.</p>
+<p>Smallest current used for solar-aware charging. NRG also honors the control entity's minimum, rounded up to whole amps. Below the effective minimum the car is paused. Must be no greater than your maximum current.</p>
 <p>Accepted range: <strong>5 to 32 A</strong>; adjustable in increments of <strong>1 A</strong>.</p>
 <p>Reference key: <code>ev_min_amps</code>.</p>
 <h4 id="settings-conservative-ev-power-at-maximum-current">Conservative EV power at maximum current</h4>
@@ -3254,10 +3275,14 @@ scheduled. An uncontrolled EV's already observed charging can be extrapolated to
 its known target as a background load; it does not produce EV command permission.
 A grid-only home needs neither battery nor EV data for price advice.</p>
 <h3 id="design-time-and-prices">Time and prices</h3>
-<p>The horizon covers 48 real hours, split into 15-minute intervals and exact tariff,
+<p>The horizon covers up to 48 real hours, split into 15-minute intervals and exact tariff,
 departure, buffer and charging-window boundaries. Intervals carry UTC instants;
 contract times and weekdays use HA's timezone. Repeated DST clock hours receive
-the same time-of-use rate, while energy uses their real elapsed duration.</p>
+the same time-of-use rate, while energy uses their real elapsed duration. Both
+occurrences of a repeated tariff/window boundary and the clock-offset jump itself
+split intervals, including non-quarter-hour and half-hour DST changes. Skipped
+tariff/window clock times are evaluated using the rate/window actually in effect
+after the jump, not a fictitious extra interval.</p>
 <p>Supply and delivery are evaluated independently at every boundary, then added once.
 Both support flat, timed and external prices; supply additionally supports ComEd.
 External current observations are not extrapolated as future rates. Missing foreign
@@ -3276,7 +3301,10 @@ Complete applicable site meters can derive a missing home/grid reading from
 <code>solar + grid + battery = home</code>, with the calculated basis identified.</p>
 <p>At least once per minute, the previous valid sample is integrated only across gaps
 of at most 180 seconds. An hour needs at least 80% coverage to be learned; its
-covered energy is scaled to an hour. Missing/restart gaps are never zero observations.</p>
+covered energy is scaled to an hour. Missing/restart gaps are never zero observations.
+An observation gap discards unfinished EV/battery sessions, but already covered
+portions of a household/solar hour can still qualify if their combined coverage
+reaches 80%. Restart still discards the unfinished in-memory hour.</p>
 <p>House demand excludes separately measured EV charging. If that meter is unavailable,
 learning can continue while the car is known not to be charging. If EV power exceeds
 home power by more than 0.2 kW, or available site flows disagree by more than the
@@ -3284,14 +3312,23 @@ larger of 0.3 kW / 5% of home power, relevant learning pauses. Details exposes q
 and the balance residual rather than learning an impossible zero house load.</p>
 <p>The recency-weighted hour-of-day profile uses up to 28 days; each older observation
 has 0.9× the next newer weight. Weekday/weekend matching is used after three matching
-observations. Missing profiles use the configured fallback.</p>
+observations. The 28-day age limit is enforced by elapsed time, not just a maximum
+row count, so a long offline period cannot retain an obsolete profile indefinitely.
+Missing profiles use the configured fallback.</p>
 <p>Solar uses correctly grouped forecasts, optional compounded panel age and a bounded
 actual/forecast ratio after six covered daylight hours. Forecasts are frozen before
-the evaluated hour; later forecast improvements are not used as hindsight.</p>
+the evaluated hour; later forecast improvements are not used as hindsight. Each
+array needs an explicitly covered hour; a daily total alone never proves missing
+daylight is zero. Alternatives are selected per hour. Daily normalization splits
+at local midnight even when UTC hours straddle dates. Explicit covered zero-output
+hours remain valid; partial edge hours remain unknown. Broken daytime shapes,
+duplicate timestamps, invalid containers and implausible daily totals are rejected.</p>
 <p>EV calibration uses covered sessions with at least five SOC points and five minutes.
 The upper 80th-percentile AC kWh/point sample from the last twelve valid sessions is
 conservative about required energy. Lower-percentile observed power/amp estimates
-help avoid overpromising charging speed. It does not estimate EV degradation.
+help avoid overpromising charging speed. An energy-counter decrease or SOC reversal
+breaks the session even if the final totals later look plausible. It does not
+estimate EV degradation.
 Optional battery calibration uses closed SOC cycles to measure AC energy out/in
 without inferring capacity. Charging and discharging capability each need repeated,
 stable ten-minute opportunities with spare supply or unmet demand, independently
@@ -3306,7 +3343,9 @@ The <a href="#learning">learning guide</a> explains the controls and measurement
 <p>When EV control is enabled, compare cheapest-grid, solar-aware, earliest and latest
 feasible schedules. Solar-aware charging values direct surplus at foregone export
 credit and can lower current within its configured stable range. It increases
-available current if otherwise a feasible deadline would be missed.</p>
+available current if otherwise a feasible deadline would be missed. The effective
+current range intersects the configured and device-reported minimum/maximum using
+whole amps, matching the writer; manual settings are not overwritten.</p>
 <p>Use the completion buffer first, then the actual departure and additional available
 time if necessary. Charge-now ignores price/window preferences. An incomplete
 continuously connected session remains overdue rather than silently moving to tomorrow.</p>
@@ -3443,7 +3482,9 @@ net cost      = purchase cost − export credit
 </code></pre>
 <p>The previous observed power is integrated only over gaps of at most three minutes.
 Configured time-of-use boundaries split observed intervals exactly, including a
-boundary partway through a sampling minute. Current variable-feed rates remain
+boundary partway through a sampling minute. Both occurrences of repeated DST
+boundaries and the offset change itself are split; skipped clock times do not
+create energy or a fictitious priced interval. Current variable-feed rates remain
 contemporaneous estimates, including the explicitly labeled published forecast
 during ComEd's bounded <a href="#pricing-comeds-new-hour-publication-window">new-hour publication window</a>.
 The optional <a href="#pricing-brief-comed-live-data-delays">brief-delay estimate mode</a>
@@ -3479,7 +3520,8 @@ from the built-in Energy dashboard's lifetime-counter-based totals.</p>
    the first price or applicable solar-coverage gap, including the remaining stored
    energy's replacement value and optional cycling cost. The displayed comparison
    endpoint may be earlier than the physical/EV outlook. With no dependable coverage,
-   no economic cost is claimed.</li>
+   no economic cost is claimed. Individual outlook intervals also leave cost
+   unknown when applicable solar coverage is missing, even if their prices are known.</li>
 <li><strong>Reference-appliance benefit:</strong> modeled difference between complete start
    windows for the selected energy/duration. Baseline and appliance replay share
    that same dependable endpoint, with applicable export/storage costs. An unknown
@@ -3578,6 +3620,12 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 <li><a href="#review-comed-publication-gap-verification-2026-10-22">ComEd publication-gap verification — 2026-10-22</a></li>
 <li><a href="#review-bounded-comed-estimate-verification-2026-10-22">Bounded ComEd estimate verification — 2026-10-22</a></li>
 <li><a href="#review-full-feature-documentation-audit-2026-10-22">Full feature documentation audit — 2026-10-22</a></li>
+<li><a href="#review-modeling-and-forecasting-robustness-audit-unreleased">Modeling and forecasting robustness audit — unreleased</a><ul>
+<li><a href="#review-algorithm-inventory-and-coverage">Algorithm inventory and coverage</a></li>
+<li><a href="#review-confirmed-findings-and-corrections">Confirmed findings and corrections</a></li>
+<li><a href="#review-verification-and-remaining-limits">Verification and remaining limits</a></li>
+</ul>
+</li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -3792,6 +3840,120 @@ asset reproduction pass. The unchanged HA-pinned dependency audit still reports
 <strong>36 Pillow/uv advisories</strong> as detailed above; none is suppressed. This audit adds
 no pricing, planning, control, storage, dependency or version behavior change.
 Hosted CI/self-review are recorded on its PR; no new release is published.</p>
+<h3 id="review-modeling-and-forecasting-robustness-audit-unreleased">Modeling and forecasting robustness audit — unreleased</h3>
+<p>Reviewed the modeling/forecasting pipeline, its measurement boundaries and its
+existing tests. This is a local source-and-test audit of unreleased development,
+not an independent review, a deployment or an empirical forecast-accuracy study.
+Observation defaults, explicit control permissions, manual settings, completed
+valid learning and ledger formats remain unchanged. No release is published.</p>
+<h4 id="review-algorithm-inventory-and-coverage">Algorithm inventory and coverage</h4>
+<div class="table-scroll" role="region" aria-label="Project review table 2" tabindex="0"><table>
+<thead>
+<tr>
+<th scope="col">Area</th>
+<th scope="col">Implementation and verification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Input normalization and measurement quality</td>
+<td><code>config.py</code>, <code>runtime.py</code>: finite/unit/sign/range checks, unknown versus absent hardware, independent site balance, house-only and EV subtraction, device current bounds. Native HA regressions cover these boundaries.</td>
+</tr>
+<tr>
+<td>Tariff and price forecasts</td>
+<td><code>tariffs.py</code>, <code>forecast.py</code>, <code>fallback.py</code>: independent supply/delivery/export, overnight schedules, explicit dated external intervals, ComEd labels/freshness/publication allowances, recovery and provenance. Existing pricing/fallback suites plus new second-by-second DST oracles pass.</td>
+</tr>
+<tr>
+<td>Solar forecast modeling</td>
+<td><code>forecast.py</code>: trapezoidal power integration, local-day normalization, cache expiry, alternative weighting versus distinct arrays, age adjustment, explicitly covered hours, known astronomical night. New missing/zero/malformed/gapped and non-whole-hour timezone regressions pass.</td>
+</tr>
+<tr>
+<td>Household demand and solar bias</td>
+<td><code>statistics.py</code>: previous-sample integration, 80% hourly coverage, EV exclusion, elapsed-time retention, recency/day-type demand estimates, frozen-before-hour solar residuals and bounded correction. Gap/retention regressions and existing no-hindsight tests pass.</td>
+</tr>
+<tr>
+<td>EV energy, power and schedules</td>
+<td><code>statistics.py</code>, <code>planner.py</code>: conservative session percentiles, invalid-session rejection, deadlines/buffers/windows, four candidate allocations, prior-plan stability, fractional stops and observed-only charging. New independent feasibility checks cover 200 randomized cases across all four allocation strategies.</td>
+</tr>
+<tr>
+<td>Passive battery calibration</td>
+<td><code>battery_learning.py</code>: closed SOC cycles, paired counters or AC power integration, sustained independent opportunities, outlier rejection, per-parameter minimum samples, 30-day expiry and manual fallbacks. The full existing cycle/opportunity/native HA suite passes; no calibration formula is changed.</td>
+</tr>
+<tr>
+<td>Battery capacity and dispatch</td>
+<td><code>config.py</code>, <code>planner.py</code>: compounded age, square-root losses, capacity/reserve/power constraints, mode permissions, bounded-bin search and no fictional battery sales. New checks cover 1,200 randomized physical transitions and 80 short searches against exhaustive feasible-mode oracles.</td>
+</tr>
+<tr>
+<td>Refill valuation and household advice</td>
+<td><code>planner.py</code>: common candidate/advice value, permitted finite refill, conservative uncovered reference, trusted contiguous horizon and incremental replay. Existing permission/tail-invariance suites pass; 100 randomized grid-only appliance scenarios match an independent overlap-cost oracle.</td>
+</tr>
+<tr>
+<td>Measured accounting and execution boundary</td>
+<td><code>statistics.py</code>, <code>runtime.py</code>, <code>control.py</code>: signed variable costs, exact tariff/estimate/hour boundaries, unobserved gaps, stale-plan revocation and guarded writer. New repeated-hour ledger regressions and the existing control/integration suites pass.</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="review-confirmed-findings-and-corrections">Confirmed findings and corrections</h4>
+<ul>
+<li><strong>Unknown solar was being reported as zero.</strong> A cache's daily date no longer
+  establishes coverage for every hour. Alternatives are selected per covered hour;
+  uncovered arrays remain unknown. Missing applicable solar also leaves an
+  interval's displayed modeled cost unknown, even with known prices.</li>
+<li><strong>Broken solar shapes could concentrate a daily total into surviving hours.</strong>
+  Long daytime gaps are rejected. Malformed containers, duplicate instants and
+  implausible daily totals produce handled validation errors; a failed refresh
+  retains only the original, still-fresh cache. Partial edge hours are excluded
+  rather than treated as complete coverage. Astronomical darkness remains the
+  only basis for filling missing night with zero.</li>
+<li><strong>Explicit zero solar could disappear.</strong> Covered all-zero series with zero
+  energy now remain valid zero forecasts rather than returning an empty series.</li>
+<li><strong>Normalization crossed local midnight incorrectly in fractional-hour zones.</strong>
+  Integration now splits at local midnight before applying each day's energy
+  normalization; complete UTC bins can contain contributions from both days.</li>
+<li><strong>Solar weight validation was inconsistent.</strong> Scope/duplicate/finite-positive
+  weight validation is shared by settings and aggregation. Relative-weight scaling
+  avoids overflow without changing the weighted-average interpretation.</li>
+<li><strong>DST intervals missed repeated boundaries and clock jumps.</strong> Tariff and EV
+  windows now split at both real occurrences, as well as the offset change itself.
+  This fixes exact ledger pricing and window availability for non-quarter-hour,
+  skipped and half-hour transitions. Daily departure retains its documented first-
+  occurrence / spring-forward resolution.</li>
+<li><strong>EV sessions could hide intermediate counter resets or SOC reversals.</strong> Either
+  decrease now breaks the candidate even when later totals recover. Valid completed
+  observations and the conservative percentile formulas are retained.</li>
+<li><strong>Hourly learning retained stale history and lost valid covered portions.</strong>
+  Old summaries expire after 28 elapsed days, including after downtime. Covered
+  portions around an observation gap can still qualify at 80%; missing time adds
+  neither coverage nor energy. Unfinished EV/battery sessions still break at gaps,
+  and restarts still discard unfinished in-memory observations.</li>
+<li><strong>House-only learning bypassed the site-balance gate.</strong> Inconsistent independent
+  site meters now pause that profile just as they pause whole-home/EV learning.</li>
+<li><strong>EV predictions ignored the device current floor.</strong> Planning now intersects
+  configured/device minimum and maximum in whole amps, scaling fallback power to
+  the effective ceiling. Unsupported ranges fail readiness; user values are not
+  rewritten and command-time bounds are still independently checked.</li>
+</ul>
+<h4 id="review-verification-and-remaining-limits">Verification and remaining limits</h4>
+<p>The baseline suite passed <strong>427 tests</strong>. The new permanent audit module adds
+<strong>39 cases</strong>: when run against an isolated copy of the original commit, <strong>30 fail
+and nine pass</strong>; against the corrected implementation all pass. The full suite
+passes <strong>466 tests</strong>, including native HA integration and executable chart tests.
+The deterministic randomized checks use invented fixtures and fixed seeds, not
+household traces. They check feasibility/accounting and independent oracles, not
+just snapshots of the implementation's output.</p>
+<p>Ruff's configured <code>F</code> rules, dependency consistency, privacy/history checks,
+generated UI/brand reproducibility and whitespace checks pass. The dependency
+audit still fails on the same <strong>36 HA-pinned Pillow/uv advisories</strong> documented
+above. No dependency override or advisory exclusion is introduced.</p>
+<p>Remaining limits are explicit: battery binning and the small EV candidate set
+are approximate, not globally optimal. Solar power is interpolated between valid
+provider points; hourly demand and bounded calibration do not predict weather or
+unusual household behavior. Conservative partial solar-edge coverage can shorten
+advice, including near sunrise/sunset, while EV deadline feasibility remains
+available. Sample-based calibration depends on AC measurement boundaries, coverage
+and SOC precision; it is not a health/capacity measurement. Refill potential is not
+a promise of a chronological refill. No real-home forecast backtest, future saving,
+physical command response or live deployment was validated by this audit.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as

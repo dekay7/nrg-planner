@@ -372,7 +372,7 @@ Reference key: `completion_buffer`.
 
 Default: **16 A**.
 
-Generic starting limit: enter a current supported by your charger and circuit. Also bounded by the control entity's maximum. Script adapters need the real supported limit here. NRG never raises the vehicle's selected charge limit.
+Generic starting limit: enter a current supported by your charger and circuit. Also bounded by the control entity's maximum, rounded down to whole amps for planning and commands. Script adapters need the real supported limit here. NRG never raises the vehicle's selected charge limit.
 
 Accepted range: **5 to 80 A**; adjustable in increments of **1 A**.
 
@@ -382,7 +382,7 @@ Reference key: `ev_max_amps`.
 
 Default: **6 A**.
 
-Smallest current used for solar-aware charging. Below this the car is paused. Must be no greater than your maximum current.
+Smallest current used for solar-aware charging. NRG also honors the control entity's minimum, rounded up to whole amps. Below the effective minimum the car is paused. Must be no greater than your maximum current.
 
 Accepted range: **5 to 32 A**; adjustable in increments of **1 A**.
 

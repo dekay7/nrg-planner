@@ -62,11 +62,12 @@ update another installation automatically. See [updates](installation.md#updates
 
 | Feature | What it provides and where to learn more |
 |---|---|
-| Meter normalization and quality | W/kW conversion, grid/battery sign switches, house-only versus whole-home meters, derived site flows, balance checks and unknown-versus-absent equipment. [Measurements](integrations.md#provider-neutral-measurements). |
+| Meter normalization and quality | W/kW conversion, grid/battery sign switches, house-only versus whole-home meters, derived site flows, balance checks (including house-only learning) and unknown-versus-absent equipment. [Measurements](integrations.md#provider-neutral-measurements). |
 | Forecast.Solar sources and alternatives | Add/edit/remove sources, physical coverage groups, alternative weights, overlap rejection, age correction, cache freshness/retries and known nighttime zero. [Solar sources](integrations.md#solar-forecasts-and-alternatives). |
-| Household-demand learning | Covered hours, EV subtraction, recency weighting, weekday/weekend matching and explicit fallback demand. [Demand learning](learning.md#learn-household-demand). |
+| Household-demand learning | Covered hours retained around observation gaps without filling missing time, elapsed-time expiry, EV subtraction, recency weighting, weekday/weekend matching and explicit fallback demand. [Demand learning](learning.md#learn-household-demand). |
 | Solar forecast calibration | Forecasts frozen before each hour; bounded actual/forecast correction after enough daylight samples, forecast error and source-change reset. [Solar learning](learning.md#solar-forecast-calibration). |
-| EV calibration | Covered AC energy/SOC sessions and conservative energy-per-point/power-per-amp estimates, with independent configured fallbacks. [EV learning](learning.md#calibrate-ev-charging-estimates). |
+| EV calibration | Covered AC energy/SOC sessions, counter-reset/SOC-reversal rejection and conservative energy-per-point/power-per-amp estimates, with independent configured fallbacks. [EV learning](learning.md#calibrate-ev-charging-estimates). |
+| Modeling robustness audit | Per-hour solar coverage/alternatives, explicit zero versus unknown, local-midnight normalization, exact repeated/skipped DST boundaries, device current bounds and independent physical/cost oracles. [Audit evidence and limits](review.md#modeling-and-forecasting-robustness-audit-unreleased). |
 | Passive battery calibration | Opt-in AC-side closed-cycle efficiency and sustained charge/discharge opportunities; paired counters, independent per-parameter fallbacks, retention and status. No forced calibration or battery-health claim. [Battery learning](learning.md#calibrate-battery-estimates). |
 | Reset and retention | Disabling learning preserves completed summaries; Reset learning retains settings and cost ledgers. Mapping changes reset only the affected calibration/comparisons. [Reset behavior](learning.md#resetting-or-disabling-learning). |
 
@@ -103,7 +104,7 @@ There is no separately calculated capacity-charge saving. See
 |---|---|
 | Original implementation through **0.1.0** | Optional components; independent tariffs/export and period editor; external/ComEd/solar adapters; EV/battery planning; local learning; cost ledger; guarded provider-neutral controls; homeowner/admin dashboards and a complete local wiki. Setup/readiness explanations, private-store removal cleanup and retirement of the summer heuristic were included before 0.1.0. Publication/privacy checks and release-based updates were established. |
 | **0.2.0** | Passive battery efficiency/charge/discharge calibration with independent fallbacks and AC-meter safeguards. Direct handbook buttons and a distinctive settings icon were also included by this release. |
-| **Unreleased development after 0.2.0** | Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs. |
+| **Unreleased development after 0.2.0** | Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs; modeling/forecasting robustness fixes and permanent independent-oracle regressions. |
 
 The detailed verification evidence and open upstream dependency-audit findings are
 in [the project review](review.md). Passing tests are not proof of globally optimal

@@ -30,7 +30,9 @@ net cost      = purchase cost − export credit
 
 The previous observed power is integrated only over gaps of at most three minutes.
 Configured time-of-use boundaries split observed intervals exactly, including a
-boundary partway through a sampling minute. Current variable-feed rates remain
+boundary partway through a sampling minute. Both occurrences of repeated DST
+boundaries and the offset change itself are split; skipped clock times do not
+create energy or a fictitious priced interval. Current variable-feed rates remain
 contemporaneous estimates, including the explicitly labeled published forecast
 during ComEd's bounded [new-hour publication window](pricing.md#comeds-new-hour-publication-window).
 The optional [brief-delay estimate mode](pricing.md#brief-comed-live-data-delays)
@@ -72,7 +74,8 @@ from the built-in Energy dashboard's lifetime-counter-based totals.
    the first price or applicable solar-coverage gap, including the remaining stored
    energy's replacement value and optional cycling cost. The displayed comparison
    endpoint may be earlier than the physical/EV outlook. With no dependable coverage,
-   no economic cost is claimed.
+   no economic cost is claimed. Individual outlook intervals also leave cost
+   unknown when applicable solar coverage is missing, even if their prices are known.
 3. **Reference-appliance benefit:** modeled difference between complete start
    windows for the selected energy/duration. Baseline and appliance replay share
    that same dependable endpoint, with applicable export/storage costs. An unknown

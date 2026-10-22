@@ -114,11 +114,15 @@ def price_at(stamp: float, now: float, config: dict, cache: list[dict], live: fl
 
 
 def solar_response(response: dict, zone: ZoneInfo, fetched_at: float) -> dict:
-    """Integrate timestamped power shape, preserving the provider's daily totals.
+    """Normalize the power shape to daily totals, exposing only covered hours.
 
     Forecast.Solar's service already reads its cache; this causes no extra provider
     polling. Normalizing daily energy avoids assuming ambiguous raw Wh boundaries.
+    Partial edge hours remain unknown; only astronomy can establish missing night.
     """
+    if (not isinstance(response, dict) or not isinstance(response.get("watts"), dict)
+            or not isinstance(response.get("wh_period"), dict)):
+        raise ValueError("Solar forecast needs power and energy time-series objects")
     points, totals = [], {}
     for stamp, raw in response.get("watts", {}).items():
         parsed, watts = datetime.fromisoformat(stamp), finite(raw)
@@ -133,26 +137,53 @@ def solar_response(response: dict, zone: ZoneInfo, fetched_at: float) -> dict:
         totals[day] = totals.get(day, 0) + wh / 1000
     if len(points) < 2 or not totals:
         raise ValueError("A full time-series forecast, not a daily scalar, is required")
-    hours = {}
-    for (start, pa), (end, pb) in zip(sorted(points), sorted(points)[1:]):
-        if not 0 < end - start <= 14400:
-            continue
+    for day, energy in totals.items():
+        start = datetime.fromisoformat(day).replace(tzinfo=zone)
+        elapsed_hours = ((start + timedelta(days=1)).timestamp() - start.timestamp()) / 3600
+        if not 0 <= energy <= 250 * elapsed_hours:
+            raise ValueError("Invalid daily solar energy")
+    points.sort()
+    if any(a[0] == b[0] for a, b in zip(points, points[1:])):
+        raise ValueError("Duplicate solar timestamp")
+    pieces = {}
+
+    def integrate(start, end, pa, pb):
         cursor = start
         while cursor < end:
-            boundary = min(end, (int(cursor) // 3600 + 1) * 3600)
+            day = datetime.fromtimestamp(cursor, zone).date()
+            midnight = datetime.combine(day + timedelta(days=1), datetime.min.time(), zone).timestamp()
+            boundary = min(end, (int(cursor) // 3600 + 1) * 3600, midnight)
             a = pa + (pb - pa) * (cursor - start) / (end - start)
             b = pa + (pb - pa) * (boundary - start) / (end - start)
-            hour = int(cursor) // 3600 * 3600
-            hours[hour] = hours.get(hour, 0) + (a + b) / 2 * (boundary - cursor) / 3600
+            key = (int(cursor) // 3600 * 3600, day.isoformat())
+            energy, covered = pieces.get(key, (0, 0))
+            pieces[key] = (energy + (a + b) / 2 * (boundary - cursor) / 3600,
+                           covered + boundary - cursor)
             cursor = boundary
+
+    for (start, pa), (end, pb) in zip(points, points[1:]):
+        if end - start > 14400:
+            # A zero-ended overnight gap is not a missing daylight shape. A
+            # broken daytime shape must not concentrate a daily total elsewhere.
+            if pa or pb or datetime.fromtimestamp(start, zone).date() == datetime.fromtimestamp(end, zone).date():
+                raise ValueError("Uncovered gap in solar power shape")
+            continue
+        integrate(start, end, pa, pb)
     shapes = {}
-    for stamp, energy in hours.items():
-        day = datetime.fromtimestamp(stamp, zone).date().isoformat()
+    for (_, day), (energy, _) in pieces.items():
         shapes[day] = shapes.get(day, 0) + energy
     if any(energy > 0 and shapes.get(day, 0) <= 0 for day, energy in totals.items()):
         raise ValueError("Positive daily solar energy has no usable power shape")
-    normalized = {str(t): e * totals[day] / shapes[day] for t, e in hours.items()
-                  if (day := datetime.fromtimestamp(t, zone).date().isoformat()) in totals and shapes.get(day, 0) > 0}
+    normalized, coverage = {}, {}
+    for (stamp, day), (energy, covered) in pieces.items():
+        if day not in totals:
+            continue
+        key = str(stamp)
+        normalized[key] = normalized.get(key, 0) + (energy * totals[day] / shapes[day] if shapes[day] > 0 else 0)
+        coverage[key] = coverage.get(key, 0) + covered
+    # A partial edge hour is not a full known forecast, including in half-hour
+    # timezones where a UTC bin straddles two independently normalized days.
+    normalized = {key: energy for key, energy in normalized.items() if abs(coverage[key] - 3600) < .001}
     return {"hours": normalized, "days": list(totals), "fetched_at": fetched_at}
 
 
@@ -176,13 +207,15 @@ def aggregate_solar(sources: list[dict], caches: dict, config: dict, now: float,
         day = datetime.fromtimestamp(stamp, zone).date().isoformat()
         total, all_known = 0.0, bool(groups)
         for alternatives in groups.values():
-            usable = [(s, c) for s, c in alternatives if c and day in c["days"]]
+            usable = [(s, c) for s, c in alternatives if c and day in c["days"] and str(stamp) in c["hours"]]
             if not usable:
                 all_known = False
                 continue
-            weights = sum(s["weight"] for s, _ in usable)
-            total += sum(c["hours"].get(str(stamp), 0) * s["weight"] *
-                         (factor if s.get("apply_age", True) else 1) for s, c in usable) / weights
+            # Relative weights avoid overflow even for large finite user inputs.
+            scale = max(finite(s["weight"]) for s, _ in usable)
+            weights = [(s, c, finite(s["weight"]) / scale) for s, c in usable]
+            total += sum(c["hours"][str(stamp)] * weight *
+                         (factor if s.get("apply_age", True) else 1) for s, c, weight in weights) / sum(w for _, _, w in weights)
         partial[str(stamp)] = total * bias
         known[str(stamp)] = all_known
         if all_known:

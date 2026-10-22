@@ -14,10 +14,14 @@ A grid-only home needs neither battery nor EV data for price advice.
 
 ## Time and prices
 
-The horizon covers 48 real hours, split into 15-minute intervals and exact tariff,
+The horizon covers up to 48 real hours, split into 15-minute intervals and exact tariff,
 departure, buffer and charging-window boundaries. Intervals carry UTC instants;
 contract times and weekdays use HA's timezone. Repeated DST clock hours receive
-the same time-of-use rate, while energy uses their real elapsed duration.
+the same time-of-use rate, while energy uses their real elapsed duration. Both
+occurrences of a repeated tariff/window boundary and the clock-offset jump itself
+split intervals, including non-quarter-hour and half-hour DST changes. Skipped
+tariff/window clock times are evaluated using the rate/window actually in effect
+after the jump, not a fictitious extra interval.
 
 Supply and delivery are evaluated independently at every boundary, then added once.
 Both support flat, timed and external prices; supply additionally supports ComEd.
@@ -42,6 +46,9 @@ Complete applicable site meters can derive a missing home/grid reading from
 At least once per minute, the previous valid sample is integrated only across gaps
 of at most 180 seconds. An hour needs at least 80% coverage to be learned; its
 covered energy is scaled to an hour. Missing/restart gaps are never zero observations.
+An observation gap discards unfinished EV/battery sessions, but already covered
+portions of a household/solar hour can still qualify if their combined coverage
+reaches 80%. Restart still discards the unfinished in-memory hour.
 
 House demand excludes separately measured EV charging. If that meter is unavailable,
 learning can continue while the car is known not to be charging. If EV power exceeds
@@ -51,16 +58,25 @@ and the balance residual rather than learning an impossible zero house load.
 
 The recency-weighted hour-of-day profile uses up to 28 days; each older observation
 has 0.9× the next newer weight. Weekday/weekend matching is used after three matching
-observations. Missing profiles use the configured fallback.
+observations. The 28-day age limit is enforced by elapsed time, not just a maximum
+row count, so a long offline period cannot retain an obsolete profile indefinitely.
+Missing profiles use the configured fallback.
 
 Solar uses correctly grouped forecasts, optional compounded panel age and a bounded
 actual/forecast ratio after six covered daylight hours. Forecasts are frozen before
-the evaluated hour; later forecast improvements are not used as hindsight.
+the evaluated hour; later forecast improvements are not used as hindsight. Each
+array needs an explicitly covered hour; a daily total alone never proves missing
+daylight is zero. Alternatives are selected per hour. Daily normalization splits
+at local midnight even when UTC hours straddle dates. Explicit covered zero-output
+hours remain valid; partial edge hours remain unknown. Broken daytime shapes,
+duplicate timestamps, invalid containers and implausible daily totals are rejected.
 
 EV calibration uses covered sessions with at least five SOC points and five minutes.
 The upper 80th-percentile AC kWh/point sample from the last twelve valid sessions is
 conservative about required energy. Lower-percentile observed power/amp estimates
-help avoid overpromising charging speed. It does not estimate EV degradation.
+help avoid overpromising charging speed. An energy-counter decrease or SOC reversal
+breaks the session even if the final totals later look plausible. It does not
+estimate EV degradation.
 Optional battery calibration uses closed SOC cycles to measure AC energy out/in
 without inferring capacity. Charging and discharging capability each need repeated,
 stable ten-minute opportunities with spare supply or unmet demand, independently
@@ -79,7 +95,9 @@ AC energy needed = (selected limit − SOC) × estimated AC kWh per percentage p
 When EV control is enabled, compare cheapest-grid, solar-aware, earliest and latest
 feasible schedules. Solar-aware charging values direct surplus at foregone export
 credit and can lower current within its configured stable range. It increases
-available current if otherwise a feasible deadline would be missed.
+available current if otherwise a feasible deadline would be missed. The effective
+current range intersects the configured and device-reported minimum/maximum using
+whole amps, matching the writer; manual settings are not overwritten.
 
 Use the completion buffer first, then the actual departure and additional available
 time if necessary. Charge-now ignores price/window preferences. An incomplete

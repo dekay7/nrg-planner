@@ -9,7 +9,7 @@ import math
 
 from .config import effective_capacity, cents_rate
 from .forecast import price_at, comed_estimate_deadline
-from .tariffs import boundaries as tariff_boundaries
+from .tariffs import boundaries as tariff_boundaries, wall_instants
 
 
 def deadline(now, config, zone, telemetry, previous):
@@ -53,9 +53,8 @@ def make_slots(now, config, zone, stats, prices, solar, live, due):
     local = datetime.fromtimestamp(now, zone)
     for day in range(3):
         for key in ("ev_start_time", "departure_time"):
-            t = datetime.combine(local.date() + timedelta(days=day), time.fromisoformat(config[key]), zone).timestamp()
-            if now < t < end:
-                boundaries.add(t)
+            wall = datetime.combine(local.date() + timedelta(days=day), time.fromisoformat(config[key]))
+            boundaries.update(t for t in wall_instants(wall, zone) if now < t < end)
     boundaries = sorted(boundaries)
     rows = []
     for start, end in zip(boundaries, boundaries[1:]):
@@ -472,7 +471,7 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
         slot.update(ev_kwh=ev, ev_amps=amps, battery_action=action["action"],
                      battery_soc=round(action["energy"] / capacity * 100, 2) if capacity and available else None,
                     import_kwh=action["import_kwh"], export_kwh=action["export_kwh"],
-                      cost=action["import_cost"] - action["export_credit"] if slot["price_known"] and (not export_required(config) or slot["export_known"]) else None)
+                      cost=action["import_cost"] - action["export_credit"] if slot["price_known"] and slot["solar_known"] and (not export_required(config) or slot["export_known"]) else None)
         slot["ev_stop_at"] = slot["start"] + ev / (power * amps / config["ev_max_amps"]) * 3600 if amps else None
     active = [s for s in slots if s["ev_kwh"] > .001]
     ev_status = ("not_installed" if not config["has_ev"] else "monitor_only" if not managed_ev else "unplugged" if not connected else "telemetry_missing" if need is None else "ready" if need <= .001

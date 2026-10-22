@@ -70,9 +70,7 @@ def validate(options: dict, today: date | None = None) -> dict:
     merged = settings(result)
     if merged["ev_min_amps"] > merged["ev_max_amps"]:
         raise ValueError("Minimum EV current cannot exceed maximum EV current")
-    for source in options.get("solar_sources", []):
-        if not source.get("group", "").strip() or finite(source.get("weight"), 0) <= 0:
-            raise ValueError("A solar source needs a physical coverage group and positive weight")
+    validate_sources(options.get("solar_sources", []))
     from .tariffs import validate_periods
     for key in ("supply_periods", "delivery_periods"):
         validate_periods(options.get(key, []))
@@ -120,6 +118,8 @@ def source_scope(source: dict) -> frozenset[str]:
 def validate_sources(sources: list[dict]) -> None:
     entries, scopes = set(), []
     for source in sources:
+        if finite(source.get("weight"), 0) <= 0:
+            raise ValueError("A solar source needs a finite positive weight")
         entry = source.get("config_entry_id") or source.get("entity_id")
         if entry in entries:
             raise ValueError("This Forecast.Solar entry is already selected; its sensors share one forecast")
