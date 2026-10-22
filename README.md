@@ -7,12 +7,12 @@ optional EV/battery/solar support, and controls mapped to existing HA entities.
 [project review](docs/review.md) for current validation results and open release
 items. NRG Planner is not included in the default HACS catalog.
 
-> **ComEd hourly pricing status — checked October 21, 2026:** The [ComEd hourly
-> pricing site](https://hourlypricing.comed.com/), [live-price API](https://hourlypricing.comed.com/api?type=currenthouraverage),
+> **ComEd hourly pricing status — October 21, 2026:** ComEd hourly pricing
+> returned to normal at around 9:15 p.m. after a temporary service issue. The
+> [ComEd hourly pricing site](https://hourlypricing.comed.com/),
+> [live-price API](https://hourlypricing.comed.com/api?type=currenthouraverage),
 > and [published forecast feed](https://hourlypricing.comed.com/rrtp/ServletFeed?type=daynexttoday)
-> returned HTTP 503 with an Incapsula “Request unsuccessful” response in our
-> checks. This appears to be an upstream WAF block on ComEd's side; ComEd hourly
-> prices may be unavailable until access is restored.
+> are available again.
 
 ## What it does
 
