@@ -111,6 +111,16 @@ bridge; its attributes and the buying/supply price entities report
 The forecast must satisfy the normal 36-hour cache limit. Missing, expired or
 learned-only forecasts cannot bridge the gap. If live pricing is still absent at
 ten past, current pricing becomes unusable and the selected protection applies.
+The optional **Allow brief published estimates** setting under **Tariff** adds a
+bounded estimated-price mode instead of immediately applying fallback actions.
+It requires a valid forecast for the exact current hour and ends 60 minutes after
+the last verified live observation. Cold starts without one get only the usual
+ten-minute bridge. Refreshes, hour changes and restarts never renew an existing
+allowance. During this mode Pricing health stays Degraded, EV planning can
+continue, battery grid charging is blocked, and higher native reserves are
+retained. The setting defaults to Strict live pricing for existing and new users;
+other supply plans are unaffected. See [brief live-data delays](pricing.md#brief-comed-live-data-delays).
+
 A genuine fetch/DNS error remains visible as Degraded while the forecast bridge
 or cached live observation is usable. An expected previous-hour response during
 the publication window is not itself a fetch failure.
@@ -120,8 +130,9 @@ flat/time-of-use rates do not depend on ComEd.
 
 Automatic recovery requires valid observations spanning at least two minutes;
 live sources must supply a distinct observation, not just repeated reads of the
-same cache. The publication bridge does not release an already active automatic
-fallback or count as fresh live recovery evidence. A manual request also stays
+same cache. Neither the publication bridge nor optional estimated pricing releases an already
+active automatic fallback or counts as fresh live recovery evidence. The
+automatic outage latch is saved so restarting cannot bypass that requirement. A manual request also stays
 active. A fresh plan is required before normal dispatch resumes. Old charging
 settings are not blindly restored. The fallback outlook assumes the selected
 baseline continues until recovery; it is not a prediction of outage duration.
@@ -163,7 +174,10 @@ cooldown. Select at least one notification service to receive messages. Alert
 permission does not enable fallback or equipment control, and dashboard visibility
 needs no notification permission.
 Missing prices remain unknown in cost accounting and are never filled with a
-made-up emergency rate or claimed savings.
+made-up emergency rate or claimed savings. Valid published-price estimates used
+by the publication bridge or optional bounded estimate mode are tracked separately
+in forecast-priced coverage, purchase-cost and export-credit attributes. Older
+ledger intervals are not retroactively reclassified.
 
 ## Recovery
 

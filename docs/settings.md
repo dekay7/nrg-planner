@@ -116,6 +116,16 @@ Choices: **Flat supply**, **Time-of-use supply**, **External supply entity**, **
 
 Reference key: `supply_plan`.
 
+### During ComEd live-price delays
+
+Default: **Strict live pricing**.
+
+Strict live pricing keeps the existing ten-minute new-hour forecast bridge. Allow brief published estimates uses a valid forecast for the exact current hour for at most 60 minutes from the last verified live observation. Pricing stays Degraded, EV planning can continue, and battery grid charging is blocked. Refreshes and restarts do not renew the allowance. Cold starts without a verified observation get only the ten-minute publication bridge. Your fallback actions still apply when the allowance or coverage ends; this choice does not enable equipment control.
+
+Choices: **Strict live pricing**, **Allow brief published estimates**.
+
+Reference key: `comed_price_resilience`.
+
 ### Flat supply rate
 
 Default: **Unset**.

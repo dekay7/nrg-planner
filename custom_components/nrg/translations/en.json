@@ -25,6 +25,7 @@
         "description": "Enter your own utility's rates. Time-of-use periods and solar forecasts can be added under Configure after setup.",
         "data": {
           "supply_plan": "Supply plan",
+          "comed_price_resilience": "During ComEd live-price delays",
           "flat_supply_cents": "Flat supply rate",
           "external_supply_attribute": "Supply forecast attribute",
           "delivery_plan": "Delivery plan",
@@ -37,6 +38,7 @@
         },
         "data_description": {
           "supply_plan": "Choose your provider's supply pricing: a flat rate, your own timed periods, an external HA price sensor/forecast, or the optional ComEd hourly feed. Delivery is configured separately and added once.",
+          "comed_price_resilience": "Strict live pricing keeps the existing ten-minute new-hour forecast bridge. Allow brief published estimates uses a valid forecast for the exact current hour for at most 60 minutes from the last verified live observation. Pricing stays Degraded, EV planning can continue, and battery grid charging is blocked. Refreshes and restarts do not renew the allowance. Cold starts without a verified observation get only the ten-minute publication bridge. Your fallback actions still apply when the allowance or coverage ends; this choice does not enable equipment control.",
           "flat_supply_cents": "Your contracted supply price, excluding delivery. Unset means unknown, not free. Enter an explicit zero only if your contract really has a zero supply rate.",
           "external_supply_attribute": "For an external provider, name the attribute containing forecast intervals. Each interval needs start, end and price (or the documented aliases). Units are read from the row or price entity. An external current price alone does not invent future prices.",
           "delivery_plan": "Delivery can have its own flat rate, timed periods or external sensor. Its schedule need not match the supply schedule. Edit periods under Configure → Pricing periods.",
@@ -178,6 +180,7 @@
         "description": "Changes persist across restarts. {error}",
         "data": {
           "supply_plan": "Supply plan",
+          "comed_price_resilience": "During ComEd live-price delays",
           "flat_supply_cents": "Flat supply rate",
           "external_supply_attribute": "Supply forecast attribute",
           "delivery_plan": "Delivery plan",
@@ -190,6 +193,7 @@
         },
         "data_description": {
           "supply_plan": "Choose your provider's supply pricing: a flat rate, your own timed periods, an external HA price sensor/forecast, or the optional ComEd hourly feed. Delivery is configured separately and added once.",
+          "comed_price_resilience": "Strict live pricing keeps the existing ten-minute new-hour forecast bridge. Allow brief published estimates uses a valid forecast for the exact current hour for at most 60 minutes from the last verified live observation. Pricing stays Degraded, EV planning can continue, and battery grid charging is blocked. Refreshes and restarts do not renew the allowance. Cold starts without a verified observation get only the ten-minute publication bridge. Your fallback actions still apply when the allowance or coverage ends; this choice does not enable equipment control.",
           "flat_supply_cents": "Your contracted supply price, excluding delivery. Unset means unknown, not free. Enter an explicit zero only if your contract really has a zero supply rate.",
           "external_supply_attribute": "For an external provider, name the attribute containing forecast intervals. Each interval needs start, end and price (or the documented aliases). Units are read from the row or price entity. An external current price alone does not invent future prices.",
           "delivery_plan": "Delivery can have its own flat rate, timed periods or external sensor. Its schedule need not match the supply schedule. Edit periods under Configure → Pricing periods.",

@@ -233,6 +233,7 @@ def setting_card(key):
         "flexible_load_minutes": "Duration", "minimum_saving_cents": "Improvement",
         "battery_wear_cents": "Cycling cost",
         "price_fallback": "Protection policy", "fallback_ev": "EV action", "fallback_battery": "Battery action",
+        "comed_price_resilience": "Live-price delays",
         "notifications": "Household advice", "notification_saving_cents": "Advice benefit",
         "fallback_notifications": "Price-data alerts",
         "quiet_start": "Quiet hours start", "quiet_end": "Quiet hours end",
@@ -266,7 +267,8 @@ def pricing_health_note():
 {{ state_attr('sensor.nrg_pricing_health','reason') }}.
 {% if observation %}No equipment commands are sent.{% else %}Configured permissions and protection guards still apply; an active policy does not mean every device command succeeded.{% endif %}
 {% if is_state('sensor.nrg_pricing_health','Recovering') %}Fresh prices have returned, but fallback remains active until recovery is confirmed and a new plan is ready.{% endif %}
-{% elif is_state('sensor.nrg_pricing_health','Degraded') %}**Pricing degraded.** {{ state_attr('sensor.nrg_pricing_health','reason') }}. Check the last valid observation and source status.
+{% elif is_state('sensor.nrg_pricing_health','Degraded') %}**Pricing degraded.** {{ state_attr('sensor.nrg_pricing_health','reason') }}.
+{% if state_attr('sensor.nrg_pricing_health','comed_estimated_price') %}Published estimate, not a live price. Temporary allowance remaining: {{ ((state_attr('sensor.nrg_pricing_health','estimate_seconds_remaining') or 0) / 60) | round(0) }} minutes. Forecast fetched {{ ((state_attr('sensor.nrg_pricing_health','forecast_age_seconds') or 0) / 60) | round(0) }} minutes ago. EV planning can continue; battery grid charging is blocked.{% else %}Check the last valid observation and source status.{% endif %}
 {% endif %}
 {% if is_state('binary_sensor.nrg_fallback_manual','on') %}**Manual request saved.** It persists across restarts until ended, even if prices recover. {% if is_state('binary_sensor.nrg_fallback_enabled','off') %}It is currently inactive under Standard protection; end it before selecting fallback again if you do not want it to resume.{% endif %}{% endif %}
 {% if active or is_state('sensor.nrg_pricing_health','Degraded') %}[Review price-data fallback](/nrg-settings/fallback).{% endif %}"""), "visibility": [{"condition": "or", "conditions": [
@@ -548,7 +550,7 @@ The administrator can change the reference appliance, rates, schedules and reser
     # their own sections keeps each group intact on mobile and pairs them on desktop.
     groups = {
         "components": (("Vehicle", ("has_ev", "ev_control")), ("Home battery", ("has_battery", "battery_control")), ("Solar", ("has_solar",))),
-        "tariff": (("Supply pricing", ("supply_plan", "flat_supply_cents", "external_supply_attribute")),
+        "tariff": (("Supply pricing", ("supply_plan", "comed_price_resilience", "flat_supply_cents", "external_supply_attribute")),
                    ("Delivery pricing", ("delivery_plan", "delivery_cents", "external_delivery_attribute")),
                    ("Export credits", ("export_rate", "export_adder_cents", "flat_export_cents", "export_policy"))),
         "solar": (("Age correction", ("solar_install_date", "solar_degradation")), ("Forecast calibration", ("solar_learning",))),
@@ -643,7 +645,8 @@ EV shortfall: {{ c.shortfall_kwh | round(2) }} kWh
 
 {% endif %}Includes remaining-energy value and any configured cycling cost. This is a model comparison, not measured savings."""),
         ], [heading("Costs and estimates"),
-        *(metric(k) for k in ("import_cost_today", "export_credit_today", "net_cost_today", "cost_coverage")),
+        *(metric(k) for k in ("import_cost_today", "export_credit_today", "net_cost_today", "cost_coverage", "estimated_pricing_hours")),
+        markdown("Cost totals may include published-price estimates. **Forecast-priced coverage** identifies newly tracked estimated intervals; cost entity attributes separate their purchase costs and export credits. These are not settled utility charges."),
         conditional("has_ev", metric("ev_energy_estimate", "EV energy per SOC point")), conditional("has_ev", metric("ev_power_estimate", "EV power at max current")),
         conditional("has_battery", status_card("battery_calibration", "Battery calibration")),
         *(conditional("has_battery", metric(key)) for key in ("battery_efficiency_estimate", "battery_charge_estimate", "battery_discharge_estimate")),

@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, time
 import math
 
 from .config import effective_capacity, cents_rate
-from .forecast import price_at
+from .forecast import price_at, comed_estimate_deadline
 from .tariffs import boundaries as tariff_boundaries
 
 
@@ -43,6 +43,9 @@ def in_window(stamp, config, zone):
 def make_slots(now, config, zone, stats, prices, solar, live, due):
     end = (int(now // 3600) + 48) * 3600
     boundaries = {now, end}
+    estimate_until = comed_estimate_deadline(now, config)
+    if estimate_until is not None and now < estimate_until < end:
+        boundaries.add(estimate_until)
     boundaries.update(range((int(now) // 900 + 1) * 900, end, 900))
     boundaries.update(t for t in (due, due - config["completion_buffer"] * 60) if now < t < end)
     boundaries.update(tariff_boundaries(now, end, config, zone))
@@ -175,7 +178,7 @@ def battery_modes(slot, car, config, available):
     if available and trusted_prefix([slot], config):
         if not car or not config["hold_battery_for_ev"]:
             modes.append("serve")
-        if not car and config.get("allow_grid_charge", True):
+        if not car and config.get("allow_grid_charge", True) and not slot.get("comed_estimated_price"):
             modes.append("charge")
     return modes
 
@@ -375,7 +378,9 @@ def household_advice(slots, ev, actions, initial, config, capacity, available, n
 def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous=None, charge_now=False):
     battery_model = stats.battery.model(config, now)
     config = config | battery_model | {"zone": zone}
-    if config.get("_fallback_active") and telemetry.get("battery_native_reserve") is not None:
+    estimated = price_at(now, now, config, prices, live)["comed_estimated_price"]
+    retain_reserve = config.get("_fallback_active") or estimated
+    if retain_reserve and telemetry.get("battery_native_reserve") is not None:
         config["backup_reserve"] = max(config["backup_reserve"], telemetry["battery_native_reserve"])
     previous = previous or {}
     managed_ev = config["has_ev"] and config["ev_control"]
@@ -384,7 +389,7 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
     capacity = effective_capacity(config, datetime.fromtimestamp(now, zone).date()) if config["has_battery"] else 0
     soc = telemetry.get("battery_soc") if config["has_battery"] else None
     available = config["has_battery"] and config["battery_control"] and soc is not None and telemetry.get("battery_ready", False)
-    if config.get("_fallback_active") and telemetry.get("battery_reserve_mapped") and telemetry.get("battery_native_reserve") is None:
+    if retain_reserve and telemetry.get("battery_reserve_mapped") and telemetry.get("battery_native_reserve") is None:
         available = False
     config["allow_grid_charge"] = telemetry.get("can_grid_charge", True)
     initial = capacity * soc / 100 if soc is not None else 0
@@ -503,6 +508,8 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
         battery_reason = "Ask the home battery to save its energy while the EV charges."
     if available and not trusted_prefix([first], config):
         battery_reason = "Current forecast coverage is incomplete; keep discretionary grid charging off."
+    if estimated and available:
+        battery_reason += " Published current-hour estimate in use; grid charging disabled and native reserve retained."
     if config.get("_fallback_active"):
         if available:
             battery_reason = "Price-data fallback baseline: " + config["fallback_battery"] + "; grid charging disabled and backup reserve retained. Outlook assumes fallback continues until recovery."
@@ -529,5 +536,5 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
              "candidate_costs": [{"name": o["name"], "modeled_cost": round(o["score"], 4) if has_known_cost else None, "shortfall_kwh": o["missing"]} for o in outcomes],
              "modeled_cost": best["score"] if has_known_cost else None, "household": advice, "slots": slots,
             "components": {"solar": config["has_solar"], "battery": config["has_battery"], "ev": config["has_ev"]},
-             "cost_includes_estimates": False,
+             "cost_includes_estimates": any(s.get("comed_estimated_price") or s.get("comed_publication_bridge") for s in economic_slots),
             "export_capability": "Permission only; timed stored-battery exports are not commanded or credited in the model."}

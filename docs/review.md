@@ -142,6 +142,36 @@ advisories** documented above. This change adds no dependency overrides or audit
 exclusions. Hosted CI and the code review are recorded on the pull request;
 local verification does not claim live deployment or physical equipment validation.
 
+## Bounded ComEd estimate verification — 2026-10-22
+
+The opt-in brief-delay policy is verified locally on Python 3.14.8 and Home
+Assistant 2026.10.2 with **396 passing tests**. Invented regressions cover delayed
+HTTP-success responses, the fixed 60-minute cutoff, exact-hour/expired/future
+forecast coverage, cold starts, clock rollback, source changes, restart persistence,
+manual/missing-delivery precedence, and distinct fresh live recovery. Planner and
+command-time tests block estimated-price battery grid charging, preserve higher
+native reserves and protection/permission guards, cap export permission and script
+context, and keep EV departure planning available. Ledger tests distinguish signed
+forecast-priced costs/credits and stop accounting at the exact estimate deadline
+or hour boundary, never carrying the prior hour's estimate into a new hour.
+Native options/select and real HA dashboard-template checks cover the UI.
+
+An additional invented-only timestamp/freshness stress audit passes 10,000 cases.
+Review hardened the boundaries: an expired allowance cannot be renewed by the
+next hour's publication bridge, and a saved automatic outage latch prevents a
+restart from treating a forecast as live recovery evidence. Other supply plans
+ignore the saved ComEd option. Existing settings, learning, ledgers, Observation
+defaults and explicit control permissions are preserved. Strict live pricing
+remains the default; the new policy requires an explicit opt-in.
+
+Ruff, privacy/history, dependency consistency and deterministic generated assets
+pass. The dependency audit now reports **36 advisories: 35 for Pillow 12.3.0 and
+one for uv 0.12.23**, the same HA-managed packages in the open finding above.
+No requirements or audit exclusions change. Hosted CI and the self-review are
+recorded on the pull request; this local record is not a claim of independent
+review, live deployment, or verified physical equipment response. No release is
+published by this change.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public

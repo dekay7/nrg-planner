@@ -36,6 +36,45 @@ normal price-data protection applies. A forecast bridge cannot release an alread
 active automatic fallback; that still requires fresh live recovery observations.
 See [detection and recovery](operations.md#detection-and-recovery).
 
+## Brief ComEd live-data delays
+
+Under **Configure → Tariff → During ComEd live-price delays**, the default
+**Strict live pricing** preserves the behavior above. Opting into **Allow brief
+published estimates** lets NRG temporarily use the published forecast for the
+**exact current hour** when live pricing is delayed. This is an estimate, not a
+live or settled price. It also works with a mapped ComEd live-price sensor.
+Other supply plans are unaffected.
+
+The allowance ends **60 minutes after the last verified live observation's
+provider timestamp**, not 60 minutes after discovering the delay. Repeated old
+responses, forecast refreshes, hour changes, settings edits and restarts do not
+renew it. Without a verified observation, only the normal first-ten-minute
+publication bridge is available. Once an existing allowance expires, a new-hour
+bridge cannot extend the outage. A valid exact-hour forecast is always required
+and must satisfy the normal 36-hour cache limit. Missing delivery pricing still
+makes the combined price unusable.
+
+During estimated operation:
+
+- **Pricing health is Degraded**, with `comed_estimated_price: true`, source
+  `day_ahead`, last live age, forecast age, fixed deadline and remaining allowance.
+- EV planning can continue within its usual permissions, charging limits and
+  departure rules, instead of immediately applying a fallback pause. It may buy
+  at a price different from the forecast.
+- Battery grid charging is blocked, including any previously planned grant.
+  Self-consumption/hold decisions remain guarded; a higher native reserve is
+  retained and export permission is capped to solar only or no exports.
+- Cost totals include separately tracked forecast-priced intervals, never learned
+  as live supply observations. See [accounting](accounting.md#observed-ledger).
+
+Loss of forecast/delivery coverage or expiry of the allowance invokes the selected
+price-data protection. Forecasts cannot release an already active automatic
+fallback; recovery still requires distinct fresh live observations spanning at
+least two minutes and a new plan. Manual requests remain active until ended.
+The automatic outage latch and verified-observation timestamp survive restarts.
+Switching between live and estimated pricing invalidates the old plan promptly.
+No choice enables equipment control or bypasses Observation/protection guards.
+
 ## Editing timed periods in HA
 
 1. Open **Settings → Devices & services → NRG Planner → Configure → Pricing periods**.

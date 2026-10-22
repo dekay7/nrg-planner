@@ -57,6 +57,21 @@ Open **Configure → Tariff** and check supply and delivery separately.
 Negative supply is not necessarily a negative total after delivery is added.
 See [pricing](pricing.md) for accepted interval fields and overnight rules.
 
+## ComEd responds, but Pricing health repeatedly enters fallback
+
+An HTTP success is not necessarily fresh data. Open **Pricing health** and check
+its last live observation age. ComEd can return the same old reading repeatedly;
+NRG does not reset its freshness merely because the request succeeded.
+
+To tolerate brief delays, choose **Configure → Tariff → During ComEd live-price
+delays → Allow brief published estimates**. This opt-in uses a valid exact-hour
+published forecast for at most 60 minutes from the last verified live observation.
+It keeps Pricing health Degraded, permits normal EV planning and blocks battery
+grid charging. Remaining allowance and forecast age are shown in Pricing health.
+It does not change your fallback actions, control permissions, or manual request.
+Forecasts cannot release an already active automatic fallback: wait for confirmed
+fresh live recovery. See [the limits and safeguards](pricing.md#brief-comed-live-data-delays).
+
 ## Advice says Waiting for dependable coverage
 
 NRG needs enough trustworthy information to compare a **complete** run of the

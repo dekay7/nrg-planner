@@ -33,6 +33,7 @@ METRICS = {
     "import_cost_today": ("Energy purchases today", "USD", SensorDeviceClass.MONETARY),
     "export_credit_today": ("Export credits today", "USD", SensorDeviceClass.MONETARY),
     "cost_coverage": ("Today's cost data coverage", "%", None),
+    "estimated_pricing_hours": ("Today's forecast-priced coverage", "h", None),
     "solar_today": ("Solar energy observed today", "kWh", None),
     "home_today": ("Home energy observed today", "kWh", None),
     "ev_today": ("Car energy observed today", "kWh", None),
@@ -90,7 +91,7 @@ class NRGSensor(NRGEntity, SensorEntity):
                 components = data.get("price_components", {})
                 source = components.get("supply_source" if key == "supply_price" else "delivery_source")
                 known = components.get("export_known") if key.startswith("export_price") else source in ("flat","time_of_use","running_average","external_live","external_forecast")
-                if key == "supply_price" and components.get("comed_publication_bridge"):
+                if key == "supply_price" and (components.get("comed_publication_bridge") or components.get("comed_estimated_price")):
                     known = True
                 value = components.get(key.removesuffix("_usd"))
                 return round(value * (1 if key.endswith("_usd") else 100), 5) if known and value is not None else None
@@ -118,6 +119,8 @@ class NRGSensor(NRGEntity, SensorEntity):
             return data.get("battery_calibration", {}).get("estimates", {}).get(parameter, {}).get("effective")
         if key == "solar_error":
             return data.get("solar_quality", {}).get("mae_kwh")
+        if key == "estimated_pricing_hours":
+            return data.get("ledger", {}).get("estimated_coverage_hours", 0)
         if key == "net_cost_today":
             ledger = data.get("ledger", {})
             return round(ledger.get("import_cost", 0) - ledger.get("export_credit", 0), 4) if ledger.get("coverage_hours", 0) > 0 else None
@@ -194,7 +197,8 @@ class NRGSensor(NRGEntity, SensorEntity):
         if self.key in ("supply_price", "import_price", "import_price_usd"):
             components = data.get("price_components", {})
             return {"source": components.get("supply_source" if self.key == "supply_price" else "price_source"),
-                    "comed_publication_bridge": components.get("comed_publication_bridge", False)}
+                    "comed_publication_bridge": components.get("comed_publication_bridge", False),
+                    "comed_estimated_price": components.get("comed_estimated_price", False)}
         if self.key == "plan":
             return {"plan": plan, "basis": "Modeled feasible plans, not guaranteed savings or an export watt setpoint.", "operating_mode": self.coordinator.config["mode"]}
         if self.key == "advice":
@@ -222,9 +226,13 @@ class NRGSensor(NRGEntity, SensorEntity):
             return {"supply_plan": config["supply_plan"], "delivery_plan": config["delivery_plan"],
                     "supply_periods": config["supply_periods"], "delivery_periods": config["delivery_periods"],
                     "status": data.get("forecast_status", {})}
-        if "cost" in self.key or "credit" in self.key:
-            return {"basis": "Measured grid power × contemporaneous running-price estimate, supply + delivery; excludes fixed charges and unconfigured taxes.",
-                    "coverage_hours": data.get("ledger", {}).get("coverage_hours", 0)}
+        if "cost" in self.key or "credit" in self.key or self.key == "estimated_pricing_hours":
+            ledger = data.get("ledger", {})
+            return {"basis": "Measured grid power × contemporaneous supply + delivery; may include separately tracked published-forecast estimates. Not a settled bill; excludes fixed charges and unconfigured taxes.",
+                    "coverage_hours": ledger.get("coverage_hours", 0),
+                    "estimated_coverage_hours": ledger.get("estimated_coverage_hours", 0),
+                    "estimated_import_cost": ledger.get("estimated_import_cost", 0),
+                    "estimated_export_credit": ledger.get("estimated_export_credit", 0)}
         if self.key == "battery_calibration":
             return data.get("battery_calibration", {})
         if self.key in ("battery_efficiency_estimate", "battery_charge_estimate", "battery_discharge_estimate"):

@@ -8,7 +8,20 @@ from .tariffs import period_at, external_at
 
 COMED_ZONE = ZoneInfo("America/Chicago")
 COMED_PUBLICATION_SECONDS = 600
+COMED_ESTIMATE_SECONDS = 3600
 PRICE_PATTERN = re.compile(r"Date\.UTC\((\d{4}),\s*(\d{1,2}),\s*(\d{1,2}),\s*(\d{1,2}),\s*(\d{1,2}),\s*(\d{1,2})\),\s*([+-]?\d+(?:\.\d+)?)")
+
+
+def comed_estimate_deadline(now: float, config: dict):
+    """A fixed deadline, never renewed by a successful fetch of old data."""
+    if (config.get("supply_plan") != "Hourly ComEd"
+            or config.get("comed_price_resilience") != "Allow brief published estimates"):
+        return None
+    observed = finite(config.get("_comed_last_live"))
+    if observed is None:
+        return int(now // 3600) * 3600 + COMED_PUBLICATION_SECONDS
+    # A future anchor/clock rollback cannot create an allowance.
+    return observed + COMED_ESTIMATE_SECONDS if observed <= now else now
 
 
 def comed_publication_window(now: float) -> bool:
@@ -76,9 +89,13 @@ def price_at(stamp: float, now: float, config: dict, cache: list[dict], live: fl
         delivery, delivery_source = external_at(stamp, now, config.get("_delivery_live"), config.get("_external_delivery", []))
     export = export_price(config, supply)
     current_comed = config["supply_plan"] == "Hourly ComEd" and int(stamp // 3600) == int(now // 3600)
+    estimate_until = comed_estimate_deadline(now, config)
+    estimate_usable = estimate_until is not None and now <= stamp < estimate_until
     publication_bridge = (current_comed and live is None and source == "day_ahead"
-                          and comed_publication_window(now))
-    current_unknown = current_comed and live is None and not publication_bridge
+                          and comed_publication_window(now)
+                          and (estimate_until is None or estimate_usable))
+    estimated = (current_comed and live is None and source == "day_ahead" and estimate_usable)
+    current_unknown = current_comed and live is None and not (publication_bridge or estimated)
     known_sources = ("flat", "running_average", "day_ahead", "time_of_use", "external_live", "external_forecast")
     known = not current_unknown and source in known_sources and delivery_source in known_sources
     combined = "missing" if supply is None or delivery is None else source
@@ -89,7 +106,8 @@ def price_at(stamp: float, now: float, config: dict, cache: list[dict], live: fl
             "import_price": supply + delivery if supply is not None and delivery is not None else None,
             "export_price": export, "price_source": combined, "supply_source": source,
             "delivery_source": delivery_source, "price_known": known,
-            "comed_publication_bridge": publication_bridge,
+            "comed_publication_bridge": publication_bridge, "comed_estimated_price": estimated,
+            "comed_estimate_until": estimate_until,
              "export_known": export is not None and (config["export_rate"] != "Supply plus adder" or not current_unknown and source in known_sources),
             "supply_period": label if config["supply_plan"] == "Time-of-use supply" else None,
             "delivery_period": delivery_label if config["delivery_plan"] == "Time-of-use delivery" else None}

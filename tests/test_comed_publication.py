@@ -117,7 +117,8 @@ async def test_bridge_keeps_supply_price_visible_and_labels_its_provenance(comed
         for key, value in (("supply_price", 6), ("import_price", 10), ("import_price_usd", .10)):
             sensor = NRGSensor(runtime, key, "Invented price", None, None)
             assert sensor.native_value == pytest.approx(value)
-            assert sensor.extra_state_attributes == {"source": "day_ahead", "comed_publication_bridge": True}
+            assert sensor.extra_state_attributes == {"source": "day_ahead", "comed_publication_bridge": True,
+                                                     "comed_estimated_price": False}
 
 
 async def test_bridge_cost_coverage_uses_forecast_without_learning_it_as_live(comed_runtime):
