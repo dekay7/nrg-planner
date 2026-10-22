@@ -122,11 +122,34 @@ bin survives. This approximate search is not a global-optimum claim. Numerical t
 favor less battery throughput, avoiding artificial flat-rate cycling.
 
 Energy remaining at the dependable boundary receives a common replacement value
-from known grid and solar refill opportunities within that same horizon, with
-losses and finite charging power. Refill is
-weighted up to usable capacity: a tiny solar surplus does not make the whole battery
-free to refill. Insufficient known refill energy uses the mean known buying rate
-for the remainder. Calendar degradation does not imply a cycling cost; optional
+from permitted grid and solar refill potential within that same horizon. Valuation
+and dispatch share one mode-permission function. Grid refill requires a supported
+charge mode and either a reversible grid-permission switch or distinct force-charge
+mode; it is excluded during EV charging and price-data fallback. Solar surplus is
+calculated after house and EV demand. If hold prevents solar charging, solar is
+counted only where another permitted mode accepts it. Unavailable/monitor-only
+batteries claim no scheduled refill potential.
+
+Conversion losses and one shared charging-power budget limit grid plus solar in
+each interval. Potential refill is weighted up to age-adjusted usable capacity:
+a tiny solar surplus does not make the whole battery free to refill. This is a
+hypothetical refill of depleted usable capacity, not today's headroom and not a
+promise of a chronological refill after a particular appliance start.
+
+If permitted potential cannot cover usable capacity, the uncovered portion receives
+a conservative reference: the highest nonnegative known buying or applicable solar
+export-opportunity rate, adjusted for charging losses. This reference is explicitly
+not a charging opportunity or an invented future tariff. Advice confidence becomes
+limited and savings notifications are withheld. Diagnostics distinguish covered
+stored kWh, uncovered stored kWh, source contributions and the reference value.
+
+EV schedules with equally ranked deadline feasibility and unpriced energy are
+valued separately to respect their demand and mode restrictions. Their maximum
+valuation is then used as a common conservative value for **all** candidate scores
+and the appliance baseline/replay; a candidate cannot win merely by repricing the
+same stored energy. Any insufficient refill coverage among those contenders limits
+comparison confidence. These bounded estimates are not a global optimization or
+refill guarantee. Calendar degradation does not imply a cycling cost; optional
 wear cost defaults to zero.
 
 Stored-battery sales are not scheduled or credited merely because export permission

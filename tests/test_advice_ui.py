@@ -28,6 +28,9 @@ def walk(value):
     {"category": "wait", "cost_basis": "battery", "best_cost": .12,
      "saving": .03, "grid_import_price": .3, "reference_kwh": 1,
      "reference_minutes": 60, "forecast_until": NOW + 7200},
+    {"category": "wait", "cost_basis": "battery", "best_cost": .12, "confidence": "limited",
+     "saving": .03, "grid_import_price": .3, "reference_kwh": 1, "reference_minutes": 60,
+     "forecast_until": NOW + 7200, "battery_valuation": {"comparison_limited": True, "usable_stored_kwh": 5}},
 ])
 async def test_generated_advice_templates_handle_new_old_and_missing_attributes(hass, advice):
     hass.states.async_set("sensor.nrg_plan", "household", {"plan": {"household": advice}})
@@ -45,6 +48,11 @@ async def test_generated_advice_templates_handle_new_old_and_missing_attributes(
         text = Template(summary, hass).async_render()
         assert "Battery-backed use" in text
         assert "not necessarily the cheapest grid-price window" in text
+        if advice.get("battery_valuation", {}).get("comparison_limited"):
+            assert "Limited battery estimate" in text
+            assert "not a promised refill" in text
+            assert "Savings notifications are withheld" in text
+            assert "Limited — conservative known-price reference" in rendered
     else:
         assert "Grid buying price during the window" not in rendered
 

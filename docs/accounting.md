@@ -65,6 +65,14 @@ from the built-in Energy dashboard's lifetime-counter-based totals.
    grid, direct-solar, battery-backed and mixed supply describe modeled physical
    supply, not a claim that any source is free.
 
+Battery replacement valuation counts only permitted refill potential after house
+and EV demand, with a shared solar/grid charging-power budget. Insufficient refill
+coverage uses an explicitly conservative known-price reference for the uncovered
+stored energy, not an assumed future purchase or a promised refill. The dashboard
+marks this limited and savings notifications are withheld. Competing feasible EV
+schedules and household replay use one common conservative stored-energy value;
+changing a candidate does not assign a cheaper price to the same battery energy.
+
 No annual saving is claimed from software scenarios. Validate predicted versus
 observed operation and reconcile actual bills.
 

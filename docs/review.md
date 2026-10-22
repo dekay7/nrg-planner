@@ -106,6 +106,25 @@ versions remain Pillow 13.0.0 and uv 0.13.4. This fix changes no dependency pins
 adds no advisory exclusions and does not resolve that upstream finding. An audit
 failure remains visible rather than being reported as a fully green validation.
 
+## Refill-capability hardening verification — 2026-10-22
+
+The follow-up hardening has **334 passing tests** on the same Python/HA baseline.
+It reproduces the former unsupported-grid-refill valuation and verifies the fix,
+EV demand subtraction and grid-charge exclusion, hold/solar behavior, fallback,
+availability, reserve/capacity/losses, shared candidate/advice valuation, actual
+notification suppression and native HA charge-mode capability detection. Permanent
+invariant checks cross-check refill accounting against physical transitions over
+64 permission/mode combinations and test 300 randomized permission restrictions.
+
+An additional deterministic invented-only stress audit passes 2,000 scenarios,
+28,324 physical intervals, 9,632 appliance windows, 2,000 untrusted-tail mutations,
+1,251 independent grid-only cost comparisons and 16 fallback combinations. Ruff,
+privacy/history, dependency consistency and reproducible generated assets pass.
+The dependency audit still reports the same **25 HA-pinned Pillow/uv advisories**
+above; requirements and advisory handling are unchanged. Hosted results are recorded
+on the pull request. These checks do not claim globally optimal schedules, promised
+chronological refills or verified physical equipment response.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public

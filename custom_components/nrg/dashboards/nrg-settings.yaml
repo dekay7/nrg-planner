@@ -24,7 +24,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=d49550192a1b
+        url_path: /nrg-planner/guide.html?v=fd24d18405b6
       grid_options:
         columns: full
         rows: auto
@@ -541,7 +541,7 @@ views:
     - type: markdown
       content: Actions begin automatically only when current supply or delivery pricing becomes unusable—not on
         a single failed request with a usable cached price, or just a missing tomorrow forecast. [Read detection
-        and recovery details](/nrg-planner/guide.html?v=d49550192a1b#operations-detection-and-recovery).
+        and recovery details](/nrg-planner/guide.html?v=fd24d18405b6#operations-detection-and-recovery).
       grid_options:
         columns: full
         rows: auto
@@ -2621,6 +2621,13 @@ views:
 
         {% if p.get(''economic_until'') is number %}Economic comparison ends {{ p.economic_until | timestamp_custom(''%a
         %I:%M %p %Z'') }}. The longer outlook still tracks EV feasibility and physical energy, not dependable savings.
+
+
+        {% endif %}{% set v = p.get(''battery_valuation'', {}) %}{% if v.get(''value_per_stored_kwh'') is number
+        %}**Common battery value:** {{ (v.value_per_stored_kwh * 100) | round(2) }}¢ per stored kWh. {{ ''Limited
+        refill coverage; a conservative price reference is used for uncovered energy.'' if v.get(''comparison_limited'')
+        else ''Based on permitted refill potential.'' }} All compared EV schedules and household advice use this
+        same value.
 
 
         {% endif %}Includes remaining-energy value and any configured cycling cost. This is a model comparison,

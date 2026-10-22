@@ -474,6 +474,8 @@ def build():
 {% set benefit = state_attr('sensor.nrg_advice', 'saving') %}{% if category == 'wait' and benefit is number %}Estimated benefit for the reference appliance: **{{ (benefit * 100) | round(1) }}¢**.{% endif %}
 {% set basis = state_attr('sensor.nrg_advice', 'cost_basis') %}
 {% if basis %}**{{ {'grid': 'Grid-supplied use', 'solar': 'Direct solar use', 'battery': 'Battery-backed use', 'mixed': 'Mixed energy sources'}.get(basis, 'Modeled appliance cost') }}** · not necessarily the cheapest grid-price window.{% endif %}
+{% set valuation = state_attr('sensor.nrg_advice', 'battery_valuation') or {} %}
+{% if valuation.get('comparison_limited') %}**Limited battery estimate:** permitted refill coverage is insufficient. Uncovered energy uses a conservative price reference, not a promised refill. Savings notifications are withheld.{% endif %}
 
 {% set controlled = is_state('binary_sensor.nrg_ev_control','on') or is_state('binary_sensor.nrg_battery_control','on') %}
 {{ 'Advice only; devices follow their own controls.' if not controlled else ('Observation: schedules are suggestions.' if state_attr('sensor.nrg_plan','operating_mode') == 'Observation' else 'NRG controls the enabled devices when their checks pass.') }}
@@ -498,6 +500,10 @@ def build():
 {% if a.get('grid_import_price') is number %}**Grid buying price during the window:** {{ (a.grid_import_price * 100) | round(2) }}¢/kWh (time-weighted average, supply + delivery).{% endif %}
 {% endif %}
 {% if a.get('forecast_until') is number %}**Dependable comparison coverage ends:** {{ a.forecast_until | timestamp_custom('%a %I:%M %p %Z') }}. Later outlook values do not establish savings for this advice.{% endif %}
+{% set v = a.get('battery_valuation', {}) %}
+{% if v.get('usable_stored_kwh', 0) > 0 %}
+
+**Battery value basis:** {{ 'Limited — conservative known-price reference for uncovered energy' if v.get('comparison_limited') else 'Permitted refill potential' }}. Charging capability, car demand, battery modes, losses and charging power are included. Refill potential is not a promised charging schedule.{% endif %}
 """), markdown("""## What the recommendation means
 The green graph segment is a suggested window for your reference appliance. The line is the grid buying price, not a claim that solar or stored energy is free.
 
@@ -632,6 +638,8 @@ EV shortfall: {{ c.shortfall_kwh | round(2) }} kWh
 
 {% endfor %}
 {% if p.get('economic_until') is number %}Economic comparison ends {{ p.economic_until | timestamp_custom('%a %I:%M %p %Z') }}. The longer outlook still tracks EV feasibility and physical energy, not dependable savings.
+
+{% endif %}{% set v = p.get('battery_valuation', {}) %}{% if v.get('value_per_stored_kwh') is number %}**Common battery value:** {{ (v.value_per_stored_kwh * 100) | round(2) }}¢ per stored kWh. {{ 'Limited refill coverage; a conservative price reference is used for uncovered energy.' if v.get('comparison_limited') else 'Based on permitted refill potential.' }} All compared EV schedules and household advice use this same value.
 
 {% endif %}Includes remaining-energy value and any configured cycling cost. This is a model comparison, not measured savings."""),
         ], [heading("Costs and estimates"),

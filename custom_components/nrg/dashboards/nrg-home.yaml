@@ -118,6 +118,12 @@ views:
         use'', ''mixed'': ''Mixed energy sources''}.get(basis, ''Modeled appliance cost'') }}** · not necessarily
         the cheapest grid-price window.{% endif %}
 
+        {% set valuation = state_attr(''sensor.nrg_advice'', ''battery_valuation'') or {} %}
+
+        {% if valuation.get(''comparison_limited'') %}**Limited battery estimate:** permitted refill coverage is
+        insufficient. Uncovered energy uses a conservative price reference, not a promised refill. Savings notifications
+        are withheld.{% endif %}
+
 
         {% set controlled = is_state(''binary_sensor.nrg_ev_control'',''on'') or is_state(''binary_sensor.nrg_battery_control'',''on'')
         %}
@@ -543,6 +549,12 @@ views:
         use'', ''mixed'': ''Mixed energy sources''}.get(basis, ''Modeled appliance cost'') }}** · not necessarily
         the cheapest grid-price window.{% endif %}
 
+        {% set valuation = state_attr(''sensor.nrg_advice'', ''battery_valuation'') or {} %}
+
+        {% if valuation.get(''comparison_limited'') %}**Limited battery estimate:** permitted refill coverage is
+        insufficient. Uncovered energy uses a conservative price reference, not a promised refill. Savings notifications
+        are withheld.{% endif %}
+
 
         {% set controlled = is_state(''binary_sensor.nrg_ev_control'',''on'') or is_state(''binary_sensor.nrg_battery_control'',''on'')
         %}
@@ -580,6 +592,15 @@ views:
         | timestamp_custom(''%a %I:%M %p %Z'') }}. Later outlook values do not establish savings for this advice.{%
         endif %}
 
+        {% set v = a.get(''battery_valuation'', {}) %}
+
+        {% if v.get(''usable_stored_kwh'', 0) > 0 %}
+
+
+        **Battery value basis:** {{ ''Limited — conservative known-price reference for uncovered energy'' if v.get(''comparison_limited'')
+        else ''Permitted refill potential'' }}. Charging capability, car demand, battery modes, losses and charging
+        power are included. Refill potential is not a promised charging schedule.{% endif %}
+
         '
       grid_options:
         columns: full
@@ -612,7 +633,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=d49550192a1b
+        url_path: /nrg-planner/guide.html?v=fd24d18405b6
       grid_options:
         columns: full
   - type: grid
