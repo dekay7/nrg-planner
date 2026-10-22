@@ -55,6 +55,18 @@ views:
 
         {% if active or is_state(''sensor.nrg_pricing_health'',''Degraded'') %}[Review price-data fallback](/nrg-settings/fallback).{%
         endif %}'
+      visibility:
+      - condition: or
+        conditions:
+        - condition: state
+          entity: sensor.nrg_pricing_health
+          state:
+          - Degraded
+          - Fallback
+          - Recovering
+        - condition: state
+          entity: binary_sensor.nrg_fallback_manual
+          state: 'on'
       grid_options:
         columns: full
     - type: grid

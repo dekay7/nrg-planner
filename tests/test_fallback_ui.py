@@ -18,13 +18,20 @@ def dashboard():
     return yaml.safe_load((ROOT / "custom_components/nrg/dashboards/nrg-settings.yaml").read_text())
 
 
+def condition_matches(condition, states):
+    if condition.get("condition") == "or":
+        return any(condition_matches(child, states) for child in condition["conditions"])
+    expected = condition["state"]
+    return states.get(condition["entity"], "off") in (expected if isinstance(expected, list) else [expected])
+
+
 def visible_items(value, states):
-    """Evaluate the simple state conditions used by these generated pages."""
+    """Evaluate the state and OR conditions used by these generated pages."""
     if isinstance(value, dict):
-        conditions = value.get("visibility", [])
+        conditions = list(value.get("visibility", []))
         if value.get("type") == "conditional":
             conditions += value.get("conditions", [])
-        if any(states.get(c["entity"], "off") != c["state"] for c in conditions):
+        if any(not condition_matches(c, states) for c in conditions):
             return
         yield value
         for key, child in value.items():
@@ -95,6 +102,31 @@ def test_notification_benefit_is_only_visible_with_household_advice(advice):
     assert "time.nrg_quiet_start" in entities and "time.nrg_quiet_end" in entities
     headings = [group["cards"][0]["heading"] for group in view["sections"]]
     assert headings == ["Household advice messages", "Price-data fallback alerts", "Shared delivery and quiet hours"]
+
+
+@pytest.mark.parametrize("health", ["Healthy", "Degraded", "Fallback", "Recovering", "unknown", "unavailable"])
+@pytest.mark.parametrize("manual", [False, True])
+async def test_pricing_note_visibility_matches_content_on_all_dashboards(hass, health, manual):
+    states = {"sensor.nrg_pricing_health": health,
+              "binary_sensor.nrg_fallback_manual": "on" if manual else "off"}
+    hass.states.async_set("sensor.nrg_pricing_health", health, {
+        "active": health in ("Fallback", "Recovering"),
+        "operating_mode": "Observation", "reason": "Invented pricing status"})
+    hass.states.async_set("binary_sensor.nrg_fallback_manual", states["binary_sensor.nrg_fallback_manual"])
+    note = pricing_health_note()
+    visible = health in ("Degraded", "Fallback", "Recovering") or manual
+    rendered = Template(note["content"], hass).async_render(parse_result=False)
+    assert bool(rendered.strip()) == visible
+    for filename, count in (("nrg-home.yaml", 1), ("nrg-settings.yaml", 2)):
+        page = yaml.safe_load((ROOT / "custom_components/nrg/dashboards" / filename).read_text())
+        # The generator must attach visibility to the entire Markdown card, not
+        # merely emit empty text inside an otherwise visible card.
+        notes = [card for view in page["views"] for section in view["sections"]
+                 for card in section["cards"] if card.get("content") == note["content"]]
+        assert len(notes) == count
+        assert all(card["visibility"] == note["visibility"] for card in notes)
+        shown = [item for item in visible_items(page, states) if item.get("content") == note["content"]]
+        assert len(shown) == (count if visible else 0)
 
 
 async def test_observation_banner_cannot_be_mistaken_for_executed_actions(hass):
