@@ -537,6 +537,12 @@ end of dependable comparison coverage. Costs include battery losses and remainin
 energy value; missing later prices do not make replacement energy free. If coverage
 cannot support the full task, NRG waits for dependable information instead of
 claiming a saving.</p>
+<p><strong>Limited battery estimate</strong> means permitted refill potential cannot cover the
+modeled usable battery capacity. NRG checks charging capability, car demand and
+whether the native hold mode accepts solar before counting a refill opportunity.
+Uncovered stored energy uses a conservative known-price reference rather than an
+assumed cheap purchase. The displayed comparison remains an estimate, and savings
+notifications are withheld. No new equipment permission or control is enabled.</p>
 <h3 id="homeowner-guide-current-power-flow-the-sankey-diagram">Current power flow: the Sankey diagram</h3>
 <p>The Home Energy tab shows Home Assistant's built-in <strong>power Sankey card</strong>, the
 same live power-flow diagram as the <strong>Now</strong> tab of the Energy dashboard. It is
@@ -2394,11 +2400,31 @@ energy is carried inside bins and never rounded up. The least modeled-cost path 
 bin survives. This approximate search is not a global-optimum claim. Numerical ties
 favor less battery throughput, avoiding artificial flat-rate cycling.</p>
 <p>Energy remaining at the dependable boundary receives a common replacement value
-from known grid and solar refill opportunities within that same horizon, with
-losses and finite charging power. Refill is
-weighted up to usable capacity: a tiny solar surplus does not make the whole battery
-free to refill. Insufficient known refill energy uses the mean known buying rate
-for the remainder. Calendar degradation does not imply a cycling cost; optional
+from permitted grid and solar refill potential within that same horizon. Valuation
+and dispatch share one mode-permission function. Grid refill requires a supported
+charge mode and either a reversible grid-permission switch or distinct force-charge
+mode; it is excluded during EV charging and price-data fallback. Solar surplus is
+calculated after house and EV demand. If hold prevents solar charging, solar is
+counted only where another permitted mode accepts it. Unavailable/monitor-only
+batteries claim no scheduled refill potential.</p>
+<p>Conversion losses and one shared charging-power budget limit grid plus solar in
+each interval. Potential refill is weighted up to age-adjusted usable capacity:
+a tiny solar surplus does not make the whole battery free to refill. This is a
+hypothetical refill of depleted usable capacity, not today's headroom and not a
+promise of a chronological refill after a particular appliance start.</p>
+<p>If permitted potential cannot cover usable capacity, the uncovered portion receives
+a conservative reference: the highest nonnegative known buying or applicable solar
+export-opportunity rate, adjusted for charging losses. This reference is explicitly
+not a charging opportunity or an invented future tariff. Advice confidence becomes
+limited and savings notifications are withheld. Diagnostics distinguish covered
+stored kWh, uncovered stored kWh, source contributions and the reference value.</p>
+<p>EV schedules with equally ranked deadline feasibility and unpriced energy are
+valued separately to respect their demand and mode restrictions. Their maximum
+valuation is then used as a common conservative value for <strong>all</strong> candidate scores
+and the appliance baseline/replay; a candidate cannot win merely by repricing the
+same stored energy. Any insufficient refill coverage among those contenders limits
+comparison confidence. These bounded estimates are not a global optimization or
+refill guarantee. Calendar degradation does not imply a cycling cost; optional
 wear cost defaults to zero.</p>
 <p>Stored-battery sales are not scheduled or credited merely because export permission
 is allowed. The modeled serve mode supplies home demand; it must not be mapped to
@@ -2497,6 +2523,13 @@ from the built-in Energy dashboard's lifetime-counter-based totals.</p>
    grid, direct-solar, battery-backed and mixed supply describe modeled physical
    supply, not a claim that any source is free.</li>
 </ol>
+<p>Battery replacement valuation counts only permitted refill potential after house
+and EV demand, with a shared solar/grid charging-power budget. Insufficient refill
+coverage uses an explicitly conservative known-price reference for the uncovered
+stored energy, not an assumed future purchase or a promised refill. The dashboard
+marks this limited and savings notifications are withheld. Competing feasible EV
+schedules and household replay use one common conservative stored-energy value;
+changing a candidate does not assign a cheaper price to the same battery energy.</p>
 <p>No annual saving is claimed from software scenarios. Validate predicted versus
 observed operation and reconcile actual bills.</p>
 <h3 id="accounting-built-in-ha-energy">Built-in HA Energy</h3>
@@ -2571,6 +2604,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 </ul>
 </li>
 <li><a href="#review-advice-correctness-verification-2026-10-22">Advice correctness verification — 2026-10-22</a></li>
+<li><a href="#review-refill-capability-hardening-verification-2026-10-22">Refill-capability hardening verification — 2026-10-22</a></li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -2708,6 +2742,22 @@ finding above, with additional published Pillow advisories. The reported fixed
 versions remain Pillow 13.0.0 and uv 0.13.4. This fix changes no dependency pins,
 adds no advisory exclusions and does not resolve that upstream finding. An audit
 failure remains visible rather than being reported as a fully green validation.</p>
+<h3 id="review-refill-capability-hardening-verification-2026-10-22">Refill-capability hardening verification — 2026-10-22</h3>
+<p>The follow-up hardening has <strong>334 passing tests</strong> on the same Python/HA baseline.
+It reproduces the former unsupported-grid-refill valuation and verifies the fix,
+EV demand subtraction and grid-charge exclusion, hold/solar behavior, fallback,
+availability, reserve/capacity/losses, shared candidate/advice valuation, actual
+notification suppression and native HA charge-mode capability detection. Permanent
+invariant checks cross-check refill accounting against physical transitions over
+64 permission/mode combinations and test 300 randomized permission restrictions.</p>
+<p>An additional deterministic invented-only stress audit passes 2,000 scenarios,
+28,324 physical intervals, 9,632 appliance windows, 2,000 untrusted-tail mutations,
+1,251 independent grid-only cost comparisons and 16 fallback combinations. Ruff,
+privacy/history, dependency consistency and reproducible generated assets pass.
+The dependency audit still reports the same <strong>25 HA-pinned Pillow/uv advisories</strong>
+above; requirements and advisory handling are unchanged. Hosted results are recorded
+on the pull request. These checks do not claim globally optimal schedules, promised
+chronological refills or verified physical equipment response.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as

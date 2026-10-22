@@ -56,6 +56,13 @@ energy value; missing later prices do not make replacement energy free. If cover
 cannot support the full task, NRG waits for dependable information instead of
 claiming a saving.
 
+**Limited battery estimate** means permitted refill potential cannot cover the
+modeled usable battery capacity. NRG checks charging capability, car demand and
+whether the native hold mode accepts solar before counting a refill opportunity.
+Uncovered stored energy uses a conservative known-price reference rather than an
+assumed cheap purchase. The displayed comparison remains an estimate, and savings
+notifications are withheld. No new equipment permission or control is enabled.
+
 ## Current power flow: the Sankey diagram
 
 The Home Energy tab shows Home Assistant's built-in **power Sankey card**, the

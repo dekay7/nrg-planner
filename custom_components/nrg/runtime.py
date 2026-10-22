@@ -186,7 +186,8 @@ class NRGRuntime(DataUpdateCoordinator):
                      and current_min <= self.config["ev_max_amps"] and current_max >= self.config["ev_min_amps"])
         battery_controls = self.state("battery_mode") is not None and adapters.can("battery_mode", "hold") and adapters.can("battery_mode", "serve")
         grid_switch = self.state("battery_grid_charge") is not None and adapters.can("battery_grid_charge", "on") and adapters.can("battery_grid_charge", "off")
-        can_grid_charge = grid_switch or (config["control_values"]["battery_charge"] != config["control_values"]["battery_hold"] and adapters.can("battery_mode", "charge"))
+        can_grid_charge = (battery_controls and adapters.can("battery_mode", "charge")
+                           and (grid_switch or config["control_values"]["battery_charge"] != config["control_values"]["battery_hold"]))
         ev_controls = adapters.can("ev_current", config["ev_max_amps"]) and charge_feedback is not None and adapters.can("ev_charge", "on") and adapters.can("ev_charge", "off")
         # Deriving a home/grid meter makes balance tautological. Only independent
         # site readings can establish spare solar or unmet household demand.
