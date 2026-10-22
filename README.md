@@ -114,6 +114,16 @@ python -m venv .venv
 git diff --check
 ```
 
+For offline model/forecast evaluation, run the [synthetic stress lab](docs/simulation.md):
+
+```sh
+python -B tools/simulate.py --scenario all --output local/simulation-suite.json
+```
+
+It exercises the real planner/learners against an independent invented plant,
+without Home Assistant, network access, household data or equipment commands.
+Use `--trace` for dated decisions and `--runs`/`--seed` for repeatable sweeps.
+
 Node.js is used for executable chart tests. Generated UI assets are committed so
 users need no build tools. The builders use only repository source and generic
 documentation, never a live HA instance or household data files.

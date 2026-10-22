@@ -66,6 +66,7 @@ HANDBOOK_CHAPTERS = [
     ("SECURITY.md", "security", "Security reporting", "Help & reference"),
     ("docs/design.md", "design", "How planning works", "Deeper reading"),
     ("docs/accounting.md", "accounting", "Costs & accounting", "Deeper reading"),
+    ("docs/simulation.md", "simulation", "Synthetic simulation & stress tests", "Deeper reading"),
     ("docs/alternatives.md", "alternatives", "Other energy planners", "Deeper reading"),
     ("docs/review.md", "review", "Project review", "Deeper reading"),
 ]

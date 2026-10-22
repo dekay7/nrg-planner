@@ -284,6 +284,33 @@ and SOC precision; it is not a health/capacity measurement. Refill potential is 
 a promise of a chronological refill. No real-home forecast backtest, future saving,
 physical command response or live deployment was validated by this audit.
 
+## Offline synthetic simulation verification (unreleased)
+
+The [source-only simulation tool](simulation.md) exercises the production planner
+and coverage-gated learners without importing Home Assistant or invoking its
+runtime/writer. A separate AC plant realizes decisions under invented actuals;
+forecasts use independent seeded streams, with future predictions frozen before
+scoring. It reports missing coverage, forecast error, EV departure shortfalls,
+final stored energy, physical/request invariants and fixed-plan advice outcomes.
+It is not a real-house backtest, global-optimum benchmark or live-control test.
+
+Local verification on Python 3.14.8 and HA 2026.10.2 passes **485 tests**, including
+18 simulator regressions and standard-library-only execution outside the checkout.
+A sweep of all **12 scenarios**, seed 1, one evaluation day and one synthetic
+training day completes with no physical/request invariant violations. A separate
+uncalibrated slow-charger regression deliberately misses departure, demonstrating
+that completion failures are reported rather than masked by modeled feasibility.
+Tests also cover reproducibility, unknown forecast coverage/recovery, partial EV
+stops, independent energy/cost calculations, DST instants, training restart/session
+boundaries and post-hoc advice isolation.
+
+Ruff's configured `F` rules, dependency consistency, privacy/history and whitespace
+checks pass. Handbook/dashboard assets are regenerated with the standard builder.
+The dependency audit still fails on the **36 existing HA-pinned Pillow/uv
+advisories** above; the simulator adds no dependency, override or audit exclusion.
+No installation settings, learning formats, control defaults or version values
+change, and no release or live deployment is performed.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public
