@@ -112,6 +112,12 @@ views:
         is number %}Estimated benefit for the reference appliance: **{{ (benefit * 100) | round(1) }}¢**.{% endif
         %}
 
+        {% set basis = state_attr(''sensor.nrg_advice'', ''cost_basis'') %}
+
+        {% if basis %}**{{ {''grid'': ''Grid-supplied use'', ''solar'': ''Direct solar use'', ''battery'': ''Battery-backed
+        use'', ''mixed'': ''Mixed energy sources''}.get(basis, ''Modeled appliance cost'') }}** · not necessarily
+        the cheapest grid-price window.{% endif %}
+
 
         {% set controlled = is_state(''binary_sensor.nrg_ev_control'',''on'') or is_state(''binary_sensor.nrg_battery_control'',''on'')
         %}
@@ -131,7 +137,7 @@ views:
       update_interval: 1min
       header:
         show: true
-        title: When to use energy · supply + delivery
+        title: Grid prices · suggested appliance window
       now:
         show: true
         label: Now
@@ -531,6 +537,12 @@ views:
         is number %}Estimated benefit for the reference appliance: **{{ (benefit * 100) | round(1) }}¢**.{% endif
         %}
 
+        {% set basis = state_attr(''sensor.nrg_advice'', ''cost_basis'') %}
+
+        {% if basis %}**{{ {''grid'': ''Grid-supplied use'', ''solar'': ''Direct solar use'', ''battery'': ''Battery-backed
+        use'', ''mixed'': ''Mixed energy sources''}.get(basis, ''Modeled appliance cost'') }}** · not necessarily
+        the cheapest grid-price window.{% endif %}
+
 
         {% set controlled = is_state(''binary_sensor.nrg_ev_control'',''on'') or is_state(''binary_sensor.nrg_battery_control'',''on'')
         %}
@@ -544,6 +556,31 @@ views:
         columns: full
     - type: markdown
       content: '{{ state_attr(''sensor.nrg_advice'',''reason'') or ''Waiting for a current explanation.'' }}'
+      grid_options:
+        columns: full
+    - type: markdown
+      content: '{% set p = state_attr(''sensor.nrg_plan'',''plan'') or {} %}{% set a = p.get(''household'', {})
+        %}
+
+        {% if a.get(''best_cost'') is number %}### Selected appliance window
+
+        {% if a.get(''reference_kwh'') is number and a.get(''reference_minutes'') is number %}**Reference appliance:**
+        {{ a.reference_kwh | round(2) }} kWh over {{ a.reference_minutes | round(0) }} minutes.{% endif %}
+
+
+        **Modeled appliance cost:** {{ (a.best_cost * 100) | round(2) }}¢.
+
+
+        {% if a.get(''grid_import_price'') is number %}**Grid buying price during the window:** {{ (a.grid_import_price
+        * 100) | round(2) }}¢/kWh (time-weighted average, supply + delivery).{% endif %}
+
+        {% endif %}
+
+        {% if a.get(''forecast_until'') is number %}**Dependable comparison coverage ends:** {{ a.forecast_until
+        | timestamp_custom(''%a %I:%M %p %Z'') }}. Later outlook values do not establish savings for this advice.{%
+        endif %}
+
+        '
       grid_options:
         columns: full
     - type: markdown
@@ -575,7 +612,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=9dc32f9d5b05
+        url_path: /nrg-planner/guide.html?v=d49550192a1b
       grid_options:
         columns: full
   - type: grid

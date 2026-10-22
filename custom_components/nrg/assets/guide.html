@@ -529,6 +529,14 @@ without changing equipment.</p>
 <p>Solar can have an export-credit opportunity cost, and stored energy has losses and
 future value. NRG considers applicable equipment rather than assuming all solar or
 battery electricity is free. Homes without that equipment need no such assumptions.</p>
+<p><strong>Battery-backed use</strong> can be suggested even when grid electricity is expensive:
+the model expects stored energy to supply the task. The green graph segment is
+therefore not necessarily the cheapest grid-price window. <strong>Why this advice?</strong> shows
+the reference task, modeled appliance cost, the window's average grid price and the
+end of dependable comparison coverage. Costs include battery losses and remaining
+energy value; missing later prices do not make replacement energy free. If coverage
+cannot support the full task, NRG waits for dependable information instead of
+claiming a saving.</p>
 <h3 id="homeowner-guide-current-power-flow-the-sankey-diagram">Current power flow: the Sankey diagram</h3>
 <p>The Home Energy tab shows Home Assistant's built-in <strong>power Sankey card</strong>, the
 same live power-flow diagram as the <strong>Now</strong> tab of the Energy dashboard. It is
@@ -736,6 +744,7 @@ summary. See <a href="#privacy">privacy</a> before sharing logs, screenshots, or
 <li><a href="#faq-how-do-i-stop-nrg-controlling-a-device">How do I stop NRG controlling a device?</a></li>
 <li><a href="#faq-can-i-use-my-existing-car-charger-or-battery-integration">Can I use my existing car, charger, or battery integration?</a></li>
 <li><a href="#faq-does-it-raise-my-cars-charge-limit">Does it raise my car's charge limit?</a></li>
+<li><a href="#faq-why-suggest-an-appliance-window-when-the-grid-price-is-high">Why suggest an appliance window when the grid price is high?</a></li>
 <li><a href="#faq-why-wait-when-the-buying-price-is-negative-or-solar-is-producing">Why wait when the buying price is negative or solar is producing?</a></li>
 <li><a href="#faq-why-does-nrg-recommend-using-energy-as-usual-on-a-flat-rate">Why does NRG recommend using energy as usual on a flat rate?</a></li>
 <li><a href="#faq-does-the-displayed-cost-equal-my-bill-or-show-money-saved">Does the displayed cost equal my bill or show money saved?</a></li>
@@ -789,6 +798,15 @@ using the available time and configured charging assumptions. A shortfall means
 the model cannot reach the selected target by departure under those conditions.
 Use <strong>Charge now</strong> or adjust the departure override when appropriate; see
 <a href="#operations-everyday-controls">everyday controls</a>.</p>
+<h3 id="faq-why-suggest-an-appliance-window-when-the-grid-price-is-high">Why suggest an appliance window when the grid price is high?</h3>
+<p>The reference appliance may be supplied by the home battery rather than the grid.
+The advice identifies grid, direct-solar, battery-backed or mixed supply and shows
+the grid rate separately from modeled appliance cost. Stored energy still has
+losses and future value, and solar used at home can give up export credit.</p>
+<p>A high-price window is recommended only when its modeled appliance cost offers a
+sufficient improvement within dependable coverage. Baseline and appliance costs
+stop at the same supported boundary; unknown later export prices cannot make a
+future battery refill free. See <a href="#homeowner-guide-the-recommendation">the homeowner guide</a>.</p>
 <h3 id="faq-why-wait-when-the-buying-price-is-negative-or-solar-is-producing">Why wait when the buying price is negative or solar is producing?</h3>
 <p>The relevant price includes <strong>supply plus delivery</strong>. Negative supply can still
 leave a positive total. Solar used at home may give up an export credit; battery
@@ -2350,8 +2368,14 @@ modeled improvement is below the selected threshold. Known-price charging period
 are preferred over unpriced gaps before comparing cost. An estimate used internally
 for deadline calculations is not displayed as a known tariff or a free hour.</p>
 <h3 id="design-battery-search">Battery search</h3>
-<p>For each EV candidate, search supported <strong>hold, serve the home, grid charge</strong> modes.
-No battery, monitoring-only battery, missing controls or invalid SOC yields no
+<p>For each EV candidate, search supported <strong>hold, serve the home, grid charge</strong> modes
+only through the contiguous dependable economic horizon: known import and applicable
+export prices, plus solar coverage when solar is configured. Stop at the first gap;
+a later island of known prices cannot justify an earlier economic action. The longer
+outlook retains EV feasibility and physical energy with battery hold after that
+boundary. An active price-data fallback instead retains its explicitly selected
+baseline. Replanning can extend the economic horizon as coverage improves.</p>
+<p>No battery, monitoring-only battery, missing controls or invalid SOC yields no
 discretionary battery trajectory. No charge-capable mode/switch means grid charging
 is excluded rather than invented. Unknown current prices/solar permit hold only.</p>
 <p>Grid charging is not scheduled alongside EV charging. The preserve-battery option
@@ -2369,8 +2393,9 @@ years from elapsed days / 365.2425. An unset date does not invent age.</p>
 energy is carried inside bins and never rounded up. The least modeled-cost path per
 bin survives. This approximate search is not a global-optimum claim. Numerical ties
 favor less battery throughput, avoiding artificial flat-rate cycling.</p>
-<p>Remaining energy receives a common replacement value from the cheapest known grid
-and solar refill opportunities, with losses and finite charging power. Refill is
+<p>Energy remaining at the dependable boundary receives a common replacement value
+from known grid and solar refill opportunities within that same horizon, with
+losses and finite charging power. Refill is
 weighted up to usable capacity: a tiny solar surplus does not make the whole battery
 free to refill. Insufficient known refill energy uses the mean known buying rate
 for the remainder. Calendar degradation does not imply a cycling cost; optional
@@ -2381,9 +2406,20 @@ a forced export operation. Solar surplus exports when permitted/nonnegative,
 otherwise it is modeled as curtailed. Native response is checked separately.</p>
 <h3 id="design-household-advice-and-execution">Household advice and execution</h3>
 <p>Replay the selected modes with the reference appliance starting now or at each
-15-minute boundary in the next day. Include its complete duration, foregone exports
-and end-of-horizon energy value. Only the contiguous trusted-price horizon competes.
-Tentative/gap prices remain distinguishable. Advice never operates an appliance.</p>
+15-minute boundary in the next day. Both the baseline and appliance scenario end at
+the same dependable boundary and include foregone exports, losses, wear and the
+value of their remaining battery energy there. The complete appliance duration must
+fit inside that horizon. Missing future export compensation must not turn a later
+solar refill into free energy or erase the cost of an earlier battery discharge.
+Explicit zero credit and prohibited exports remain distinct from unknown credit.</p>
+<p>Advice identifies the modeled appliance supply as grid, direct solar, battery or
+mixed. Its grid-price attribute is a time-weighted supply-plus-delivery rate for
+the selected window, not the appliance's modeled cost. Battery-backed use can be
+worthwhile during an expensive grid hour; it is not necessarily a cheap-grid window.
+These are incremental costs under the selected modes, not a separate globally
+reoptimized appliance schedule. Incomplete equipment information limits confidence;
+only dependable advice can send savings notifications. Tentative/gap outlook values
+remain distinguishable. Advice never operates an appliance.</p>
 <p>Plans expire after seven minutes and replan every five minutes/on important changes.
 The serialized writer runs every thirty seconds and selects the applicable dated
 plan interval, so tariff/charging boundaries do not wait for a fresh five-minute
@@ -2448,11 +2484,18 @@ from the built-in Energy dashboard's lifetime-counter-based totals.</p>
 <ol>
 <li><strong>Observed net variable cost:</strong> grid meter readings and contemporaneous rates,
    with explicit coverage. Not a complete settled utility bill.</li>
-<li><strong>Modeled horizon cost:</strong> a schedule comparison, including storage terminal value
-   and optional cycling cost. A <code>~</code> indicates estimated/uncovered future prices are
-   involved. With no usable rates, the table says rates are needed.</li>
+<li><strong>Modeled cost through dependable coverage:</strong> a schedule comparison ending at
+   the first price or applicable solar-coverage gap, including the remaining stored
+   energy's replacement value and optional cycling cost. The displayed comparison
+   endpoint may be earlier than the physical/EV outlook. With no dependable coverage,
+   no economic cost is claimed.</li>
 <li><strong>Reference-appliance benefit:</strong> modeled difference between complete start
-   windows for the selected energy/duration, with applicable export/storage costs.</li>
+   windows for the selected energy/duration. Baseline and appliance replay share
+   that same dependable endpoint, with applicable export/storage costs. An unknown
+   future export credit is not a zero credit and cannot justify a free solar refill.
+   The selected window's grid rate is shown separately from its appliance cost;
+   grid, direct-solar, battery-backed and mixed supply describe modeled physical
+   supply, not a claim that any source is free.</li>
 </ol>
 <p>No annual saving is claimed from software scenarios. Validate predicted versus
 observed operation and reconcile actual bills.</p>
@@ -2527,6 +2570,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 <li><a href="#review-open-dependency-finding">Open dependency finding</a></li>
 </ul>
 </li>
+<li><a href="#review-advice-correctness-verification-2026-10-22">Advice correctness verification — 2026-10-22</a></li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -2647,6 +2691,23 @@ ignored, and no incompatible overrides are added to HA's exact requirements.</p>
 <p>When a compatible upstream HA release resolves these findings, update the tested
 version and rerun dependency resolution, the full suite, and the audit. Recheck
 the documented minimum HA version and <code>hacs.json</code> if the supported baseline changes.</p>
+<h3 id="review-advice-correctness-verification-2026-10-22">Advice correctness verification — 2026-10-22</h3>
+<p>The dependable-horizon fix is verified locally with Python 3.14.8 and Home Assistant
+2026.10.2: <strong>307 tests pass</strong>, including invented missing-export-price regressions,
+baseline-mode/score invariance beyond coverage gaps, storage losses and wear,
+explicit zero credit, prohibited exports, battery constraints, EV feasibility,
+DST durations, notification confidence and real HA dashboard-template rendering.
+The original planner reproduces a falsely free evening window on the invented
+regression; the corrected planner does not. Ruff's configured <code>F</code> checks, dependency
+consistency, privacy/history checks and deterministic UI/brand builds pass.
+Hosted validation results remain recorded on the pull request; local verification
+is not a claim of live equipment validation or deployment.</p>
+<p>A fresh isolated audit now reports <strong>25 advisories: 24 for Pillow 12.3.0 and one
+for uv 0.12.23</strong>. These are the same HA-pinned packages described in the open
+finding above, with additional published Pillow advisories. The reported fixed
+versions remain Pillow 13.0.0 and uv 0.13.4. This fix changes no dependency pins,
+adds no advisory exclusions and does not resolve that upstream finding. An audit
+failure remains visible rather than being reported as a fully green validation.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as

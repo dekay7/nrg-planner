@@ -52,11 +52,18 @@ from the built-in Energy dashboard's lifetime-counter-based totals.
 
 1. **Observed net variable cost:** grid meter readings and contemporaneous rates,
    with explicit coverage. Not a complete settled utility bill.
-2. **Modeled horizon cost:** a schedule comparison, including storage terminal value
-   and optional cycling cost. A `~` indicates estimated/uncovered future prices are
-   involved. With no usable rates, the table says rates are needed.
+2. **Modeled cost through dependable coverage:** a schedule comparison ending at
+   the first price or applicable solar-coverage gap, including the remaining stored
+   energy's replacement value and optional cycling cost. The displayed comparison
+   endpoint may be earlier than the physical/EV outlook. With no dependable coverage,
+   no economic cost is claimed.
 3. **Reference-appliance benefit:** modeled difference between complete start
-   windows for the selected energy/duration, with applicable export/storage costs.
+   windows for the selected energy/duration. Baseline and appliance replay share
+   that same dependable endpoint, with applicable export/storage costs. An unknown
+   future export credit is not a zero credit and cannot justify a free solar refill.
+   The selected window's grid rate is shown separately from its appliance cost;
+   grid, direct-solar, battery-backed and mixed supply describe modeled physical
+   supply, not a claim that any source is free.
 
 No annual saving is claimed from software scenarios. Validate predicted versus
 observed operation and reconcile actual bills.

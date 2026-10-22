@@ -160,16 +160,21 @@ def transition(slot, energy, ev, action, config, capacity, battery_available=Tru
             "cost": import_cost - credit + wear, "action": action}
 
 
+def export_required(config):
+    """Only modeled solar exports need compensation coverage; battery sales are excluded."""
+    return config["has_solar"] and config["export_policy"] != "No exports"
+
+
 def replacement_value(slots, config, capacity=None):
     """Value a usable battery's refill, not an unlimited tiny cheap opportunity."""
     eta = (config["round_trip_efficiency"] / 100) ** .5
     opportunities, rates = [], []
     for slot in slots:
-        if not slot["price_known"] or not slot.get("export_known", True):
+        if not slot["price_known"] or (export_required(config) and not slot.get("export_known", True)):
             continue
         quota = config["battery_charge_kw"] * slot["hours"]
         solar = min(max(slot["solar_kwh"] - slot["house_kwh"], 0), quota) if slot["solar_known"] else 0
-        credit = max(slot["export_price"], 0) if config["export_policy"] != "No exports" else 0
+        credit = max(slot["export_price"], 0) if export_required(config) else 0
         if solar:
             opportunities.append((credit / eta, solar * eta))
         grid_rate = max(slot["import_price"], 0) / eta
@@ -190,15 +195,28 @@ def replacement_value(slots, config, capacity=None):
     return (cost + remaining * fallback) / need
 
 
+def trusted_prefix(slots, config):
+    """Economic decisions stop at the first price or applicable solar gap."""
+    result = []
+    for slot in slots:
+        if (not slot["price_known"] or (export_required(config) and not slot.get("export_known", True))
+                or (config["has_solar"] and not slot["solar_known"])):
+            break
+        result.append(slot)
+    return result
+
+
 def battery_search(slots, ev, initial, config, capacity, terminal, available):
     # Node = (cash cost, exact stored energy, parent, transition). Bins only bound
     # search width; no stored energy is ever rounded upwards or created for free.
     step = max(.5, capacity / 80)
     root = (0.0, initial, None, None, 0.0)
     nodes = {int(initial / step): root}
-    for slot, car in zip(slots, ev):
+    economic_slots = trusted_prefix(slots, config)
+    for slot, car in zip(economic_slots, ev):
         modes = ["hold"]
-        if available and slot["solar_known"] and slot["price_known"] and slot.get("export_known", True):
+        if available:
+            # Every optimized interval is already in the trusted prefix.
             if not car or not config["hold_battery_for_ev"]:
                 modes.append("serve")
             if not car and config.get("allow_grid_charge", True):
@@ -221,47 +239,75 @@ def battery_search(slots, ev, initial, config, capacity, terminal, available):
         nodes = next_nodes
     winner = min(nodes.values(), key=lambda node: (round(node[0] + (initial - node[1]) * terminal, 9), node[4]))
     score = winner[0] + (initial - winner[1]) * terminal
+    energy = winner[1]
     rows = []
     while winner[2] is not None:
         rows.append(winner[3])
         winner = winner[2]
-    return score, list(reversed(rows))
+    rows.reverse()
+    # Keep a full physical/EV outlook, but do not let uncertain future cash flows
+    # influence today's economic modes or candidate scores. Fallback retains its
+    # explicitly selected baseline rather than becoming discretionary arbitrage.
+    for slot, car in zip(slots[len(economic_slots):], ev[len(economic_slots):]):
+        serve = (config.get("_fallback_active") and available
+                 and config["fallback_battery"] == "Self-consumption"
+                 and (not car or not config["hold_battery_for_ev"]))
+        row = transition(slot, energy, car, "serve" if serve else "hold", config, capacity, available)
+        rows.append(row)
+        energy = row["energy"]
+    return score, rows
 
 
 def replay(slots, ev, actions, initial, config, capacity, terminal, available,
-           load_start=None):
+           load_start=None, details=False):
     energy, cost = initial, 0.0
+    sources = {"grid": 0.0, "solar": 0.0, "battery": 0.0}
     duration = config["flexible_load_minutes"] * 60
     for slot, car, planned in zip(slots, ev, actions):
         overlap = max(min(slot["end"], load_start + duration) - max(slot["start"], load_start), 0) if load_start is not None else 0
         extra = config["flexible_load_kwh"] * overlap / duration
         row = transition(slot, energy, car, planned["action"], config, capacity, available, extra,
                          planned["energy"] if planned["action"] == "charge" else None)
+        if extra:
+            without = transition(slot, energy, car, planned["action"], config, capacity, available,
+                                 target=planned["energy"] if planned["action"] == "charge" else None)
+            load = slot["house_kwh"] + car
+            direct = min(slot["solar_kwh"], load + extra) - min(slot["solar_kwh"], load)
+            stored = min(max(row["battery_discharge_kwh"] - without["battery_discharge_kwh"], 0), extra - direct)
+            sources["solar"] += direct
+            sources["battery"] += stored
+            sources["grid"] += max(extra - direct - stored, 0)
         energy, cost = row["energy"], cost + row["cost"]
-    return cost + (initial - energy) * terminal
+    score = cost + (initial - energy) * terminal
+    return {"cost": score, "energy_sources": sources} if details else score
 
 
-def household_advice(slots, ev, actions, initial, config, capacity, terminal, available, now):
+def household_advice(slots, ev, actions, initial, config, capacity, available, now):
     duration = config["flexible_load_minutes"] * 60
-    # Compare only the contiguous trusted horizon; estimates remain charted but do
-    # not compete with published windows or authorize discretionary battery moves.
-    end = now
-    for slot in slots:
-        if not slot["price_known"] or not slot.get("export_known", True):
-            break
-        end = slot["end"]
+    # Both baseline and appliance replay end at the same trusted boundary. Merely
+    # restricting appliance start times still lets an unpriced refill erase the
+    # cost of battery energy in the full-horizon replay.
+    slots = trusted_prefix(slots, config)
+    ev, actions = ev[:len(slots)], actions[:len(slots)]
+    terminal = replacement_value(slots, config, capacity)
+    end = slots[-1]["end"] if slots else now
     windows = []
     base = replay(slots, ev, actions, initial, config, capacity, terminal, available)
-    solar_complete = all(s["solar_known"] for s in slots if s["start"] < end)
+    solar_complete = not config["has_solar"] or all(s["solar_known"] for s in slots)
     for slot in slots:
         start = slot["start"]
         if start > now + 24 * 3600 or start + duration > end:
             continue
-        cost = replay(slots, ev, actions, initial, config, capacity, terminal, available, start) - base
-        windows.append({"start": start, "end": start + duration, "cost": round(cost, 6)})
+        result = replay(slots, ev, actions, initial, config, capacity, terminal, available, start, details=True)
+        grid_price = sum(s["import_price"] * max(min(s["end"], start + duration) - max(s["start"], start), 0)
+                         for s in slots) / duration
+        windows.append({"start": start, "end": start + duration, "cost": round(result["cost"] - base, 6),
+                        "grid_import_price": grid_price,
+                        "energy_sources": {k: round(v, 6) for k, v in result["energy_sources"].items()}})
     if not windows:
         return {"category": "limited", "summary": "Waiting for dependable price coverage",
-                "reason": "No complete known-price window is available. Configure supply, delivery and export compensation. Locally learned estimates are tentative only.", "windows": []}
+                "reason": "No complete window has dependable prices and applicable solar coverage. Check supply, delivery, export compensation and solar forecasts. Estimates are tentative only.",
+                "confidence": "limited", "forecast_until": end, "windows": []}
     best = min(windows, key=lambda w: (w["cost"], w["start"]))
     current = windows[0] if windows[0]["start"] == now else None
     saving = max(current["cost"] - best["cost"], 0) if current else None
@@ -283,9 +329,17 @@ def household_advice(slots, ev, actions, initial, config, capacity, terminal, av
         included.append("unknown EV charging duration" if config.get("_ev_duration_unknown") else "EV schedule" if config["ev_control"] else "observed EV charging")
     basis = ", ".join(included).capitalize() + " considered"
     accounting = " Export credits are included." if config["has_solar"] else ""
-    accounting += " Remaining battery energy is valued, not treated as free." if available else ""
+    accounting += " Remaining battery energy is valued at the dependable coverage boundary, not treated as free." if available else ""
+    active_sources = [k for k, v in best["energy_sources"].items() if v > 1e-6]
+    cost_basis = active_sources[0] if len(active_sources) == 1 else "mixed"
+    labels = {"grid": "Grid-supplied use", "solar": "Direct solar use", "battery": "Battery-backed use",
+              "mixed": "Mixed energy sources"}
+    explanation = f" {labels[cost_basis]}; this is an appliance-cost comparison, not necessarily the cheapest grid-price window."
     return {"category": category, "summary": summary,
-            "reason": f"{basis}. Compare {config['flexible_load_kwh']:g} kWh over {config['flexible_load_minutes']:g} minutes.{accounting}",
+            "reason": f"{basis}. Compare {config['flexible_load_kwh']:g} kWh over {config['flexible_load_minutes']:g} minutes.{accounting}{explanation}",
+            "cost_basis": cost_basis, "energy_sources": best["energy_sources"],
+            "grid_import_price": best["grid_import_price"], "reference_kwh": config["flexible_load_kwh"],
+            "reference_minutes": config["flexible_load_minutes"],
             "best_start": best["start"], "best_end": best["end"], "now_cost": current["cost"] if current else None,
             "best_cost": best["cost"], "saving": saving, "confidence": "forecast" if trusted else "limited",
             "windows": windows, "forecast_until": end}
@@ -359,7 +413,7 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
                 remaining -= amount
             if remaining <= .001:
                 candidates.append(("previous", ev, amps, 0))
-    terminal = replacement_value(slots, config, capacity)
+    terminal = replacement_value(trusted_prefix(slots, config), config, capacity)
     outcomes = []
     for name, ev, amps, missing in candidates:
         score, actions = battery_search(slots, ev, initial, config, capacity, terminal, available)
@@ -373,7 +427,7 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
         slot.update(ev_kwh=ev, ev_amps=amps, battery_action=action["action"],
                      battery_soc=round(action["energy"] / capacity * 100, 2) if capacity and available else None,
                     import_kwh=action["import_kwh"], export_kwh=action["export_kwh"],
-                      cost=action["import_cost"] - action["export_credit"] if slot["price_known"] and slot["export_known"] else None)
+                      cost=action["import_cost"] - action["export_credit"] if slot["price_known"] and (not export_required(config) or slot["export_known"]) else None)
         slot["ev_stop_at"] = slot["start"] + ev / (power * amps / config["ev_max_amps"]) * 3600 if amps else None
     active = [s for s in slots if s["ev_kwh"] > .001]
     ev_status = ("not_installed" if not config["has_ev"] else "monitor_only" if not managed_ev else "unplugged" if not connected else "telemetry_missing" if need is None else "ready" if need <= .001
@@ -383,7 +437,7 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
     first = slots[0]
     next_charge = active[0]["start"] if active and managed_ev else None
     completion = active[-1]["start"] + active[-1]["ev_kwh"] / (power * active[-1]["ev_amps"] / config["ev_max_amps"]) * 3600 if active and managed_ev else None
-    advice = household_advice(slots, best["ev"], best["actions"], initial, config, capacity, terminal, available, now)
+    advice = household_advice(slots, best["ev"], best["actions"], initial, config, capacity, available, now)
     reasons = {"charge": "Buy lower-cost energy for later use after losses and export credits are considered.",
                "serve": "Use stored energy for the home rather than buy at this hour's price.",
                "hold": "Keep stored energy for a more valuable hour or preserve backup reserve."}
@@ -407,7 +461,7 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
             battery_reason = "Battery telemetry or native-event readiness is incomplete; no discretionary battery action."
     elif first["ev_kwh"] and config["hold_battery_for_ev"]:
         battery_reason = "Ask the home battery to save its energy while the EV charges."
-    if available and (not first["price_known"] or not first["export_known"] or not first["solar_known"]):
+    if available and not trusted_prefix([first], config):
         battery_reason = "Current forecast coverage is incomplete; keep discretionary grid charging off."
     if config.get("_fallback_active"):
         if available:
@@ -418,8 +472,10 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
     for slot in slots:
         slot.pop("_model_import_price", None)
         slot.pop("_model_export_price", None)
-    has_known_cost = any(s["price_known"] and s["export_known"] for s in slots)
+    economic_slots = trusted_prefix(slots, config)
+    has_known_cost = bool(economic_slots)
     return {"version": 2, "generated_at": now, "expires_at": now + 420,
+            "economic_until": economic_slots[-1]["end"] if economic_slots else now,
             "deadline": due if managed_ev else None, "departure_setting": config["departure_time"],
             "departure_override": config.get("departure_override"), "connected": connected,
             "ev_status": ev_status, "ev_needed_kwh": need, "ev_shortfall_kwh": best["missing"] if managed_ev else None,
@@ -433,5 +489,5 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
              "candidate_costs": [{"name": o["name"], "modeled_cost": round(o["score"], 4) if has_known_cost else None, "shortfall_kwh": o["missing"]} for o in outcomes],
              "modeled_cost": best["score"] if has_known_cost else None, "household": advice, "slots": slots,
             "components": {"solar": config["has_solar"], "battery": config["has_battery"], "ev": config["has_ev"]},
-             "cost_includes_estimates": any(not s["price_known"] or not s["export_known"] for s in slots),
+             "cost_includes_estimates": False,
             "export_capability": "Permission only; timed stored-battery exports are not commanded or credited in the model."}

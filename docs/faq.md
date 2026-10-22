@@ -57,6 +57,18 @@ the model cannot reach the selected target by departure under those conditions.
 Use **Charge now** or adjust the departure override when appropriate; see
 [everyday controls](operations.md#everyday-controls).
 
+## Why suggest an appliance window when the grid price is high?
+
+The reference appliance may be supplied by the home battery rather than the grid.
+The advice identifies grid, direct-solar, battery-backed or mixed supply and shows
+the grid rate separately from modeled appliance cost. Stored energy still has
+losses and future value, and solar used at home can give up export credit.
+
+A high-price window is recommended only when its modeled appliance cost offers a
+sufficient improvement within dependable coverage. Baseline and appliance costs
+stop at the same supported boundary; unknown later export prices cannot make a
+future battery refill free. See [the homeowner guide](homeowner-guide.md#the-recommendation).
+
 ## Why wait when the buying price is negative or solar is producing?
 
 The relevant price includes **supply plus delivery**. Negative supply can still
