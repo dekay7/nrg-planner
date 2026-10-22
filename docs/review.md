@@ -145,17 +145,19 @@ local verification does not claim live deployment or physical equipment validati
 ## Bounded ComEd estimate verification — 2026-10-22
 
 The opt-in brief-delay policy is verified locally on Python 3.14.8 and Home
-Assistant 2026.10.2 with **395 passing tests**. Invented regressions cover delayed
+Assistant 2026.10.2 with **396 passing tests**. Invented regressions cover delayed
 HTTP-success responses, the fixed 60-minute cutoff, exact-hour/expired/future
 forecast coverage, cold starts, clock rollback, source changes, restart persistence,
 manual/missing-delivery precedence, and distinct fresh live recovery. Planner and
 command-time tests block estimated-price battery grid charging, preserve higher
 native reserves and protection/permission guards, cap export permission and script
 context, and keep EV departure planning available. Ledger tests distinguish signed
-forecast-priced costs/credits and stop accounting at the exact estimate deadline.
+forecast-priced costs/credits and stop accounting at the exact estimate deadline
+or hour boundary, never carrying the prior hour's estimate into a new hour.
 Native options/select and real HA dashboard-template checks cover the UI.
 
-Review hardened two boundaries: an expired allowance cannot be renewed by the
+An additional invented-only timestamp/freshness stress audit passes 10,000 cases.
+Review hardened the boundaries: an expired allowance cannot be renewed by the
 next hour's publication bridge, and a saved automatic outage latch prevents a
 restart from treating a forecast as live recovery evidence. Other supply plans
 ignore the saved ComEd option. Existing settings, learning, ledgers, Observation

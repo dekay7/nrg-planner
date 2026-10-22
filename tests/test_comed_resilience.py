@@ -106,6 +106,16 @@ async def test_delayed_success_uses_estimate_without_renewing_anchor_and_labels_
     assert runtime.controller.last == {}  # Observation never commands equipment.
 
 
+async def test_current_hour_forecast_is_not_carried_into_next_hour_accounting(resilient_runtime):
+    runtime = resilient_runtime
+    runtime.comed_continuity["last_live"] = NOW + 1800
+    runtime.live_cache = {"time": NOW + 1800, "supply": .04}
+    runtime.get_text.return_value = json.dumps([{"millisUTC": (NOW + 1800) * 1000, "price": 4}])
+    with patch("custom_components.nrg.runtime.time.time", return_value=NOW + 3590):
+        await runtime._async_update_data()
+    assert runtime.stats.previous[1]["_price_valid_until"] == NOW + 3600
+
+
 async def test_command_time_estimate_transition_revokes_old_plan_without_postponing_poll(resilient_runtime):
     runtime = resilient_runtime
     runtime.plan = {"expires_at": NOW + 3000}

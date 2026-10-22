@@ -484,7 +484,8 @@ class NRGRuntime(DataUpdateCoordinator):
                              "import_price": current["import_price"] if self.current_price_known else None,
                              "export_price": self.live_export,
                              "_price_estimated": current["comed_publication_bridge"] or current["comed_estimated_price"],
-                             "_price_valid_until": current["comed_estimate_until"] if current["comed_estimated_price"] else
+                             "_price_valid_until": min(current["comed_estimate_until"], (int(now // 3600) + 1) * 3600)
+                             if current["comed_estimated_price"] else
                              int(now // 3600) * 3600 + 600 if current["comed_publication_bridge"] else None,
                              "supply_price": current["supply_price"] if current["comed_publication_bridge"] or current["comed_estimated_price"] or current["supply_source"] in ("flat","time_of_use","running_average","external_live","external_forecast") else None,
                              "delivery_price": current["delivery_price"] if current["delivery_source"] in ("flat","time_of_use","external_live","external_forecast") else None,
