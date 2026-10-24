@@ -113,12 +113,15 @@ def price_at(stamp: float, now: float, config: dict, cache: list[dict], live: fl
             "delivery_period": delivery_label if config["delivery_plan"] == "Time-of-use delivery" else None}
 
 
-def solar_response(response: dict, zone: ZoneInfo, fetched_at: float) -> dict:
+def solar_response(response: dict, zone: ZoneInfo, fetched_at: float,
+                   daylight: dict[str, tuple[float, float]] | None = None) -> dict:
     """Normalize the power shape to daily totals, exposing only covered hours.
 
     Forecast.Solar's service already reads its cache; this causes no extra provider
     polling. Normalizing daily energy avoids assuming ambiguous raw Wh boundaries.
-    Partial edge hours remain unknown; only astronomy can establish missing night.
+    Partial edge hours need explicit coverage of every daylight portion. Optional
+    local-date sunrise/sunset bounds can establish uncovered darkness as zero,
+    never missing daylight. Daily normalization retains the edge-hour energy.
     """
     if (not isinstance(response, dict) or not isinstance(response.get("watts"), dict)
             or not isinstance(response.get("wh_period"), dict)):
@@ -145,7 +148,7 @@ def solar_response(response: dict, zone: ZoneInfo, fetched_at: float) -> dict:
     points.sort()
     if any(a[0] == b[0] for a, b in zip(points, points[1:])):
         raise ValueError("Duplicate solar timestamp")
-    pieces = {}
+    pieces, intervals = {}, {}
 
     def integrate(start, end, pa, pb):
         cursor = start
@@ -156,9 +159,8 @@ def solar_response(response: dict, zone: ZoneInfo, fetched_at: float) -> dict:
             a = pa + (pb - pa) * (cursor - start) / (end - start)
             b = pa + (pb - pa) * (boundary - start) / (end - start)
             key = (int(cursor) // 3600 * 3600, day.isoformat())
-            energy, covered = pieces.get(key, (0, 0))
-            pieces[key] = (energy + (a + b) / 2 * (boundary - cursor) / 3600,
-                           covered + boundary - cursor)
+            pieces[key] = pieces.get(key, 0) + (a + b) / 2 * (boundary - cursor) / 3600
+            intervals.setdefault(key, []).append((cursor, boundary))
             cursor = boundary
 
     for (start, pa), (end, pb) in zip(points, points[1:]):
@@ -170,20 +172,42 @@ def solar_response(response: dict, zone: ZoneInfo, fetched_at: float) -> dict:
             continue
         integrate(start, end, pa, pb)
     shapes = {}
-    for (_, day), (energy, _) in pieces.items():
+    for (_, day), energy in pieces.items():
         shapes[day] = shapes.get(day, 0) + energy
     if any(energy > 0 and shapes.get(day, 0) <= 0 for day, energy in totals.items()):
         raise ValueError("Positive daily solar energy has no usable power shape")
     normalized, coverage = {}, {}
-    for (stamp, day), (energy, covered) in pieces.items():
+    for (stamp, day), energy in pieces.items():
         if day not in totals:
             continue
         key = str(stamp)
         normalized[key] = normalized.get(key, 0) + (energy * totals[day] / shapes[day] if shapes[day] > 0 else 0)
-        coverage[key] = coverage.get(key, 0) + covered
-    # A partial edge hour is not a full known forecast, including in half-hour
-    # timezones where a UTC bin straddles two independently normalized days.
-    normalized = {key: energy for key, energy in normalized.items() if abs(coverage[key] - 3600) < .001}
+        coverage.setdefault(key, []).extend(intervals[(stamp, day)])
+    for day, (rise, setting) in (daylight or {}).items():
+        if day not in totals:
+            continue
+        date = datetime.fromisoformat(day).date()
+        start = datetime.combine(date, datetime.min.time(), zone).timestamp()
+        end = datetime.combine(date + timedelta(days=1), datetime.min.time(), zone).timestamp()
+        if not start <= rise < setting <= end:
+            continue  # Uncertain/polar events must not manufacture night coverage.
+        for hour, spans in coverage.items():
+            for a, b in ((start, rise), (setting, end)):
+                a, b = max(a, float(hour)), min(b, float(hour) + 3600)
+                if a < b:
+                    spans.append((a, b))
+
+    def complete(hour, spans):
+        # Merge overlaps: provider night samples and astronomical darkness can
+        # cover the same seconds. Never count them twice or scale an edge up.
+        cursor = float(hour)
+        for a, b in sorted(spans):
+            if a > cursor + .001:
+                return False
+            cursor = max(cursor, b)
+        return cursor >= float(hour) + 3600 - .001
+
+    normalized = {key: energy for key, energy in normalized.items() if complete(key, coverage[key])}
     return {"hours": normalized, "days": list(totals), "fetched_at": fetched_at}
 
 

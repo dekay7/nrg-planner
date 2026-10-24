@@ -84,6 +84,12 @@ never backfilled: a partial-day forecast remains labeled partial, and
 no covered observations today, it stays unknown rather than presenting a
 forecast-only total as metered cost.
 
+Dawn/dusk intervals can combine provider-covered daylight with HA's astronomical
+nighttime zero without scaling the partial energy to a full hour. Every daylight
+portion still needs forecast coverage for each physical array; unavailable sun
+events or real daylight gaps remain unknown. Waiting explanations identify the
+missing input and first uncovered local time when available.
+
 Remaining coverage must be continuous and dependable through midnight. A stale
 plan, missing applicable import/export/solar coverage, an unmodeled installed
 battery or insufficient EV charging information/controls leaves the value unknown

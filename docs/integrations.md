@@ -140,11 +140,15 @@ alternative can cover a failed estimate for the same panels, but a missing entir
 array is not a confident whole-system zero. Astronomically dark intervals are known
 zero even when the provider drops the completed day after sunset. Missing daylight
 stays unknown. Coverage and alternative selection are checked for each hour, not
-just the presence of a daily total. A covered zero-output hour is valid; missing or
-partial edge hours remain unknown. Long daytime power-shape gaps and malformed
-responses are rejected instead of redistributing their energy into other hours.
-These conservative boundaries can shorten the dependable comparison horizon,
-including near sunrise/sunset; EV deadline feasibility remains available. A failed
+just the presence of a daily total. A covered zero-output hour is valid. At dawn
+and dusk, NRG can combine a partial provider hour with HA's astronomical darkness
+**only when every daylight second is covered**. The partial hour keeps its actual
+forecast energy; it is not scaled up to a full hour. Overlapping provider/night
+coverage is counted once, including in fractional-hour timezones and DST days.
+Missing daylight, unavailable sun events or a stale/missing array still stays
+unknown. Long daytime power-shape gaps and malformed responses are rejected
+instead of redistributing their energy into other hours. Genuine gaps can shorten
+the dependable comparison horizon; EV deadline feasibility remains available. A failed
 refresh keeps the previous valid cache only until its original three-hour expiry.
 Startup/source updates trigger a cache read; failed sources retry after five
 minutes, normal refresh after thirty.

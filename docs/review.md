@@ -327,6 +327,28 @@ No dependency pins or advisory exclusions change. Existing settings, learning,
 ledgers, Observation defaults and control permissions are preserved. No release,
 live deployment or physical equipment validation is claimed.
 
+## Solar dawn/dusk coverage correction — unreleased
+
+Local verification on Python 3.14.8 / HA 2026.10.2 passes **535 tests**, including
+21 new invented dawn/dusk regressions. The parser can merge provider-covered
+portions with HA astronomical darkness before deciding whether an edge hour is
+complete. It retains normalized partial-hour energy without scaling it to an hour
+or counting overlapping night coverage twice. End-to-end cash accounting now
+reaches midnight for a complete daylight forecast; a genuinely missing daylight
+edge still waits and names its first missing input/local time.
+
+Tests cover both edges, missing/invalid/polar sun events, internal daytime gaps,
+physical arrays versus alternatives, stale caches, fractional-hour timezones, DST,
+daily energy conservation and the existing single cached service read. No provider
+polling, control permission, manual setting, learning or ledger format is added
+or changed. Older caches gain edge coverage only after a successful normal refresh;
+failed refreshes retain their original age and cannot manufacture coverage.
+
+Ruff, dependency consistency, privacy/history, whitespace and reproducible bundled
+assets pass. The same **38 HA-pinned Pillow/uv advisories** remain open; no package
+overrides, workflow changes or audit exclusions are introduced. This record is
+source-and-test verification, not a claim of independent review or a release.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public

@@ -459,7 +459,7 @@ update another installation automatically. See <a href="#installation-updates-an
 </tr>
 <tr>
 <td>Forecast.Solar sources and alternatives</td>
-<td>Add/edit/remove sources, physical coverage groups, alternative weights, overlap rejection, age correction, cache freshness/retries and known nighttime zero. <a href="#integrations-solar-forecasts-and-alternatives">Solar sources</a>.</td>
+<td>Add/edit/remove sources, physical coverage groups, alternative weights, overlap rejection, age correction, cache freshness/retries, known nighttime zero and dawn/dusk completion only when every daylight portion is covered. <a href="#integrations-solar-forecasts-and-alternatives">Solar sources</a>.</td>
 </tr>
 <tr>
 <td>Household-demand learning</td>
@@ -565,7 +565,7 @@ There is no separately calculated capacity-charge saving. See
 </tr>
 <tr>
 <td><strong>Unreleased development after 0.2.0</strong></td>
-<td>Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs; modeling/forecasting robustness fixes and permanent independent-oracle regressions; offline seeded simulation of forecasts, learning and decision outcomes against independent synthetic physics; read-only end-of-day net-cost forecast with local-midnight and coverage safeguards.</td>
+<td>Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs; modeling/forecasting robustness fixes and permanent independent-oracle regressions; offline seeded simulation of forecasts, learning and decision outcomes against independent synthetic physics; read-only end-of-day net-cost forecast with local-midnight and coverage safeguards, astronomical completion of covered dawn/dusk edges and input-specific gap explanations.</td>
 </tr>
 </tbody>
 </table></div>
@@ -965,6 +965,10 @@ bill; check <strong>Today's cost coverage</strong>. More info separates <code>ob
 <code>remaining_net_cost</code>, <code>uncovered_past_hours</code> and future coverage timestamps.
 Remaining interval costs are prorated when the current time or midnight cuts a
 plan interval. The day boundary follows local time, including 23/25-hour DST days.</p>
+<p>Normal sunrise/sunset boundaries do not need a full-hour provider point: NRG
+combines the covered daylight portion with HA's known nighttime zero. It never
+fills genuinely missing daylight this way. If coverage is still missing, the
+explanation names the input and first uncovered local time.</p>
 <p>The forecast waits rather than treating missing future prices or solar as zero.
 It also needs some covered cost today, a fresh plan, an applicable battery outlook
 and sufficient EV charging information/compatible controls. A monitoring-only
@@ -1796,11 +1800,15 @@ alternative can cover a failed estimate for the same panels, but a missing entir
 array is not a confident whole-system zero. Astronomically dark intervals are known
 zero even when the provider drops the completed day after sunset. Missing daylight
 stays unknown. Coverage and alternative selection are checked for each hour, not
-just the presence of a daily total. A covered zero-output hour is valid; missing or
-partial edge hours remain unknown. Long daytime power-shape gaps and malformed
-responses are rejected instead of redistributing their energy into other hours.
-These conservative boundaries can shorten the dependable comparison horizon,
-including near sunrise/sunset; EV deadline feasibility remains available. A failed
+just the presence of a daily total. A covered zero-output hour is valid. At dawn
+and dusk, NRG can combine a partial provider hour with HA's astronomical darkness
+<strong>only when every daylight second is covered</strong>. The partial hour keeps its actual
+forecast energy; it is not scaled up to a full hour. Overlapping provider/night
+coverage is counted once, including in fractional-hour timezones and DST days.
+Missing daylight, unavailable sun events or a stale/missing array still stays
+unknown. Long daytime power-shape gaps and malformed responses are rejected
+instead of redistributing their energy into other hours. Genuine gaps can shorten
+the dependable comparison horizon; EV deadline feasibility remains available. A failed
 refresh keeps the previous valid cache only until its original three-hour expiry.
 Startup/source updates trigger a cache read; failed sources retry after five
 minutes, normal refresh after thirty.</p>
@@ -3360,7 +3368,10 @@ the evaluated hour; later forecast improvements are not used as hindsight. Each
 array needs an explicitly covered hour; a daily total alone never proves missing
 daylight is zero. Alternatives are selected per hour. Daily normalization splits
 at local midnight even when UTC hours straddle dates. Explicit covered zero-output
-hours remain valid; partial edge hours remain unknown. Broken daytime shapes,
+hours remain valid. A partial dawn/dusk hour is usable only when its provider
+coverage plus HA's known astronomical darkness covers the whole interval. Night
+overlap is merged, not double-counted; partial energy is never scaled to an hour.
+Missing daylight or sun events leaves the edge unknown. Broken daytime shapes,
 duplicate timestamps, invalid containers and implausible daily totals are rejected.</p>
 <p>EV calibration uses covered sessions with at least five SOC points and five minutes.
 The upper 80th-percentile AC kWh/point sample from the last twelve valid sessions is
@@ -3567,6 +3578,11 @@ never backfilled: a partial-day forecast remains labeled partial, and
 <code>uncovered_past_hours</code> and today's observed coverage describe the omission. With
 no covered observations today, it stays unknown rather than presenting a
 forecast-only total as metered cost.</p>
+<p>Dawn/dusk intervals can combine provider-covered daylight with HA's astronomical
+nighttime zero without scaling the partial energy to a full hour. Every daylight
+portion still needs forecast coverage for each physical array; unavailable sun
+events or real daylight gaps remain unknown. Waiting explanations identify the
+missing input and first uncovered local time when available.</p>
 <p>Remaining coverage must be continuous and dependable through midnight. A stale
 plan, missing applicable import/export/solar coverage, an unmodeled installed
 battery or insufficient EV charging information/controls leaves the value unknown
@@ -3942,6 +3958,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 </li>
 <li><a href="#review-offline-synthetic-simulation-verification-unreleased">Offline synthetic simulation verification (unreleased)</a></li>
 <li><a href="#review-end-of-day-net-cost-forecast-verification-unreleased">End-of-day net-cost forecast verification — unreleased</a></li>
+<li><a href="#review-solar-dawndusk-coverage-correction-unreleased">Solar dawn/dusk coverage correction — unreleased</a></li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -4306,6 +4323,24 @@ build checks pass. The dependency audit reports <strong>38 advisories: 37 for Pi
 No dependency pins or advisory exclusions change. Existing settings, learning,
 ledgers, Observation defaults and control permissions are preserved. No release,
 live deployment or physical equipment validation is claimed.</p>
+<h3 id="review-solar-dawndusk-coverage-correction-unreleased">Solar dawn/dusk coverage correction — unreleased</h3>
+<p>Local verification on Python 3.14.8 / HA 2026.10.2 passes <strong>535 tests</strong>, including
+21 new invented dawn/dusk regressions. The parser can merge provider-covered
+portions with HA astronomical darkness before deciding whether an edge hour is
+complete. It retains normalized partial-hour energy without scaling it to an hour
+or counting overlapping night coverage twice. End-to-end cash accounting now
+reaches midnight for a complete daylight forecast; a genuinely missing daylight
+edge still waits and names its first missing input/local time.</p>
+<p>Tests cover both edges, missing/invalid/polar sun events, internal daytime gaps,
+physical arrays versus alternatives, stale caches, fractional-hour timezones, DST,
+daily energy conservation and the existing single cached service read. No provider
+polling, control permission, manual setting, learning or ledger format is added
+or changed. Older caches gain edge coverage only after a successful normal refresh;
+failed refreshes retain their original age and cannot manufacture coverage.</p>
+<p>Ruff, dependency consistency, privacy/history, whitespace and reproducible bundled
+assets pass. The same <strong>38 HA-pinned Pillow/uv advisories</strong> remain open; no package
+overrides, workflow changes or audit exclusions are introduced. This record is
+source-and-test verification, not a claim of independent review or a release.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as
