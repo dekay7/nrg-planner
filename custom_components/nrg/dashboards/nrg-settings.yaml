@@ -24,7 +24,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=5fbf156dbc29
+        url_path: /nrg-planner/guide.html?v=3a752d332d20
       grid_options:
         columns: full
         rows: auto
@@ -547,7 +547,7 @@ views:
     - type: markdown
       content: Actions begin automatically only when current supply or delivery pricing becomes unusable—not on
         a single failed request with a usable cached price, or just a missing tomorrow forecast. [Read detection
-        and recovery details](/nrg-planner/guide.html?v=5fbf156dbc29#operations-detection-and-recovery).
+        and recovery details](/nrg-planner/guide.html?v=3a752d332d20#operations-detection-and-recovery).
       grid_options:
         columns: full
         rows: auto
@@ -2749,11 +2749,50 @@ views:
         columns: full
         rows: auto
     - type: markdown
-      content: Cost totals may include published-price estimates. **Forecast-priced coverage** identifies newly
-        tracked estimated intervals; cost entity attributes separate their purchase costs and export credits. **Forecast
-        net cost by midnight** adds the remaining plan to covered costs so far; its attributes explain coverage
-        gaps or why it is waiting. It excludes battery wear and remaining-energy valuation. These are not settled
-        utility charges.
+      content: 'Cost totals may include published-price estimates. **Forecast-priced coverage** identifies newly
+        tracked estimated intervals; cost entity attributes separate their purchase costs and export credits. These
+        are not settled utility charges.
+
+
+        **By midnight** adds the remaining selected energy flows to the covered cost so far. It assumes the modeled
+        schedule is followed, not a guaranteed bill. Battery wear and remaining-energy valuation are excluded.
+
+
+        {% set status = state_attr(''sensor.nrg_net_cost_eod'', ''status'') %}
+
+        {% if status == ''waiting'' %}**Forecast waiting:** {{ state_attr(''sensor.nrg_net_cost_eod'', ''reason'')
+        }}
+
+        {% elif status == ''partial_day'' %}**Partial day:** earlier missing readings are not included in either
+        total. Check today''s cost coverage.
+
+        {% else %}Low coverage means the day is incomplete; earlier gaps are not filled by the forecast.{% endif
+        %}
+
+
+        {% if state_attr(''sensor.nrg_net_cost_eod'', ''confidence'') == ''tentative'' %}
+
+        **Tentative forecast · lower confidence:** includes estimated prices, not known or settled charges. Equipment-control
+        pricing is unchanged.
+
+        {% set intervals = state_attr(''sensor.nrg_net_cost_eod'', ''estimated_forecast_intervals'') or [] %}
+
+        {% if intervals %}**Estimated remaining hours** ({{ state_attr(''sensor.nrg_net_cost_eod'', ''estimated_forecast_hours'')
+        | round(2) }} h):
+
+        {% for interval in intervals %}
+
+        - {{ interval.start | timestamp_custom(''%H:%M %Z'') }}–{{ interval.end | timestamp_custom(''%H:%M %Z'')
+        }}: {{ (interval.supply_price * 100) | round(2) }}¢/kWh supply · {{ {''recorded_estimate'': ''recorded matching-hour
+        median'', ''published_price_median'': ''recent published-price median'', ''day_ahead'': ''published current-hour
+        estimate''}.get(interval.source, interval.source) }}
+
+        {% endfor %}{% endif %}
+
+        {% if state_attr(''sensor.nrg_net_cost_eod'', ''estimated_observed_coverage_hours'') | float(0) > 0 %}Covered
+        costs so far also include published-price estimates; see today''s forecast-priced coverage.{% endif %}
+
+        {% endif %}'
       grid_options:
         columns: full
         rows: auto

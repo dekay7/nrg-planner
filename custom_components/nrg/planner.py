@@ -7,8 +7,8 @@ inside each bin. This is an approximate feasible search, not a global-optimum cl
 from datetime import datetime, timedelta, time
 import math
 
-from .config import effective_capacity, cents_rate
-from .forecast import price_at, comed_estimate_deadline
+from .config import effective_capacity, cents_rate, export_price
+from .forecast import price_at, comed_estimate_deadline, cost_price_estimate
 from .tariffs import boundaries as tariff_boundaries, wall_instants
 
 
@@ -85,6 +85,34 @@ def make_slots(now, config, zone, stats, prices, solar, live, due):
                       "display_import_price": price["import_price"], **price,
                       "_model_import_price": model_import, "_model_export_price": model_export})
     return rows
+
+
+def add_cost_forecast(slots, now, config, prices, stats):
+    """Reprice selected flows only, after all equipment/economic decisions.
+
+    Keep cost, price_known, export_known and the dependable horizon unchanged.
+    Tentative supply cannot fill missing delivery, solar or export settings.
+    """
+    until = now
+    today = datetime.fromtimestamp(now, config["zone"]).date()
+    midnight = datetime.combine(today + timedelta(days=1), datetime.min.time(), config["zone"]).timestamp()
+    for slot in slots:
+        slot["forecast_cost"] = slot["cost"]
+        estimate = (cost_price_estimate(slot["start"], now, config, prices, slot, stats.price_prior)
+                    if slot["start"] < midnight else None)
+        if estimate is not None:
+            supply = estimate["supply_price"]
+            delivery = slot["delivery_price"]
+            credit = export_price(config, supply)
+            delivery_known = slot["delivery_source"] in ("flat", "time_of_use", "external_live", "external_forecast")
+            if (delivery_known and delivery is not None and slot["solar_known"]
+                    and (not export_required(config) or credit is not None)):
+                slot["forecast_cost"] = (slot["import_kwh"] * (supply + delivery)
+                                         - slot["export_kwh"] * (credit if credit is not None else 0))
+                slot["forecast_price_estimate"] = estimate | {"import_price": supply + delivery, "export_price": credit}
+        if slot["start"] == until and slot["forecast_cost"] is not None:
+            until = slot["end"]
+    return until
 
 
 def allocate(slots, need, power, cutoff, config, kind, all_time=False):
@@ -520,8 +548,10 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
         slot.pop("_model_export_price", None)
     economic_slots = trusted_prefix(slots, config)
     has_known_cost = bool(economic_slots)
+    cost_forecast_until = add_cost_forecast(slots, now, config, prices, stats)
     return {"version": 2, "generated_at": now, "expires_at": now + 420,
             "economic_until": economic_slots[-1]["end"] if economic_slots else now,
+            "cost_forecast_until": cost_forecast_until,
             "deadline": due if managed_ev else None, "departure_setting": config["departure_time"],
             "departure_override": config.get("departure_override"), "connected": connected,
             "ev_status": ev_status, "ev_needed_kwh": need, "ev_shortfall_kwh": best["missing"] if managed_ev else None,

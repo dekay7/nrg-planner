@@ -28,7 +28,8 @@ def forecast_net_cost(now: float, zone, ledger: dict, planned: dict) -> dict:
     result = {"net_cost": None, "observed_net_cost": round(observed, 4) if covered > 0 else None,
               "remaining_net_cost": None, "observed_coverage_hours": covered,
               "uncovered_past_hours": missing, "forecast_start": now, "forecast_end": day_end,
-              "forecast_until": now, "forecast_coverage_hours": 0, "status": "waiting"}
+              "forecast_until": now, "forecast_coverage_hours": 0, "status": "waiting",
+              "confidence": "unavailable", "estimated_forecast_hours": 0, "estimated_forecast_intervals": []}
     if planned.get("expires_at", 0) <= now or planned.get("generated_at", now + 1) > now:
         return result | {"reason": "Waiting for a fresh energy plan."}
     if covered <= 0:
@@ -37,20 +38,31 @@ def forecast_net_cost(now: float, zone, ledger: dict, planned: dict) -> dict:
         return result | {"reason": "A dependable battery outlook is needed. " + planned.get("battery_reason", "")}
     if planned.get("ev_forecast_available") is False:
         return result | {"reason": "Waiting for EV charging duration, telemetry or compatible controls."}
-    until = min(day_end, planned.get("economic_until", now))
-    cursor, remaining = now, 0.0
+    until = min(day_end, planned.get("cost_forecast_until", planned.get("economic_until", now)))
+    cursor, remaining, estimated_hours = now, 0.0, 0.0
+    estimates = result["estimated_forecast_intervals"]
     for slot in planned.get("slots", []):
         start, end = max(slot["start"], now), min(slot["end"], until)
         if end <= start:
             continue
-        cost = finite(slot.get("cost"))
+        cost = finite(slot.get("forecast_cost", slot.get("cost")))
         if abs(start - cursor) > 1e-6 or cost is None:
             break
+        estimate = slot.get("forecast_price_estimate")
+        if estimate:
+            estimated_hours += (end - start) / 3600
+            if (estimates and estimates[-1]["end"] == start
+                    and int(estimates[-1]["start"] // 3600) == int(start // 3600)
+                    and all(estimates[-1].get(key) == value for key, value in estimate.items())):
+                estimates[-1]["end"] = end
+            else:
+                estimates.append(estimate | {"start": start, "end": end})
         remaining += cost * (end - start) / (slot["end"] - slot["start"])
         cursor = end
         if cursor >= until:
             break
-    result.update(forecast_until=cursor, forecast_coverage_hours=(cursor - now) / 3600)
+    result.update(forecast_until=cursor, forecast_coverage_hours=(cursor - now) / 3600,
+                  estimated_forecast_hours=estimated_hours)
     if cursor < day_end:
         slot = next((s for s in planned.get("slots", []) if s["start"] <= cursor < s["end"]), {})
         missing_inputs = [label for key, label in (("price_known", "buying price"),
@@ -59,10 +71,16 @@ def forecast_net_cost(now: float, zone, ledger: dict, planned: dict) -> dict:
         reason = (f"Missing {', '.join(missing_inputs)} coverage at {at}; continuous coverage through local midnight is required."
                   if missing_inputs else "Waiting for continuous price and applicable solar coverage through local midnight.")
         return result | {"reason": reason, "missing_forecast_inputs": missing_inputs}
+    tentative = estimated_hours > 0 or ledger.get("estimated_coverage_hours", 0) > 0
+    reasons = ["Covered cost so far plus the remaining energy plan to local midnight."]
+    if tentative:
+        reasons.append("Tentative: includes estimated prices; see estimated forecast intervals and observed pricing coverage.")
+    if missing > 1e-6:
+        reasons.append("Earlier observation gaps are not included.")
     return result | {"net_cost": round(observed + remaining, 4), "remaining_net_cost": round(remaining, 4),
                      "status": "partial_day" if missing > 1e-6 else "ready",
-                     "reason": "Earlier observation gaps are not included." if missing > 1e-6 else
-                               "Covered cost so far plus the remaining energy plan to local midnight."}
+                     "confidence": "tentative" if tentative else "limited" if missing > 1e-6 else "forecast",
+                     "reason": " ".join(reasons)}
 
 
 class Statistics:

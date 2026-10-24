@@ -230,9 +230,9 @@ class NRGSensor(NRGEntity, SensorEntity):
                     "supply_periods": config["supply_periods"], "delivery_periods": config["delivery_periods"],
                     "status": data.get("forecast_status", {})}
         if self.key == "net_cost_eod":
-            forecast = data.get("cost_forecast", {}) if plan else {"status": "waiting", "reason": "Waiting for a fresh energy plan."}
+            forecast = data.get("cost_forecast", {}) if plan else {"status": "waiting", "confidence": "unavailable", "reason": "Waiting for a fresh energy plan."}
             return forecast | {
-                "basis": "Covered purchases minus export credits so far + remaining plan to local midnight, prorated within intervals. Earlier observation gaps are not filled. Excludes fixed charges, unconfigured taxes, battery wear and remaining-energy valuation. Not a settled bill or guaranteed outcome.",
+                "basis": "Covered purchases minus export credits so far + remaining selected energy flows priced to local midnight, prorated within intervals. Unpublished future ComEd hours may use labeled tentative supply estimates; these never authorize equipment control. Earlier observation gaps are not filled. Excludes fixed charges, unconfigured taxes, battery wear and remaining-energy valuation. Not a settled bill or guaranteed outcome.",
                 "operating_mode": self.coordinator.config["mode"],
                 "estimated_observed_coverage_hours": data.get("ledger", {}).get("estimated_coverage_hours", 0)}
         if "cost" in self.key or "credit" in self.key or self.key == "estimated_pricing_hours":

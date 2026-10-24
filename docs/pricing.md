@@ -98,6 +98,61 @@ The automatic outage latch and verified-observation timestamp survive restarts.
 Switching between live and estimated pricing invalidates the old plan promptly.
 No choice enables equipment control or bypasses Observation/protection guards.
 
+## Tentative prices for the end-of-day cost forecast
+
+**Unreleased after 0.2.0.** The read-only **Forecast net cost by midnight** can
+estimate unpublished **future ComEd supply hours** for the remaining local day,
+without waiting for the next-day feed. ComEd's hour-ending labels mean today's
+feed ends at 23:00; the next-day feed supplies today's 23:00–midnight hour. There
+is no hard-coded afternoon publication time.
+
+The cash forecast uses this order:
+
+1. Use the applicable published exact-hour price (and current live price where
+   available). When current live pricing is missing, a fresh publication for the
+   **exact current hour** can price its remaining cash projection, labeled
+   `day_ahead` and tentative, even beyond the separate control-policy cutoff.
+   It does not make the current price usable for commands or observed accounting.
+2. For an unpublished future hour, use the median of this installation's recorded
+   live supply observations for the matching **Central clock hour**, when present
+   in the existing bounded learning history. Label it `recorded_estimate`, with
+   its sample count. These observations are running estimates, not settlements.
+3. Without matching history, use the **median of published supply prices in the
+   preceding 24 real hours**, labeled `published_price_median`, with sample count
+   and reference timestamps. Rows must also satisfy the normal 36-hour fetch-age
+   limit; future fetch timestamps, old dated hours and later published hours do
+   not qualify. A single spike does not dominate this median. The baseline stays
+   constant within each real hour. A new installation can use this baseline
+   without inventing a learned household profile.
+4. Without either baseline, keep the forecast unknown and explain the gap. Never
+   use an unconfigured rate, a flat-rate placeholder, the last live price carried
+   forward, or zero as a missing supply estimate. A genuine signed or zero median
+   remains signed or zero.
+
+These estimates reprice the **already selected energy flows**, including applicable
+supply-linked export credits, only after equipment planning. They do not set
+`price_known`/`export_known`, change ordinary slot costs, extend the dependable
+comparison horizon, authorize charging, alter advice/notifications, make a current
+live-price outage usable for control, or update the observed ledger. A missing
+current hour without a fresh exact-hour publication is never filled from history
+or a published-price median. Missing delivery,
+applicable export settings, daylight coverage or equipment inputs still block the
+forecast. Other providers and unconfigured flat/time-of-use rates are not filled
+from ComEd data.
+
+The sensor exposes `estimated_forecast_hours`, `estimated_forecast_intervals` and
+`confidence: tentative`; both dashboards show which remaining hours use estimates
+and their supply rates/sources. Covered observed costs that include published-price
+estimates also lower confidence. Partial-day omissions remain separately labeled.
+A normal fresh plan replaces tentative prices when ComEd publishes exact-hour
+coverage, automatically removing the tentative label if no other estimated prices
+remain. See [forecast accounting](accounting.md#end-of-day-net-cost-forecast).
+
+This default forecast behavior needs **no new setting or permission** and is
+independent of the opt-in **Allow brief published estimates** control policy.
+Observation defaults, live-price guards, equipment permissions, fallback/recovery,
+user settings and learning are unchanged.
+
 ## Editing timed periods in HA
 
 1. Open **Settings → Devices & services → NRG Planner → Configure → Pricing periods**.

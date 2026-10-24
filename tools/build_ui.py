@@ -471,6 +471,22 @@ def translations():
 
 
 def build():
+    cost_forecast_note = """**By midnight** adds the remaining selected energy flows to the covered cost so far. It assumes the modeled schedule is followed, not a guaranteed bill. Battery wear and remaining-energy valuation are excluded.
+
+{% set status = state_attr('sensor.nrg_net_cost_eod', 'status') %}
+{% if status == 'waiting' %}**Forecast waiting:** {{ state_attr('sensor.nrg_net_cost_eod', 'reason') }}
+{% elif status == 'partial_day' %}**Partial day:** earlier missing readings are not included in either total. Check today's cost coverage.
+{% else %}Low coverage means the day is incomplete; earlier gaps are not filled by the forecast.{% endif %}
+
+{% if state_attr('sensor.nrg_net_cost_eod', 'confidence') == 'tentative' %}
+**Tentative forecast · lower confidence:** includes estimated prices, not known or settled charges. Equipment-control pricing is unchanged.
+{% set intervals = state_attr('sensor.nrg_net_cost_eod', 'estimated_forecast_intervals') or [] %}
+{% if intervals %}**Estimated remaining hours** ({{ state_attr('sensor.nrg_net_cost_eod', 'estimated_forecast_hours') | round(2) }} h):
+{% for interval in intervals %}
+- {{ interval.start | timestamp_custom('%H:%M %Z') }}–{{ interval.end | timestamp_custom('%H:%M %Z') }}: {{ (interval.supply_price * 100) | round(2) }}¢/kWh supply · {{ {'recorded_estimate': 'recorded matching-hour median', 'published_price_median': 'recent published-price median', 'day_ahead': 'published current-hour estimate'}.get(interval.source, interval.source) }}
+{% endfor %}{% endif %}
+{% if state_attr('sensor.nrg_net_cost_eod', 'estimated_observed_coverage_hours') | float(0) > 0 %}Covered costs so far also include published-price estimates; see today's forecast-priced coverage.{% endif %}
+{% endif %}"""
     price = {"type": "sensor", "entity": "sensor.nrg_import_price", "name": "Electricity price · supply + delivery", "graph": "line", "detail": 2, "icon": "mdi:lightning-bolt"}
     advice = markdown("""## {{ states('sensor.nrg_advice') }}
 {% set category = state_attr('sensor.nrg_advice','category') %}
@@ -498,14 +514,7 @@ def build():
             conditional("ev_control", {"type":"conditional", "conditions":[{"condition":"numeric_state","entity":"sensor.nrg_ev_needed","above":0}], "card":grid([metric("next_charge"), metric("completion")])}),
             conditional("cost_metered", metric("net_cost_today")),
             conditional("cost_metered", metric("net_cost_eod")), conditional("cost_metered", metric("cost_coverage")),
-            conditional("cost_metered", markdown("""Net cost is purchases minus export credits using observed power and your supply + delivery rates. Fixed charges and unconfigured taxes are excluded.
-
-**By midnight** adds the remaining energy plan to the covered cost so far. It assumes the modeled schedule is followed, not a guaranteed bill.
-
-{% set status = state_attr('sensor.nrg_net_cost_eod', 'status') %}
-{% if status == 'waiting' %}**Forecast waiting:** {{ state_attr('sensor.nrg_net_cost_eod', 'reason') }}
-{% elif status == 'partial_day' %}**Partial day:** earlier missing readings are not included in either total. Check today's cost coverage.
-{% else %}Low coverage means the day is incomplete; earlier gaps are not filled by the forecast.{% endif %}""")),
+            conditional("cost_metered", markdown("Net cost is purchases minus export credits using observed power and your supply + delivery rates. Fixed charges and unconfigured taxes are excluded.\n\n" + cost_forecast_note)),
             conditional("cost_metered", markdown("Connect a grid or whole-home meter in Settings to track net energy cost. Price advice works without one."), False)]]),
         view("Why?", "why", [[advice, markdown("{{ state_attr('sensor.nrg_advice','reason') or 'Waiting for a current explanation.' }}"), markdown("""{% set p = state_attr('sensor.nrg_plan','plan') or {} %}{% set a = p.get('household', {}) %}
 {% if a.get('best_cost') is number %}### Selected appliance window
@@ -660,7 +669,7 @@ EV shortfall: {{ c.shortfall_kwh | round(2) }} kWh
 {% endif %}Includes remaining-energy value and any configured cycling cost. This is a model comparison, not measured savings."""),
         ], [heading("Costs and estimates"),
         *(metric(k) for k in ("import_cost_today", "export_credit_today", "net_cost_today", "net_cost_eod", "cost_coverage", "estimated_pricing_hours")),
-        markdown("Cost totals may include published-price estimates. **Forecast-priced coverage** identifies newly tracked estimated intervals; cost entity attributes separate their purchase costs and export credits. **Forecast net cost by midnight** adds the remaining plan to covered costs so far; its attributes explain coverage gaps or why it is waiting. It excludes battery wear and remaining-energy valuation. These are not settled utility charges."),
+        markdown("Cost totals may include published-price estimates. **Forecast-priced coverage** identifies newly tracked estimated intervals; cost entity attributes separate their purchase costs and export credits. These are not settled utility charges.\n\n" + cost_forecast_note),
         conditional("has_ev", metric("ev_energy_estimate", "EV energy per SOC point")), conditional("has_ev", metric("ev_power_estimate", "EV power at max current")),
         conditional("has_battery", status_card("battery_calibration", "Battery calibration")),
         *(conditional("has_battery", metric(key)) for key in ("battery_efficiency_estimate", "battery_charge_estimate", "battery_discharge_estimate")),

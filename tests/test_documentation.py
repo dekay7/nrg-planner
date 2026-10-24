@@ -98,6 +98,7 @@ def test_every_mapping_control_value_and_script_role_is_documented_from_catalogu
     "pricing.md#comed-price-sources-and-freshness",
     "pricing.md#comeds-new-hour-publication-window",
     "pricing.md#brief-comed-live-data-delays",
+    "pricing.md#tentative-prices-for-the-end-of-day-cost-forecast",
     "operations.md#price-data-fallback",
     "operations.md#detection-and-recovery",
     "operations.md#notifications",
