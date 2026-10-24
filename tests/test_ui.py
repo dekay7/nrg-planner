@@ -37,6 +37,24 @@ def test_homeowner_dashboard_contains_only_read_metrics_and_accessible_links():
     assert package["lovelace"]["dashboards"]["nrg-settings"]["icon"] == "mdi:crystal-ball"
 
 
+def test_daily_cost_forecast_follows_observed_cost_with_matching_meter_visibility():
+    for filename in ("nrg-home.yaml", "nrg-settings.yaml"):
+        dashboard = yaml.safe_load((INTEGRATION / "dashboards" / filename).read_text())
+        tiles = [item for item in walk(dashboard) if item.get("type") == "tile"]
+        entities = [item["entity"] for item in tiles]
+        index = entities.index("sensor.nrg_net_cost_today")
+        assert entities[index + 1:index + 3] == ["sensor.nrg_net_cost_eod", "sensor.nrg_cost_coverage"]
+        assert tiles[index + 1]["name"] == "Forecast net cost by midnight"
+        if filename == "nrg-home.yaml":
+            costs = [item for item in walk(dashboard) if item.get("type") == "conditional"
+                     and item.get("card", {}).get("entity") in ("sensor.nrg_net_cost_today", "sensor.nrg_net_cost_eod")]
+            assert len(costs) == 2
+            assert costs[0]["conditions"] == costs[1]["conditions"]
+            assert costs[0]["conditions"][0]["entity"] == "binary_sensor.nrg_cost_metered"
+            notes = " ".join(item.get("content", "") for item in walk(dashboard))
+            assert "Forecast waiting:" in notes and "Partial day:" in notes
+
+
 async def test_dashboard_entities_exist_and_all_tuning_has_help(hass, installed):
     admin = yaml.safe_load((INTEGRATION / "dashboards/nrg-settings.yaml").read_text())
     entities = [item["entity"] for item in walk(admin) if "entity" in item]

@@ -525,6 +525,7 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
             "deadline": due if managed_ev else None, "departure_setting": config["departure_time"],
             "departure_override": config.get("departure_override"), "connected": connected,
             "ev_status": ev_status, "ev_needed_kwh": need, "ev_shortfall_kwh": best["missing"] if managed_ev else None,
+            "ev_forecast_available": not config["_ev_duration_unknown"] and ev_status not in ("telemetry_missing", "blocked"),
             "next_charge": next_charge, "completion": completion,
             "ev_amps": first["ev_amps"],
             "ev_stop_at": first["start"] + first["ev_kwh"] / (power * first["ev_amps"] / config["ev_max_amps"]) * 3600 if first["ev_amps"] else None,

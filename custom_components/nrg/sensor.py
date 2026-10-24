@@ -30,6 +30,7 @@ METRICS = {
     "ev_needed": ("Car energy still needed", "kWh", None),
     "ev_shortfall": ("Car departure energy shortfall", "kWh", None),
     "net_cost_today": ("Net energy cost today", "USD", SensorDeviceClass.MONETARY),
+    "net_cost_eod": ("Forecast net cost by midnight", "USD", SensorDeviceClass.MONETARY),
     "import_cost_today": ("Energy purchases today", "USD", SensorDeviceClass.MONETARY),
     "export_credit_today": ("Export credits today", "USD", SensorDeviceClass.MONETARY),
     "cost_coverage": ("Today's cost data coverage", "%", None),
@@ -121,6 +122,8 @@ class NRGSensor(NRGEntity, SensorEntity):
             return data.get("solar_quality", {}).get("mae_kwh")
         if key == "estimated_pricing_hours":
             return data.get("ledger", {}).get("estimated_coverage_hours", 0)
+        if key == "net_cost_eod":
+            return data.get("cost_forecast", {}).get("net_cost") if planned else None
         if key == "net_cost_today":
             ledger = data.get("ledger", {})
             return round(ledger.get("import_cost", 0) - ledger.get("export_credit", 0), 4) if ledger.get("coverage_hours", 0) > 0 else None
@@ -226,6 +229,12 @@ class NRGSensor(NRGEntity, SensorEntity):
             return {"supply_plan": config["supply_plan"], "delivery_plan": config["delivery_plan"],
                     "supply_periods": config["supply_periods"], "delivery_periods": config["delivery_periods"],
                     "status": data.get("forecast_status", {})}
+        if self.key == "net_cost_eod":
+            forecast = data.get("cost_forecast", {}) if plan else {"status": "waiting", "reason": "Waiting for a fresh energy plan."}
+            return forecast | {
+                "basis": "Covered purchases minus export credits so far + remaining plan to local midnight, prorated within intervals. Earlier observation gaps are not filled. Excludes fixed charges, unconfigured taxes, battery wear and remaining-energy valuation. Not a settled bill or guaranteed outcome.",
+                "operating_mode": self.coordinator.config["mode"],
+                "estimated_observed_coverage_hours": data.get("ledger", {}).get("estimated_coverage_hours", 0)}
         if "cost" in self.key or "credit" in self.key or self.key == "estimated_pricing_hours":
             ledger = data.get("ledger", {})
             return {"basis": "Measured grid power × contemporaneous supply + delivery; may include separately tracked published-forecast estimates. Not a settled bill; excludes fixed charges and unconfigured taxes.",

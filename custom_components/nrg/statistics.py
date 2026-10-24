@@ -11,6 +11,54 @@ from .config import export_price, finite
 from .tariffs import boundaries, period_at
 
 
+def forecast_net_cost(now: float, zone, ledger: dict, planned: dict) -> dict:
+    """Covered cash cost so far plus a complete remaining local-day outlook.
+
+    Never use the planner's comparison score: it includes battery replacement
+    value and wear, rather than just purchases minus export credits. Interval
+    cash costs are prorated where now or local midnight cuts through a slot.
+    Earlier observation gaps remain explicitly uncovered, not backfilled.
+    """
+    today = datetime.fromtimestamp(now, zone).date()
+    day_start = datetime.combine(today, datetime.min.time(), zone).timestamp()
+    day_end = datetime.combine(today + timedelta(days=1), datetime.min.time(), zone).timestamp()
+    covered = ledger.get("coverage_hours", 0)
+    observed = ledger.get("import_cost", 0) - ledger.get("export_credit", 0)
+    missing = max((now - day_start) / 3600 - covered, 0)
+    result = {"net_cost": None, "observed_net_cost": round(observed, 4) if covered > 0 else None,
+              "remaining_net_cost": None, "observed_coverage_hours": covered,
+              "uncovered_past_hours": missing, "forecast_start": now, "forecast_end": day_end,
+              "forecast_until": now, "forecast_coverage_hours": 0, "status": "waiting"}
+    if planned.get("expires_at", 0) <= now or planned.get("generated_at", now + 1) > now:
+        return result | {"reason": "Waiting for a fresh energy plan."}
+    if covered <= 0:
+        return result | {"reason": "Waiting for covered grid readings and prices today."}
+    if planned.get("components", {}).get("battery") and not planned.get("battery_forecast_available"):
+        return result | {"reason": "A dependable battery outlook is needed. " + planned.get("battery_reason", "")}
+    if planned.get("ev_forecast_available") is False:
+        return result | {"reason": "Waiting for EV charging duration, telemetry or compatible controls."}
+    until = min(day_end, planned.get("economic_until", now))
+    cursor, remaining = now, 0.0
+    for slot in planned.get("slots", []):
+        start, end = max(slot["start"], now), min(slot["end"], until)
+        if end <= start:
+            continue
+        cost = finite(slot.get("cost"))
+        if abs(start - cursor) > 1e-6 or cost is None:
+            break
+        remaining += cost * (end - start) / (slot["end"] - slot["start"])
+        cursor = end
+        if cursor >= until:
+            break
+    result.update(forecast_until=cursor, forecast_coverage_hours=(cursor - now) / 3600)
+    if cursor < day_end:
+        return result | {"reason": "Waiting for continuous price and applicable solar coverage through local midnight."}
+    return result | {"net_cost": round(observed + remaining, 4), "remaining_net_cost": round(remaining, 4),
+                     "status": "partial_day" if missing > 1e-6 else "ready",
+                     "reason": "Earlier observation gaps are not included." if missing > 1e-6 else
+                               "Covered cost so far plus the remaining energy plan to local midnight."}
+
+
 class Statistics:
     def __init__(self, saved: dict | None = None):
         saved = saved or {}

@@ -24,7 +24,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=fef7019a2ea4
+        url_path: /nrg-planner/guide.html?v=41df9925b984
       grid_options:
         columns: full
         rows: auto
@@ -547,7 +547,7 @@ views:
     - type: markdown
       content: Actions begin automatically only when current supply or delivery pricing becomes unusable—not on
         a single failed request with a usable cached price, or just a missing tomorrow forecast. [Read detection
-        and recovery details](/nrg-planner/guide.html?v=fef7019a2ea4#operations-detection-and-recovery).
+        and recovery details](/nrg-planner/guide.html?v=41df9925b984#operations-detection-and-recovery).
       grid_options:
         columns: full
         rows: auto
@@ -2713,6 +2713,18 @@ views:
         columns: full
         rows: auto
     - type: tile
+      entity: sensor.nrg_net_cost_eod
+      name: Forecast net cost by midnight
+      tap_action:
+        action: more-info
+      hold_action:
+        action: none
+      icon_tap_action:
+        action: more-info
+      grid_options:
+        columns: full
+        rows: auto
+    - type: tile
       entity: sensor.nrg_cost_coverage
       name: Today's cost coverage
       tap_action:
@@ -2738,8 +2750,10 @@ views:
         rows: auto
     - type: markdown
       content: Cost totals may include published-price estimates. **Forecast-priced coverage** identifies newly
-        tracked estimated intervals; cost entity attributes separate their purchase costs and export credits. These
-        are not settled utility charges.
+        tracked estimated intervals; cost entity attributes separate their purchase costs and export credits. **Forecast
+        net cost by midnight** adds the remaining plan to covered costs so far; its attributes explain coverage
+        gaps or why it is waiting. It excludes battery wear and remaining-energy valuation. These are not settled
+        utility charges.
       grid_options:
         columns: full
         rows: auto
