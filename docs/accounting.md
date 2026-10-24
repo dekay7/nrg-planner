@@ -120,7 +120,10 @@ without those price estimates, and `unavailable` while waiting. `status` still
 separately reports `ready`, `partial_day` or `waiting`; ready means calculable, not
 certain. The dashboards show tentative hours and retain partial-day warnings too.
 These forecast-only estimates are never written into the observed ledger, learned
-as live prices, or used to extend the dependable economic horizon.
+as live prices, or used to extend the dependable economic horizon. A fresh published
+exact-current-hour price can cover its remaining projection beyond the control
+policy's cutoff; it remains tentative and cannot authorize commands or observed
+costs. Without that publication, the current hour is not filled from a median.
 
 ## Different money figures
 

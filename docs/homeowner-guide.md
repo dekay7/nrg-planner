@@ -180,8 +180,11 @@ for freshness limits and fallback details.
 This estimates the cost of the already selected energy flows; it does not change
 EV/battery schedules, buying-price sensors, household advice or equipment-control
 pricing rules. It requires no opt-in to the separate ComEd live-delay policy.
-Estimated current-hour prices from that bounded policy and estimated observed
-costs also lower forecast confidence. This is still an uncertain energy forecast,
+During a live-price delay, a fresh published price for the exact current hour can
+also price its remaining forecast as tentative, without extending the control
+policy's allowance or booking observed costs. Without that publication the current
+hour remains unknown; history/medians do not fill it. Estimated observed costs
+also lower forecast confidence. This is still an uncertain energy forecast,
 not a promise that the selected schedule or price will occur.
 
 Normal sunrise/sunset boundaries do not need a full-hour provider point: NRG
@@ -190,7 +193,7 @@ fills genuinely missing daylight this way. If coverage is still missing, the
 explanation names the input and first uncovered local time.
 
 The forecast still waits for a missing price without a defensible estimate, a
-current live-price outage beyond its existing bounded policy, missing delivery or
+current live-price outage without a fresh exact-hour publication, missing delivery or
 export settings, or missing solar coverage; none is treated as zero.
 It also needs some covered cost today, a fresh plan, an applicable battery outlook
 and sufficient EV charging information/compatible controls. A monitoring-only

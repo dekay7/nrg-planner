@@ -121,12 +121,14 @@ def cost_price_estimate(stamp: float, now: float, config: dict, cache: list[dict
     Estimate unpublished future ComEd hours from recorded matching-hour medians,
     then the median of up to 24 preceding published real hours. The latter needs
     both a recent fetch and recent dated hours; stale/re-fetched old days do
-    not become a baseline. Current live outages and other tariffs are not filled.
+    not become a baseline. A valid exact-current-hour publication can price the
+    remaining cash projection beyond control cutoffs, but never authorize live
+    pricing. Current hours without a publication and other tariffs are not filled.
     """
     if config["supply_plan"] != "Hourly ComEd":
         return None
     stamp = int(stamp // 3600) * 3600
-    if price.get("comed_publication_bridge") or price.get("comed_estimated_price"):
+    if price["supply_source"] == "day_ahead" and int(stamp // 3600) == int(now // 3600):
         return {"source": "day_ahead", "supply_price": price["supply_price"]}
     if (int(stamp // 3600) <= int(now // 3600)
             or price["supply_source"] not in ("missing", "recorded_estimate")):

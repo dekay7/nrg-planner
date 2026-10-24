@@ -109,7 +109,10 @@ is no hard-coded afternoon publication time.
 The cash forecast uses this order:
 
 1. Use the applicable published exact-hour price (and current live price where
-   available) under the existing pricing rules.
+   available). When current live pricing is missing, a fresh publication for the
+   **exact current hour** can price its remaining cash projection, labeled
+   `day_ahead` and tentative, even beyond the separate control-policy cutoff.
+   It does not make the current price usable for commands or observed accounting.
 2. For an unpublished future hour, use the median of this installation's recorded
    live supply observations for the matching **Central clock hour**, when present
    in the existing bounded learning history. Label it `recorded_estimate`, with
@@ -130,7 +133,9 @@ These estimates reprice the **already selected energy flows**, including applica
 supply-linked export credits, only after equipment planning. They do not set
 `price_known`/`export_known`, change ordinary slot costs, extend the dependable
 comparison horizon, authorize charging, alter advice/notifications, make a current
-live-price outage usable, or update the observed ledger. Missing delivery,
+live-price outage usable for control, or update the observed ledger. A missing
+current hour without a fresh exact-hour publication is never filled from history
+or a published-price median. Missing delivery,
 applicable export settings, daylight coverage or equipment inputs still block the
 forecast. Other providers and unconfigured flat/time-of-use rates are not filled
 from ComEd data.

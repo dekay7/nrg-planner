@@ -108,12 +108,15 @@ def test_no_defensible_baseline_waits_instead_of_using_flat_placeholder_or_zero(
     assert "buying price" in result["reason"]
 
 
-@pytest.mark.parametrize("fault", ["live", "delivery", "solar", "export", "battery", "ev", "stale_plan"])
+@pytest.mark.parametrize("fault", ["live_without_publication", "delivery", "solar", "export", "battery", "ev", "stale_plan"])
 def test_tentative_supply_never_hides_other_missing_inputs(fault):
     config, _, solar, telemetry, stats = fixture(has_ev=False, has_battery=False)
     now, live = NOW + 900, .1  # Beyond the strict new-hour publication bridge.
-    if fault == "live":
+    prices = published_today(now)
+    if fault == "live_without_publication":
         live = None
+        prices = [row for row in prices if not row["start"] <= now < row["start"] + 3600]
+        stats.hours = [{"comed_hour": datetime.fromtimestamp(now, ZONE).hour, "supply": .04}]
     elif fault == "delivery":
         config["delivery_cents"] = None
     elif fault == "solar":
@@ -125,13 +128,41 @@ def test_tentative_supply_never_hides_other_missing_inputs(fault):
     elif fault == "ev":
         config.update(has_ev=True, ev_control=True)
         telemetry["ev_soc"] = None
-    planned = plan(now, config, ZONE, telemetry, stats, published_today(now), solar, live)
+    planned = plan(now, config, ZONE, telemetry, stats, prices, solar, live)
     if fault == "stale_plan":
         planned["expires_at"] = now
     result = forecast_net_cost(now, ZONE, ledger(), planned)
     assert result["net_cost"] is None
     assert result["status"] == "waiting"
     assert result["confidence"] == "unavailable"
+
+
+@pytest.mark.parametrize("policy", ["Strict live pricing", "Allow brief published estimates"])
+@pytest.mark.parametrize("offset", [900, 2700])
+def test_exact_hour_publication_prices_forecast_beyond_control_cutoffs_without_authorizing_live_price(policy, offset):
+    config, _, _, telemetry, stats = fixture(has_ev=False, has_battery=False, has_solar=False,
+        house_kw=2, comed_price_resilience=policy)
+    config["_comed_last_live"] = NOW - 1800
+    now = NOW + offset
+    prices = published_today(now)
+    planned = plan(now, config, ZONE, telemetry, stats, prices, {}, None)
+    observed = ledger(coverage=18 + offset / 3600)
+    result = forecast_net_cost(now, ZONE, observed, planned)
+    current = price_at(now, now, config, prices, None)
+    assert result["net_cost"] == pytest.approx(1.2 + (6 - offset / 3600) * 2 * .14)
+    assert result["confidence"] == "tentative"
+    assert result["estimated_forecast_intervals"][0]["source"] == "day_ahead"
+    assert result["estimated_forecast_intervals"][-1]["source"] == "published_price_median"
+    assert planned["economic_until"] < result["forecast_end"]
+    # The allowance, where applicable, ends midway through the current hour.
+    after_cutoff = next(slot for slot in planned["slots"]
+                        if int(slot["start"] // 3600) == int(now // 3600) and not slot["price_known"])
+    assert after_cutoff["cost"] is None
+    assert after_cutoff["forecast_cost"] is not None
+    assert not after_cutoff["export_known"]
+    assert current["comed_estimate_until"] == (NOW + 1800 if policy.startswith("Allow") else None)
+    assert current["price_known"] == (policy.startswith("Allow") and offset < 1800)
+    assert "estimated_coverage_hours" not in observed  # Forecasting never books costs.
 
 
 @pytest.mark.parametrize("supply_plan", ["Flat supply", "Time-of-use supply", "External supply entity"])

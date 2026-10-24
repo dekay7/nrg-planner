@@ -978,15 +978,18 @@ for freshness limits and fallback details.</p>
 <p>This estimates the cost of the already selected energy flows; it does not change
 EV/battery schedules, buying-price sensors, household advice or equipment-control
 pricing rules. It requires no opt-in to the separate ComEd live-delay policy.
-Estimated current-hour prices from that bounded policy and estimated observed
-costs also lower forecast confidence. This is still an uncertain energy forecast,
+During a live-price delay, a fresh published price for the exact current hour can
+also price its remaining forecast as tentative, without extending the control
+policy's allowance or booking observed costs. Without that publication the current
+hour remains unknown; history/medians do not fill it. Estimated observed costs
+also lower forecast confidence. This is still an uncertain energy forecast,
 not a promise that the selected schedule or price will occur.</p>
 <p>Normal sunrise/sunset boundaries do not need a full-hour provider point: NRG
 combines the covered daylight portion with HA's known nighttime zero. It never
 fills genuinely missing daylight this way. If coverage is still missing, the
 explanation names the input and first uncovered local time.</p>
 <p>The forecast still waits for a missing price without a defensible estimate, a
-current live-price outage beyond its existing bounded policy, missing delivery or
+current live-price outage without a fresh exact-hour publication, missing delivery or
 export settings, or missing solar coverage; none is treated as zero.
 It also needs some covered cost today, a fresh plan, an applicable battery outlook
 and sufficient EV charging information/compatible controls. A monitoring-only
@@ -1491,7 +1494,10 @@ is no hard-coded afternoon publication time.</p>
 <p>The cash forecast uses this order:</p>
 <ol>
 <li>Use the applicable published exact-hour price (and current live price where
-   available) under the existing pricing rules.</li>
+   available). When current live pricing is missing, a fresh publication for the
+   <strong>exact current hour</strong> can price its remaining cash projection, labeled
+   <code>day_ahead</code> and tentative, even beyond the separate control-policy cutoff.
+   It does not make the current price usable for commands or observed accounting.</li>
 <li>For an unpublished future hour, use the median of this installation's recorded
    live supply observations for the matching <strong>Central clock hour</strong>, when present
    in the existing bounded learning history. Label it <code>recorded_estimate</code>, with
@@ -1512,7 +1518,9 @@ is no hard-coded afternoon publication time.</p>
 supply-linked export credits, only after equipment planning. They do not set
 <code>price_known</code>/<code>export_known</code>, change ordinary slot costs, extend the dependable
 comparison horizon, authorize charging, alter advice/notifications, make a current
-live-price outage usable, or update the observed ledger. Missing delivery,
+live-price outage usable for control, or update the observed ledger. A missing
+current hour without a fresh exact-hour publication is never filled from history
+or a published-price median. Missing delivery,
 applicable export settings, daylight coverage or equipment inputs still block the
 forecast. Other providers and unconfigured flat/time-of-use rates are not filled
 from ComEd data.</p>
@@ -3676,7 +3684,10 @@ without those price estimates, and <code>unavailable</code> while waiting. <code
 separately reports <code>ready</code>, <code>partial_day</code> or <code>waiting</code>; ready means calculable, not
 certain. The dashboards show tentative hours and retain partial-day warnings too.
 These forecast-only estimates are never written into the observed ledger, learned
-as live prices, or used to extend the dependable economic horizon.</p>
+as live prices, or used to extend the dependable economic horizon. A fresh published
+exact-current-hour price can cover its remaining projection beyond the control
+policy's cutoff; it remains tentative and cannot authorize commands or observed
+costs. Without that publication, the current hour is not filled from a median.</p>
 <h3 id="accounting-different-money-figures">Different money figures</h3>
 <ol>
 <li><strong>Observed net variable cost:</strong> grid meter readings and contemporaneous rates,
@@ -4425,7 +4436,7 @@ assets pass. The same <strong>38 HA-pinned Pillow/uv advisories</strong> remain 
 overrides, workflow changes or audit exclusions are introduced. This record is
 source-and-test verification, not a claim of independent review or a release.</p>
 <h3 id="review-tentative-unpublished-comed-cost-forecast-unreleased">Tentative unpublished ComEd cost forecast — unreleased</h3>
-<p>Local verification on Python 3.14.8 / HA 2026.10.2 passes <strong>570 tests</strong>. The
+<p>Local verification on Python 3.14.8 / HA 2026.10.2 passes <strong>574 tests</strong>. The
 read-only EOD cash projection now prices unpublished future ComEd hours with a
 recorded matching-hour median or a recent published-price median, after selecting
 all equipment actions. Separate cash-projection fields leave ordinary tariffs,
@@ -4435,16 +4446,17 @@ and tentative confidence; partial-day omissions remain visible.</p>
 <p>Invented regressions cover the morning 23:00–midnight gap, publication handover,
 recorded-history precedence, median spike resistance, signed/zero rates,
 supply-linked and independent export credits, baseline freshness, unchanged other
-tariffs, current live outages, remaining coverage/equipment blockers, elapsed
-clipping, DST hours, real HA sensor updates and dashboard-template rendering. A
+tariffs, current live outages without a publication, exact-current-hour published
+cash projections beyond control cutoffs, remaining coverage/equipment blockers,
+elapsed clipping, DST hours, real HA sensor updates and dashboard-template rendering. A
 comparison with forecast repricing disabled verifies identical selected flows,
 controls, advice and comparison costs.</p>
 <p>Ruff, dependency consistency, privacy/history, whitespace and reproducible UI/brand
 build checks pass. The dependency audit still reports the existing <strong>38 advisories
 in HA-managed Pillow 12.3.0 / uv 0.12.23</strong>; no dependencies or audit exclusions are
 changed. Settings, learning, observed ledgers, Observation defaults and explicit
-control permissions are preserved. No version bump, release, live deployment or
-physical-equipment validation is claimed.</p>
+control permissions are preserved. No version bump or release is made; these
+source checks do not claim physical-equipment validation.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as

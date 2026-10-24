@@ -351,7 +351,7 @@ source-and-test verification, not a claim of independent review or a release.
 
 ## Tentative unpublished ComEd cost forecast — unreleased
 
-Local verification on Python 3.14.8 / HA 2026.10.2 passes **570 tests**. The
+Local verification on Python 3.14.8 / HA 2026.10.2 passes **574 tests**. The
 read-only EOD cash projection now prices unpublished future ComEd hours with a
 recorded matching-hour median or a recent published-price median, after selecting
 all equipment actions. Separate cash-projection fields leave ordinary tariffs,
@@ -362,8 +362,9 @@ and tentative confidence; partial-day omissions remain visible.
 Invented regressions cover the morning 23:00–midnight gap, publication handover,
 recorded-history precedence, median spike resistance, signed/zero rates,
 supply-linked and independent export credits, baseline freshness, unchanged other
-tariffs, current live outages, remaining coverage/equipment blockers, elapsed
-clipping, DST hours, real HA sensor updates and dashboard-template rendering. A
+tariffs, current live outages without a publication, exact-current-hour published
+cash projections beyond control cutoffs, remaining coverage/equipment blockers,
+elapsed clipping, DST hours, real HA sensor updates and dashboard-template rendering. A
 comparison with forecast repricing disabled verifies identical selected flows,
 controls, advice and comparison costs.
 
@@ -371,8 +372,8 @@ Ruff, dependency consistency, privacy/history, whitespace and reproducible UI/br
 build checks pass. The dependency audit still reports the existing **38 advisories
 in HA-managed Pillow 12.3.0 / uv 0.12.23**; no dependencies or audit exclusions are
 changed. Settings, learning, observed ledgers, Observation defaults and explicit
-control permissions are preserved. No version bump, release, live deployment or
-physical-equipment validation is claimed.
+control permissions are preserved. No version bump or release is made; these
+source checks do not claim physical-equipment validation.
 
 ## Publication decision — 2026-10-20
 
