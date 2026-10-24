@@ -396,18 +396,20 @@ It uses invented inputs and does not establish real-home accuracy or savings.
 Ruff, dependency consistency, privacy/history and whitespace checks pass. Bundled
 UI/handbook/dashboard and brand assets are rebuilt with the standard builders;
 release-candidate CI checks reproducibility, Hassfest and HACS on the candidate.
-Hosted results are tracked on the release-preparation pull request.
+Hosted results are tracked on [release-preparation PR #18](https://github.com/dekay7/nrg-planner/pull/18);
+the final exact-commit validation run is linked from the GitHub release notes.
 
 The dependency audit still fails with **38 advisories: 37 for Pillow 12.3.0 and
 one for uv 0.12.23**, both pinned by HA 2026.10.2. Reported fixes remain Pillow
 13.0.0 and uv 0.13.4; no override or advisory exclusion is introduced. These are
 the existing upstream findings, not a fully green validation.
 
-**Publication gate:** current dashboard/live-equipment revalidation needs owner
-confirmation because planning and controls changed after the historical live
-checks. Automated restoration and command tests are not a substitute for that
-confirmation. This record prepares a release candidate, not a published release
-or a claim of live deployment. Published tags remain unchanged.
+**Live revalidation and release authorization:** on 2026-10-24, the owner confirmed
+successful checks of the current dashboards and live equipment behavior, clearing
+the outstanding publication gate for the requested release. This is owner-reported
+validation, not independent physical-equipment verification. Final publication
+requires the exact-commit hosted checks above; the known upstream dependency
+findings remain visible and published tags stay fixed.
 
 ## Publication decision — 2026-10-20
 
