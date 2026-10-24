@@ -8,12 +8,13 @@ control-state name and script-adapter role.
 
 ## Which features are in my installation?
 
-The latest numbered release is **0.2.0**. Work merged after that release is
-**unreleased development**, even while its source manifest still says 0.2.0.
+The latest numbered release is **0.3.0**, including the features indexed below.
+Work merged after a release is **unreleased development** until the next release
+is published, even if its source manifest still has the previous version.
 Documentation on GitHub's main branch can therefore describe features not present
-in a HACS installation following stable releases. The handbook shipped inside an
-installation belongs to the component files installed there; it is generic help,
-not a detection of that home's configuration.
+in an older HACS installation following stable releases. The handbook shipped
+inside an installation belongs to the component files installed there; it is
+generic help, not a detection of that home's configuration.
 
 Use the release notes and installation source to identify the installed feature
 set; a version number alone cannot distinguish a manually installed development
@@ -80,7 +81,7 @@ update another installation automatically. See [updates](installation.md#updates
 | Dependable economic horizon | Cost comparisons stop at the first applicable import/export/solar gap while the longer outlook retains physical energy and EV feasibility. Missing later data cannot make an earlier action free. [Planning method](design.md#battery-search). |
 | Feasible refill valuation | Shared solar/grid charging power, supported modes, house/EV demand and losses constrain refill potential. A common conservative value covers insufficient refill; limited confidence suppresses savings notifications. [Valuation](accounting.md#different-money-figures). |
 | Observed costs and coverage | Metered purchases minus export credits, signed costs, tariff-boundary splitting, partial-day/restart gaps and 62-day retention. Not a utility bill or proven savings. [Ledger](accounting.md#observed-ledger). |
-| End-of-day net-cost forecast | Read-only covered cost so far plus remaining selected purchases minus export credits to local midnight. Published prices take priority; unpublished future ComEd hours use labeled matching-hour or recent published medians, with estimated-hour details and lower confidence. No defensible baseline, other missing coverage or unmodeled equipment still leaves it unknown; partial past coverage remains labeled. No new settings/permissions or changes to control pricing. Unreleased after 0.2.0. [Dashboard forecast](homeowner-guide.md#forecast-net-cost-by-midnight), [tentative pricing](pricing.md#tentative-prices-for-the-end-of-day-cost-forecast) and [accounting](accounting.md#end-of-day-net-cost-forecast). |
+| End-of-day net-cost forecast | Read-only covered cost so far plus remaining selected purchases minus export credits to local midnight. Published prices take priority; unpublished future ComEd hours use labeled matching-hour or recent published medians, with estimated-hour details and lower confidence. No defensible baseline, other missing coverage or unmodeled equipment still leaves it unknown; partial past coverage remains labeled. No new settings/permissions or changes to control pricing. Available in 0.3.0. [Dashboard forecast](homeowner-guide.md#forecast-net-cost-by-midnight), [tentative pricing](pricing.md#tentative-prices-for-the-end-of-day-cost-forecast) and [accounting](accounting.md#end-of-day-net-cost-forecast). |
 | Forecast-priced accounting | Separate coverage, purchase-cost and export-credit subsets for newly tracked published-estimate intervals; exact deadline/hour cutoffs and no learning forecasts as live. [Estimated coverage](accounting.md#observed-ledger). |
 | HA Energy price sensors | Independent USD/kWh buying and export entities; buying already includes delivery. NRG does not rewrite Energy configuration/history. [HA Energy](accounting.md#built-in-ha-energy). |
 | Two notification types | Stable worthwhile household wait advice and separate fallback-entry/recovery alerts; independent opt-ins, shared notify services/quiet hours, deduplication/cooldown and Observation wording. [Notifications](operations.md#notifications). |
@@ -106,7 +107,7 @@ There is no separately calculated capacity-charge saving. See
 |---|---|
 | Original implementation through **0.1.0** | Optional components; independent tariffs/export and period editor; external/ComEd/solar adapters; EV/battery planning; local learning; cost ledger; guarded provider-neutral controls; homeowner/admin dashboards and a complete local wiki. Setup/readiness explanations, private-store removal cleanup and retirement of the summer heuristic were included before 0.1.0. Publication/privacy checks and release-based updates were established. |
 | **0.2.0** | Passive battery efficiency/charge/discharge calibration with independent fallbacks and AC-meter safeguards. Direct handbook buttons and a distinctive settings icon were also included by this release. |
-| **Unreleased development after 0.2.0** | Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs; modeling/forecasting robustness fixes and permanent independent-oracle regressions; offline seeded simulation of forecasts, learning and decision outcomes against independent synthetic physics; read-only end-of-day net-cost forecast with local-midnight and coverage safeguards, astronomical completion of covered dawn/dusk edges, input-specific gap explanations and clearly tentative estimates for unpublished ComEd hours, separate from control prices. |
+| **0.3.0** | Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs; modeling/forecasting robustness fixes and permanent independent-oracle regressions; offline seeded simulation of forecasts, learning and decision outcomes against independent synthetic physics; read-only end-of-day net-cost forecast with local-midnight and coverage safeguards, astronomical completion of covered dawn/dusk edges, input-specific gap explanations and clearly tentative estimates for unpublished ComEd hours, separate from control prices. |
 
 The detailed verification evidence and open upstream dependency-audit findings are
 in [the project review](review.md). Passing tests are not proof of globally optimal

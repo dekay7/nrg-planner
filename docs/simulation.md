@@ -1,7 +1,7 @@
 # Synthetic simulation and stress testing
 
-**Unreleased development after 0.2.0.** This is an offline developer tool in the
-source repository, not a dashboard, HA service or feature of a stable HACS install.
+**Available in the 0.3.0 source repository.** This is an offline developer tool,
+not a dashboard, HA service or tool bundled in a HACS component download.
 It asks: **if these forecasts were issued and this invented household behaved
 this way, what decisions would NRG propose, and what would happen?**
 

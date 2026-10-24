@@ -36,7 +36,7 @@ blockquote{margin:20px 0;padding:4px 18px;border-left:3px solid var(--accent);ba
 <h1>Your home energy handbook.</h1>
 <p class="intro">From your first electricity rate to everyday energy decisions. Clear explanations, practical setup steps, and the details when you need them.</p>
 <div class="actions"><a class="button primary" href="#quick-start">Get started</a><a class="button" href="#homeowner-guide">Read the dashboard</a><a class="button" href="#troubleshooting">Solve a problem</a></div>
-<p class="meta">Version 0.2.0 · Early development · Home Assistant 2026.10.2+ · USD pricing</p>
+<p class="meta">Version 0.3.0 · Early development · Home Assistant 2026.10.2+ · USD pricing</p>
 <p class="reading-help">Find anything with your browser's <strong>Find in page</strong> (<kbd>Ctrl F</kbd> or <kbd>⌘ F</kbd>). Use <strong>Print → Save as PDF</strong> to keep a copy. This page contains generic guidance, not your live settings.</p>
 </header>
 <div class="layout">
@@ -309,12 +309,13 @@ links to the guide that explains how to use the feature and its limits. The
 <a href="#settings">settings reference</a> lists every catalogue default, mapping role,
 control-state name and script-adapter role.</p>
 <h3 id="features-which-features-are-in-my-installation">Which features are in my installation?</h3>
-<p>The latest numbered release is <strong>0.2.0</strong>. Work merged after that release is
-<strong>unreleased development</strong>, even while its source manifest still says 0.2.0.
+<p>The latest numbered release is <strong>0.3.0</strong>, including the features indexed below.
+Work merged after a release is <strong>unreleased development</strong> until the next release
+is published, even if its source manifest still has the previous version.
 Documentation on GitHub's main branch can therefore describe features not present
-in a HACS installation following stable releases. The handbook shipped inside an
-installation belongs to the component files installed there; it is generic help,
-not a detection of that home's configuration.</p>
+in an older HACS installation following stable releases. The handbook shipped
+inside an installation belongs to the component files installed there; it is
+generic help, not a detection of that home's configuration.</p>
 <p>Use the release notes and installation source to identify the installed feature
 set; a version number alone cannot distinguish a manually installed development
 snapshot with the same manifest version. A merge does not publish a release or
@@ -518,7 +519,7 @@ update another installation automatically. See <a href="#installation-updates-an
 </tr>
 <tr>
 <td>End-of-day net-cost forecast</td>
-<td>Read-only covered cost so far plus remaining selected purchases minus export credits to local midnight. Published prices take priority; unpublished future ComEd hours use labeled matching-hour or recent published medians, with estimated-hour details and lower confidence. No defensible baseline, other missing coverage or unmodeled equipment still leaves it unknown; partial past coverage remains labeled. No new settings/permissions or changes to control pricing. Unreleased after 0.2.0. <a href="#homeowner-guide-forecast-net-cost-by-midnight">Dashboard forecast</a>, <a href="#pricing-tentative-prices-for-the-end-of-day-cost-forecast">tentative pricing</a> and <a href="#accounting-end-of-day-net-cost-forecast">accounting</a>.</td>
+<td>Read-only covered cost so far plus remaining selected purchases minus export credits to local midnight. Published prices take priority; unpublished future ComEd hours use labeled matching-hour or recent published medians, with estimated-hour details and lower confidence. No defensible baseline, other missing coverage or unmodeled equipment still leaves it unknown; partial past coverage remains labeled. No new settings/permissions or changes to control pricing. Available in 0.3.0. <a href="#homeowner-guide-forecast-net-cost-by-midnight">Dashboard forecast</a>, <a href="#pricing-tentative-prices-for-the-end-of-day-cost-forecast">tentative pricing</a> and <a href="#accounting-end-of-day-net-cost-forecast">accounting</a>.</td>
 </tr>
 <tr>
 <td>Forecast-priced accounting</td>
@@ -564,7 +565,7 @@ There is no separately calculated capacity-charge saving. See
 <td>Passive battery efficiency/charge/discharge calibration with independent fallbacks and AC-meter safeguards. Direct handbook buttons and a distinctive settings icon were also included by this release.</td>
 </tr>
 <tr>
-<td><strong>Unreleased development after 0.2.0</strong></td>
+<td><strong>0.3.0</strong></td>
 <td>Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs; modeling/forecasting robustness fixes and permanent independent-oracle regressions; offline seeded simulation of forecasts, learning and decision outcomes against independent synthetic physics; read-only end-of-day net-cost forecast with local-midnight and coverage safeguards, astronomical completion of covered dawn/dusk edges, input-specific gap explanations and clearly tentative estimates for unpublished ComEd hours, separate from control prices.</td>
 </tr>
 </tbody>
@@ -680,8 +681,8 @@ search and Print to save a PDF; reading a loaded copy needs no internet connecti
 <h3 id="installation-updates-and-removal">Updates and removal</h3>
 <p>Check the <a href="#features-development-milestones-since-creation">feature guide and milestones</a>
 when comparing the online docs with your installation. The latest stable release
-is 0.2.0; later main-branch work is unreleased until a new release is explicitly
-published. A manually installed development snapshot may still report 0.2.0, so
+is 0.3.0; later main-branch work is unreleased until a new release is explicitly
+published. A manually installed development snapshot may still report 0.3.0, so
 keep its source commit with your private deployment record. The bundled handbook
 travels with the installed component rather than silently following GitHub main.
 Do not move a published tag to make its contents match development docs.</p>
@@ -1358,7 +1359,7 @@ no longer needed. Restart gaps are not filled with invented use. Integration
 removal deletes NRG's own local store, whereas reloads/updates preserve it.
 The <a href="#operations">operations guide</a> covers updates and recovery.</p>
 <h3 id="faq-why-do-the-online-docs-show-a-feature-missing-from-my-hacs-installation">Why do the online docs show a feature missing from my HACS installation?</h3>
-<p>Main-branch documentation can include unreleased development after 0.2.0. HACS
+<p>Main-branch documentation can include unreleased development after 0.3.0. HACS
 stable users receive features through published releases, not every merged PR.
 A manually installed development snapshot may retain the same manifest version
 as the latest release, so that number alone does not identify its feature set.
@@ -1486,7 +1487,7 @@ The automatic outage latch and verified-observation timestamp survive restarts.
 Switching between live and estimated pricing invalidates the old plan promptly.
 No choice enables equipment control or bypasses Observation/protection guards.</p>
 <h3 id="pricing-tentative-prices-for-the-end-of-day-cost-forecast">Tentative prices for the end-of-day cost forecast</h3>
-<p><strong>Unreleased after 0.2.0.</strong> The read-only <strong>Forecast net cost by midnight</strong> can
+<p><strong>Available in 0.3.0.</strong> The read-only <strong>Forecast net cost by midnight</strong> can
 estimate unpublished <strong>future ComEd supply hours</strong> for the remaining local day,
 without waiting for the next-day feed. ComEd's hour-ending labels mean today's
 feed ends at 23:00; the next-day feed supplies today's 23:00–midnight hour. There
@@ -2818,7 +2819,7 @@ called <strong>NRG Planner settings</strong>.</p>
 <h3 id="troubleshooting-a-documented-feature-is-missing">A documented feature is missing</h3>
 <p>Check <a href="#features-which-features-are-in-my-installation">feature availability</a>
 before resetting or reinstalling. GitHub main can include unreleased work after
-0.2.0; a HACS stable installation only has its selected release. A development
+0.3.0; a HACS stable installation only has its selected release. A development
 snapshot can use the same manifest version, so compare its source/release notes
 and bundled handbook, not just the displayed number. Some forms/cards also hide
 choices for components not installed or enabled for NRG control. Hidden saved
@@ -3739,8 +3740,8 @@ sources is a separate supported UI action; NRG does not rewrite historical recor
 </ul>
 </div>
 </nav></details>
-<p><strong>Unreleased development after 0.2.0.</strong> This is an offline developer tool in the
-source repository, not a dashboard, HA service or feature of a stable HACS install.
+<p><strong>Available in the 0.3.0 source repository.</strong> This is an offline developer tool,
+not a dashboard, HA service or tool bundled in a HACS component download.
 It asks: <strong>if these forecasts were issued and this invented household behaved
 this way, what decisions would NRG propose, and what would happen?</strong></p>
 <h3 id="simulation-safety-permissions-and-defaults">Safety, permissions and defaults</h3>
@@ -4053,6 +4054,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 <li><a href="#review-end-of-day-net-cost-forecast-verification-unreleased">End-of-day net-cost forecast verification — unreleased</a></li>
 <li><a href="#review-solar-dawndusk-coverage-correction-unreleased">Solar dawn/dusk coverage correction — unreleased</a></li>
 <li><a href="#review-tentative-unpublished-comed-cost-forecast-unreleased">Tentative unpublished ComEd cost forecast — unreleased</a></li>
+<li><a href="#review-030-release-candidate-verification-2026-10-24">0.3.0 release-candidate verification — 2026-10-24</a></li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -4457,6 +4459,36 @@ in HA-managed Pillow 12.3.0 / uv 0.12.23</strong>; no dependencies or audit excl
 changed. Settings, learning, observed ledgers, Observation defaults and explicit
 control permissions are preserved. No version bump or release is made; these
 source checks do not claim physical-equipment validation.</p>
+<h3 id="review-030-release-candidate-verification-2026-10-24">0.3.0 release-candidate verification — 2026-10-24</h3>
+<p>The owner requested a new release. Version 0.3.0 batches the feature and correctness
+work since 0.2.0; see the <a href="#features-development-milestones-since-creation">release milestones</a>.
+The manifest, runtime version and README agree, and the guides now identify the
+0.3.0 feature set. Home Assistant 2026.10.2 remains the minimum/tested baseline;
+no runtime dependency, storage version or manual migration is introduced.</p>
+<p>Local verification with Python 3.14.8, HA 2026.10.2 and Node.js 22.23.4 passes
+<strong>577 tests</strong>. This includes native fresh setup plus invented 0.2.0-format store
+restoration in Observation and Control: existing settings, explicit permissions,
+completed household/EV/battery learning and observed ledgers survive. New fallback
+and ComEd estimate policies retain their conservative defaults. Tests exercise
+native HA services and guarded commands, not physical equipment.</p>
+<p>The 12-scenario synthetic sweep (seed 1, one evaluation day and one warmup day)
+completes without physical/request invariant violations or missed EV departures.
+It uses invented inputs and does not establish real-home accuracy or savings.
+Ruff, dependency consistency, privacy/history and whitespace checks pass. Bundled
+UI/handbook/dashboard and brand assets are rebuilt with the standard builders;
+release-candidate CI checks reproducibility, Hassfest and HACS on the candidate.
+Hosted results are tracked on <a href="https://github.com/dekay7/nrg-planner/pull/18">release-preparation PR #18</a>;
+the final exact-commit validation run is linked from the GitHub release notes.</p>
+<p>The dependency audit still fails with <strong>38 advisories: 37 for Pillow 12.3.0 and
+one for uv 0.12.23</strong>, both pinned by HA 2026.10.2. Reported fixes remain Pillow
+13.0.0 and uv 0.13.4; no override or advisory exclusion is introduced. These are
+the existing upstream findings, not a fully green validation.</p>
+<p><strong>Live revalidation and release authorization:</strong> on 2026-10-24, the owner confirmed
+successful checks of the current dashboards and live equipment behavior, clearing
+the outstanding publication gate for the requested release. This is owner-reported
+validation, not independent physical-equipment verification. Final publication
+requires the exact-commit hosted checks above; the known upstream dependency
+findings remain visible and published tags stay fixed.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as

@@ -8,7 +8,7 @@ from urllib.parse import unquote, urlsplit
 import markdown
 import pytest
 
-from custom_components.nrg.const import SETTINGS, MAPPINGS, CONTROL_VALUES, COMMAND_SCRIPTS, option_label
+from custom_components.nrg.const import SETTINGS, MAPPINGS, CONTROL_VALUES, COMMAND_SCRIPTS, VERSION, option_label
 from tools.build_ui import HANDBOOK_CHAPTERS
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -128,7 +128,9 @@ def test_feature_index_links_original_and_subsequent_feature_areas(target):
 def test_feature_availability_and_retired_behavior_are_explicit():
     inventory = (DOCS / "features.md").read_text()
     assert "**0.1.0**" in inventory and "**0.2.0**" in inventory
-    assert "**Unreleased development after 0.2.0**" in inventory
+    assert f"The latest numbered release is **{VERSION}**" in inventory
+    assert f"| **{VERSION}** |" in inventory
+    assert "**unreleased development**" in inventory
     assert "summer peak-import heuristic is retired" in inventory
     for filename in ("design.md", "accounting.md"):
         text = (DOCS / filename).read_text()

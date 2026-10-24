@@ -375,6 +375,42 @@ changed. Settings, learning, observed ledgers, Observation defaults and explicit
 control permissions are preserved. No version bump or release is made; these
 source checks do not claim physical-equipment validation.
 
+## 0.3.0 release-candidate verification — 2026-10-24
+
+The owner requested a new release. Version 0.3.0 batches the feature and correctness
+work since 0.2.0; see the [release milestones](features.md#development-milestones-since-creation).
+The manifest, runtime version and README agree, and the guides now identify the
+0.3.0 feature set. Home Assistant 2026.10.2 remains the minimum/tested baseline;
+no runtime dependency, storage version or manual migration is introduced.
+
+Local verification with Python 3.14.8, HA 2026.10.2 and Node.js 22.23.4 passes
+**577 tests**. This includes native fresh setup plus invented 0.2.0-format store
+restoration in Observation and Control: existing settings, explicit permissions,
+completed household/EV/battery learning and observed ledgers survive. New fallback
+and ComEd estimate policies retain their conservative defaults. Tests exercise
+native HA services and guarded commands, not physical equipment.
+
+The 12-scenario synthetic sweep (seed 1, one evaluation day and one warmup day)
+completes without physical/request invariant violations or missed EV departures.
+It uses invented inputs and does not establish real-home accuracy or savings.
+Ruff, dependency consistency, privacy/history and whitespace checks pass. Bundled
+UI/handbook/dashboard and brand assets are rebuilt with the standard builders;
+release-candidate CI checks reproducibility, Hassfest and HACS on the candidate.
+Hosted results are tracked on [release-preparation PR #18](https://github.com/dekay7/nrg-planner/pull/18);
+the final exact-commit validation run is linked from the GitHub release notes.
+
+The dependency audit still fails with **38 advisories: 37 for Pillow 12.3.0 and
+one for uv 0.12.23**, both pinned by HA 2026.10.2. Reported fixes remain Pillow
+13.0.0 and uv 0.13.4; no override or advisory exclusion is introduced. These are
+the existing upstream findings, not a fully green validation.
+
+**Live revalidation and release authorization:** on 2026-10-24, the owner confirmed
+successful checks of the current dashboards and live equipment behavior, clearing
+the outstanding publication gate for the requested release. This is owner-reported
+validation, not independent physical-equipment verification. Final publication
+requires the exact-commit hosted checks above; the known upstream dependency
+findings remain visible and published tags stay fixed.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public
