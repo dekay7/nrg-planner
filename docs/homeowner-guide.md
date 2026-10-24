@@ -166,6 +166,11 @@ bill; check **Today's cost coverage**. More info separates `observed_net_cost`,
 Remaining interval costs are prorated when the current time or midnight cuts a
 plan interval. The day boundary follows local time, including 23/25-hour DST days.
 
+Normal sunrise/sunset boundaries do not need a full-hour provider point: NRG
+combines the covered daylight portion with HA's known nighttime zero. It never
+fills genuinely missing daylight this way. If coverage is still missing, the
+explanation names the input and first uncovered local time.
+
 The forecast waits rather than treating missing future prices or solar as zero.
 It also needs some covered cost today, a fresh plan, an applicable battery outlook
 and sufficient EV charging information/compatible controls. A monitoring-only

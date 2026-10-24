@@ -52,7 +52,13 @@ def forecast_net_cost(now: float, zone, ledger: dict, planned: dict) -> dict:
             break
     result.update(forecast_until=cursor, forecast_coverage_hours=(cursor - now) / 3600)
     if cursor < day_end:
-        return result | {"reason": "Waiting for continuous price and applicable solar coverage through local midnight."}
+        slot = next((s for s in planned.get("slots", []) if s["start"] <= cursor < s["end"]), {})
+        missing_inputs = [label for key, label in (("price_known", "buying price"),
+                          ("export_known", "export credit"), ("solar_known", "solar forecast")) if slot.get(key) is False]
+        at = datetime.fromtimestamp(cursor, zone).strftime("%a %H:%M %Z")
+        reason = (f"Missing {', '.join(missing_inputs)} coverage at {at}; continuous coverage through local midnight is required."
+                  if missing_inputs else "Waiting for continuous price and applicable solar coverage through local midnight.")
+        return result | {"reason": reason, "missing_forecast_inputs": missing_inputs}
     return result | {"net_cost": round(observed + remaining, 4), "remaining_net_cost": round(remaining, 4),
                      "status": "partial_day" if missing > 1e-6 else "ready",
                      "reason": "Earlier observation gaps are not included." if missing > 1e-6 else

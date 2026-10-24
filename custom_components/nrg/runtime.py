@@ -399,6 +399,7 @@ class NRGRuntime(DataUpdateCoordinator):
                 errors.append(f"Tomorrow: {error}")
             self.prices = sorted(merged.values(), key=lambda r: r["start"])
             self.forecast_status["comed"] = "; ".join(errors) if errors else "Published forecast loaded"
+        daylight = self.solar_daylight(now) if self.config["has_solar"] else {}
         for source in self.entry.options.get("solar_sources", []) if self.config["has_solar"] else []:
             key = source["config_entry_id"]
             old = self.solar_caches.get(key, {})
@@ -408,7 +409,7 @@ class NRGRuntime(DataUpdateCoordinator):
                     raise ValueError("Selected Forecast.Solar entity is unavailable")
                 response = await self.hass.services.async_call("forecast_solar", "get_forecast",
                     {"config_entry": key, "resolution": "raw"}, blocking=True, return_response=True)
-                self.solar_caches[key] = solar_response(response, self.zone, now)
+                self.solar_caches[key] = solar_response(response, self.zone, now, daylight)
             except (HomeAssistantError, ClientError, TimeoutError, ValueError, TypeError, KeyError) as error:
                 self.solar_caches[key] = old | {"error": str(error)}
         self.last_fetch = now
@@ -557,18 +558,27 @@ class NRGRuntime(DataUpdateCoordinator):
         await self.notify_fallback(now)
         return data
 
-    def with_nights(self, forecast, now):
+    def solar_daylight(self, now):
         today = datetime.fromtimestamp(now, self.zone).date()
-        daylight = []
+        daylight = {}
         for offset in range(3):
             day = today + timedelta(days=offset)
             rising, setting = get_astral_event_date(self.hass, "sunrise", day), get_astral_event_date(self.hass, "sunset", day)
-            if rising is None or setting is None:
-                return forecast  # Polar/event calculation uncertainty: do not guess.
-            daylight.append((rising.timestamp(), setting.timestamp()))
+            if rising is not None and setting is not None:
+                first = datetime.combine(day, datetime.min.time(), self.zone).timestamp()
+                last = datetime.combine(day + timedelta(days=1), datetime.min.time(), self.zone).timestamp()
+                if first <= rising.timestamp() < setting.timestamp() <= last:
+                    daylight[day.isoformat()] = (rising.timestamp(), setting.timestamp())
+        return daylight
+
+    def with_nights(self, forecast, now):
+        today = datetime.fromtimestamp(now, self.zone).date()
+        daylight = self.solar_daylight(now)
+        if len(daylight) != 3:
+            return forecast  # Polar/event calculation uncertainty: do not guess.
         first = datetime.combine(today, datetime.min.time(), self.zone).timestamp()
         last = datetime.combine(today + timedelta(days=3), datetime.min.time(), self.zone).timestamp()
-        return known_nights(forecast, daylight, now, first, last)
+        return known_nights(forecast, list(daylight.values()), now, first, last)
 
     async def notify(self, now):
         config, advice = self.config, self.plan.get("household", {})

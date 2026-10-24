@@ -68,7 +68,10 @@ the evaluated hour; later forecast improvements are not used as hindsight. Each
 array needs an explicitly covered hour; a daily total alone never proves missing
 daylight is zero. Alternatives are selected per hour. Daily normalization splits
 at local midnight even when UTC hours straddle dates. Explicit covered zero-output
-hours remain valid; partial edge hours remain unknown. Broken daytime shapes,
+hours remain valid. A partial dawn/dusk hour is usable only when its provider
+coverage plus HA's known astronomical darkness covers the whole interval. Night
+overlap is merged, not double-counted; partial energy is never scaled to an hour.
+Missing daylight or sun events leaves the edge unknown. Broken daytime shapes,
 duplicate timestamps, invalid containers and implausible daily totals are rejected.
 
 EV calibration uses covered sessions with at least five SOC points and five minutes.
