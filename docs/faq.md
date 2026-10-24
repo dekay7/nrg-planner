@@ -176,7 +176,7 @@ The [operations guide](operations.md) covers updates and recovery.
 
 ## Why do the online docs show a feature missing from my HACS installation?
 
-Main-branch documentation can include unreleased development after 0.2.0. HACS
+Main-branch documentation can include unreleased development after 0.3.0. HACS
 stable users receive features through published releases, not every merged PR.
 A manually installed development snapshot may retain the same manifest version
 as the latest release, so that number alone does not identify its feature set.

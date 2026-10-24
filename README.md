@@ -3,15 +3,15 @@
 Home Assistant energy planning with independent supply and delivery tariffs,
 optional EV/battery/solar support, and controls mapped to existing HA entities.
 
-**Early development · version 0.2.0.** See the
+**Early development · version 0.3.0.** See the
 [project review](docs/review.md) for current validation results and open release
 items. NRG Planner is not included in the default HACS catalog.
 
-> **Documentation scope:** this branch includes unreleased work after 0.2.0.
-> A stable HACS installation may not contain every feature described here. See
-> [the feature guide and development milestones](docs/features.md) for coverage
-> from the original planner onward, and [pricing resilience](docs/pricing.md#brief-comed-live-data-delays)
-> for current ComEd delay-handling rules—not a live provider-status claim.
+> **Documentation scope:** these features are included in 0.3.0. Later main-branch
+> work may not be in your installed HACS release; see
+> [the feature guide and development milestones](docs/features.md) for release
+> coverage, and [pricing resilience](docs/pricing.md#brief-comed-live-data-delays)
+> for ComEd delay-handling rules—not a live provider-status claim.
 
 ## What it does
 

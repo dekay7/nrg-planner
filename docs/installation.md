@@ -116,8 +116,8 @@ search and Print to save a PDF; reading a loaded copy needs no internet connecti
 
 Check the [feature guide and milestones](features.md#development-milestones-since-creation)
 when comparing the online docs with your installation. The latest stable release
-is 0.2.0; later main-branch work is unreleased until a new release is explicitly
-published. A manually installed development snapshot may still report 0.2.0, so
+is 0.3.0; later main-branch work is unreleased until a new release is explicitly
+published. A manually installed development snapshot may still report 0.3.0, so
 keep its source commit with your private deployment record. The bundled handbook
 travels with the installed component rather than silently following GitHub main.
 Do not move a published tag to make its contents match development docs.

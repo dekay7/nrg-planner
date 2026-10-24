@@ -8,7 +8,7 @@ called **NRG Planner settings**.
 
 Check [feature availability](features.md#which-features-are-in-my-installation)
 before resetting or reinstalling. GitHub main can include unreleased work after
-0.2.0; a HACS stable installation only has its selected release. A development
+0.3.0; a HACS stable installation only has its selected release. A development
 snapshot can use the same manifest version, so compare its source/release notes
 and bundled handbook, not just the displayed number. Some forms/cards also hide
 choices for components not installed or enabled for NRG control. Hidden saved

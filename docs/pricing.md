@@ -100,7 +100,7 @@ No choice enables equipment control or bypasses Observation/protection guards.
 
 ## Tentative prices for the end-of-day cost forecast
 
-**Unreleased after 0.2.0.** The read-only **Forecast net cost by midnight** can
+**Available in 0.3.0.** The read-only **Forecast net cost by midnight** can
 estimate unpublished **future ComEd supply hours** for the remaining local day,
 without waiting for the next-day feed. ComEd's hour-ending labels mean today's
 feed ends at 23:00; the next-day feed supplies today's 23:00–midnight hour. There
