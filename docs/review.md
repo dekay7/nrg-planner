@@ -311,6 +311,22 @@ advisories** above; the simulator adds no dependency, override or audit exclusio
 No installation settings, learning formats, control defaults or version values
 change, and no release or live deployment is performed.
 
+## End-of-day net-cost forecast verification — unreleased
+
+Local verification on Python 3.14.8 / HA 2026.10.2 passes **514 tests**. New
+invented regressions cover observed-plus-remaining cash accounting, exclusion of
+comparison scores and tomorrow's costs, interval clipping, signed export credits,
+23/25-hour DST days, partial history, missing future coverage, unmodeled equipment,
+automatic data recovery, native sensor registration/stale-plan revocation and
+read-only dashboard placement immediately below the observed net cost.
+
+Ruff, privacy/history, dependency consistency, whitespace and deterministic UI/brand
+build checks pass. The dependency audit reports **38 advisories: 37 for Pillow
+12.3.0 and one for uv 0.12.23**, the same HA-managed packages in the open finding.
+No dependency pins or advisory exclusions change. Existing settings, learning,
+ledgers, Observation defaults and control permissions are preserved. No release,
+live deployment or physical equipment validation is claimed.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public

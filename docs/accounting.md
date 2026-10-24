@@ -66,17 +66,52 @@ DST. First days and outage days are partial. The ledger retains 62 days; learnin
 reset preserves it. Daily energy figures cover observed intervals and can differ
 from the built-in Energy dashboard's lifetime-counter-based totals.
 
+## End-of-day net-cost forecast
+
+**Forecast net cost by midnight** (`sensor.nrg_net_cost_eod`) is the covered
+ledger's purchases minus export credits plus the selected plan's remaining
+interval cash costs up to the next local midnight. It includes supply and delivery;
+it does **not** use `modeled_cost` or candidate scores, which include optional
+battery wear and stored-energy replacement value. It excludes tomorrow's costs.
+Current and midnight-crossing intervals are prorated by their real-time overlap.
+Local midnight is calculated as the next calendar date, not by adding 24 hours,
+so DST days retain their real 23/25-hour lengths.
+
+The sensor updates with each measurement refresh, clipping already elapsed plan
+time to avoid adding it again to the observed ledger. Earlier uncovered time is
+never backfilled: a partial-day forecast remains labeled partial, and
+`uncovered_past_hours` and today's observed coverage describe the omission. With
+no covered observations today, it stays unknown rather than presenting a
+forecast-only total as metered cost.
+
+Remaining coverage must be continuous and dependable through midnight. A stale
+plan, missing applicable import/export/solar coverage, an unmodeled installed
+battery or insufficient EV charging information/controls leaves the value unknown
+with a reason. Recovery is automatic when the data is ready. A monitoring-only
+battery's independent dispatch is not assumed to match a schedule. A monitoring
+EV contributes only its observed charging toward a known target. No future
+plug-in or independent controller schedule is invented.
+
+The projection is read-only and requires no new settings or control permissions.
+Observation still blocks commands; the forecast assumes the proposal is followed.
+It is not a utility bill, guaranteed savings or a cash-payout prediction. Entity
+attributes separate observed and remaining net cost, observed estimated-price
+coverage, future coverage timestamps, operating mode and the current status/reason.
+
 ## Different money figures
 
 1. **Observed net variable cost:** grid meter readings and contemporaneous rates,
    with explicit coverage. Not a complete settled utility bill.
-2. **Modeled cost through dependable coverage:** a schedule comparison ending at
+2. **Forecast net cost by midnight:** covered observed net cost plus remaining
+   planned cash costs for this local day, with earlier gaps explicitly omitted.
+   Not the optimization score or a reconstructed complete bill.
+3. **Modeled cost through dependable coverage:** a schedule comparison ending at
    the first price or applicable solar-coverage gap, including the remaining stored
    energy's replacement value and optional cycling cost. The displayed comparison
    endpoint may be earlier than the physical/EV outlook. With no dependable coverage,
    no economic cost is claimed. Individual outlook intervals also leave cost
    unknown when applicable solar coverage is missing, even if their prices are known.
-3. **Reference-appliance benefit:** modeled difference between complete start
+4. **Reference-appliance benefit:** modeled difference between complete start
    windows for the selected energy/duration. Baseline and appliance replay share
    that same dependable endpoint, with applicable export/storage costs. An unknown
    future export credit is not a zero credit and cannot justify a free solar refill.

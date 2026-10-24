@@ -21,7 +21,7 @@ from .control import Controller
 from .forecast import aggregate_solar, parse_comed, price_at, solar_response, known_nights, comed_publication_window
 from .fallback import PriceFallback, KNOWN_SOURCES, live_valid
 from .planner import plan
-from .statistics import Statistics
+from .statistics import Statistics, forecast_net_cost
 
 _LOGGER = logging.getLogger(__name__)
 COMED = "https://hourlypricing.comed.com/rrtp/ServletFeed"
@@ -539,6 +539,7 @@ class NRGRuntime(DataUpdateCoordinator):
                 "observations": list(self.stats.hours),
                 "price": current if self.current_price_known else None, "price_components": current, "ledger": ledger,
                 "cost_coverage": min(coverage, 100), "forecast_status": dict(self.forecast_status),
+                "cost_forecast": forecast_net_cost(now, self.zone, ledger, self.plan),
                 "capacity": effective_capacity(config, datetime.fromtimestamp(now, self.zone).date()) if config["has_battery"] else None,
                 "components": {"ev": config["has_ev"], "battery": config["has_battery"], "solar": config["has_solar"],
                                "ev_control": config["has_ev"] and config["ev_control"], "battery_control": config["has_battery"] and config["battery_control"]},

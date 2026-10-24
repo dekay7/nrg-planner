@@ -517,6 +517,10 @@ update another installation automatically. See <a href="#installation-updates-an
 <td>Metered purchases minus export credits, signed costs, tariff-boundary splitting, partial-day/restart gaps and 62-day retention. Not a utility bill or proven savings. <a href="#accounting-observed-ledger">Ledger</a>.</td>
 </tr>
 <tr>
+<td>End-of-day net-cost forecast</td>
+<td>Read-only covered cost so far plus remaining planned purchases minus export credits to local midnight, shown under today's net cost. Partial past coverage is labeled; missing future coverage or unmodeled equipment leaves it unknown. No new permissions. Unreleased after 0.2.0. <a href="#homeowner-guide-forecast-net-cost-by-midnight">Dashboard forecast</a> and <a href="#accounting-end-of-day-net-cost-forecast">accounting</a>.</td>
+</tr>
+<tr>
 <td>Forecast-priced accounting</td>
 <td>Separate coverage, purchase-cost and export-credit subsets for newly tracked published-estimate intervals; exact deadline/hour cutoffs and no learning forecasts as live. <a href="#accounting-observed-ledger">Estimated coverage</a>.</td>
 </tr>
@@ -561,7 +565,7 @@ There is no separately calculated capacity-charge saving. See
 </tr>
 <tr>
 <td><strong>Unreleased development after 0.2.0</strong></td>
-<td>Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs; modeling/forecasting robustness fixes and permanent independent-oracle regressions; offline seeded simulation of forecasts, learning and decision outcomes against independent synthetic physics.</td>
+<td>Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs; modeling/forecasting robustness fixes and permanent independent-oracle regressions; offline seeded simulation of forecasts, learning and decision outcomes against independent synthetic physics; read-only end-of-day net-cost forecast with local-midnight and coverage safeguards.</td>
 </tr>
 </tbody>
 </table></div>
@@ -817,7 +821,10 @@ the graphs, <a href="#faq">common questions</a> for typical decisions, or
 <li><a href="#homeowner-guide-current-power-flow-the-sankey-diagram">Current power flow: the Sankey diagram</a></li>
 <li><a href="#homeowner-guide-only-the-equipment-this-home-has">Only the equipment this home has</a></li>
 <li><a href="#homeowner-guide-modeled-energy-plan-the-battery-line">Modeled energy plan: the battery line</a></li>
-<li><a href="#homeowner-guide-net-energy-cost-today">Net energy cost today</a></li>
+<li><a href="#homeowner-guide-net-energy-cost-today">Net energy cost today</a><ul>
+<li><a href="#homeowner-guide-forecast-net-cost-by-midnight">Forecast net cost by midnight</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </nav></details>
@@ -940,6 +947,30 @@ shows the newly tracked estimated hours; cost/coverage entity attributes separat
 <code>estimated_import_cost</code>, <code>estimated_export_credit</code> and <code>estimated_coverage_hours</code>.
 These are subsets of the totals, not additional charges. Old ledger history is
 not retroactively classified. See <a href="#accounting-observed-ledger">accounting</a>.</p>
+<h4 id="homeowner-guide-forecast-net-cost-by-midnight">Forecast net cost by midnight</h4>
+<p>Directly below <strong>Net energy cost today</strong>, <strong>Forecast net cost by midnight</strong>
+(<code>sensor.nrg_net_cost_eod</code>) adds the covered net cost so far to the remaining
+modeled purchases minus export credits, stopping at midnight in your Home
+Assistant timezone. It includes supply and delivery, but not fixed fees,
+unconfigured taxes, battery wear or a value assigned to leftover stored energy.
+Negative forecasts are possible; they do not establish a cash payout.</p>
+<p>This is a read-only estimate requiring no new permissions or settings. In
+<strong>Observation</strong>, it assumes the proposed schedule is followed; NRG still sends no
+commands. Household demand, solar, EV activity and device behavior can change the
+outcome. Monitoring-only EVs include only an already observed charge toward a
+known target, not a prediction of future plug-ins or another controller's schedule.</p>
+<p><strong>Partial day</strong> means earlier missing readings are not included in either total.
+The forecast does not reconstruct setup/restart gaps or claim a complete daily
+bill; check <strong>Today's cost coverage</strong>. More info separates <code>observed_net_cost</code>,
+<code>remaining_net_cost</code>, <code>uncovered_past_hours</code> and future coverage timestamps.
+Remaining interval costs are prorated when the current time or midnight cuts a
+plan interval. The day boundary follows local time, including 23/25-hour DST days.</p>
+<p>The forecast waits rather than treating missing future prices or solar as zero.
+It also needs some covered cost today, a fresh plan, an applicable battery outlook
+and sufficient EV charging information/compatible controls. A monitoring-only
+battery's independent dispatch is not predicted, so its forecast stays unknown.
+The explanation below the totals names the blocker. It returns automatically when
+these inputs are ready; no control permission is enabled to obtain a forecast.</p>
 <p>Use <strong>Why?</strong> and the linked complete handbook for explanations. The homeowner
 dashboard has no equipment or configuration controls.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="operations" aria-label="Operation &amp; handover"><h2 id="operations-operation-handover-and-recovery">Operation, handover, and recovery</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Operation &amp; handover topics"><div class="toc">
 <ul>
@@ -3463,6 +3494,7 @@ ApexCharts is a separately installed optional chart dependency used for timeline
 <ul>
 <li><a href="#accounting-supply-and-delivery">Supply and delivery</a></li>
 <li><a href="#accounting-observed-ledger">Observed ledger</a></li>
+<li><a href="#accounting-end-of-day-net-cost-forecast">End-of-day net-cost forecast</a></li>
 <li><a href="#accounting-different-money-figures">Different money figures</a></li>
 <li><a href="#accounting-built-in-ha-energy">Built-in HA Energy</a></li>
 </ul>
@@ -3520,10 +3552,40 @@ Coverage is cost-covered hours divided by real elapsed local-day hours, includin
 DST. First days and outage days are partial. The ledger retains 62 days; learning
 reset preserves it. Daily energy figures cover observed intervals and can differ
 from the built-in Energy dashboard's lifetime-counter-based totals.</p>
+<h3 id="accounting-end-of-day-net-cost-forecast">End-of-day net-cost forecast</h3>
+<p><strong>Forecast net cost by midnight</strong> (<code>sensor.nrg_net_cost_eod</code>) is the covered
+ledger's purchases minus export credits plus the selected plan's remaining
+interval cash costs up to the next local midnight. It includes supply and delivery;
+it does <strong>not</strong> use <code>modeled_cost</code> or candidate scores, which include optional
+battery wear and stored-energy replacement value. It excludes tomorrow's costs.
+Current and midnight-crossing intervals are prorated by their real-time overlap.
+Local midnight is calculated as the next calendar date, not by adding 24 hours,
+so DST days retain their real 23/25-hour lengths.</p>
+<p>The sensor updates with each measurement refresh, clipping already elapsed plan
+time to avoid adding it again to the observed ledger. Earlier uncovered time is
+never backfilled: a partial-day forecast remains labeled partial, and
+<code>uncovered_past_hours</code> and today's observed coverage describe the omission. With
+no covered observations today, it stays unknown rather than presenting a
+forecast-only total as metered cost.</p>
+<p>Remaining coverage must be continuous and dependable through midnight. A stale
+plan, missing applicable import/export/solar coverage, an unmodeled installed
+battery or insufficient EV charging information/controls leaves the value unknown
+with a reason. Recovery is automatic when the data is ready. A monitoring-only
+battery's independent dispatch is not assumed to match a schedule. A monitoring
+EV contributes only its observed charging toward a known target. No future
+plug-in or independent controller schedule is invented.</p>
+<p>The projection is read-only and requires no new settings or control permissions.
+Observation still blocks commands; the forecast assumes the proposal is followed.
+It is not a utility bill, guaranteed savings or a cash-payout prediction. Entity
+attributes separate observed and remaining net cost, observed estimated-price
+coverage, future coverage timestamps, operating mode and the current status/reason.</p>
 <h3 id="accounting-different-money-figures">Different money figures</h3>
 <ol>
 <li><strong>Observed net variable cost:</strong> grid meter readings and contemporaneous rates,
    with explicit coverage. Not a complete settled utility bill.</li>
+<li><strong>Forecast net cost by midnight:</strong> covered observed net cost plus remaining
+   planned cash costs for this local day, with earlier gaps explicitly omitted.
+   Not the optimization score or a reconstructed complete bill.</li>
 <li><strong>Modeled cost through dependable coverage:</strong> a schedule comparison ending at
    the first price or applicable solar-coverage gap, including the remaining stored
    energy's replacement value and optional cycling cost. The displayed comparison
@@ -3879,6 +3941,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 </ul>
 </li>
 <li><a href="#review-offline-synthetic-simulation-verification-unreleased">Offline synthetic simulation verification (unreleased)</a></li>
+<li><a href="#review-end-of-day-net-cost-forecast-verification-unreleased">End-of-day net-cost forecast verification — unreleased</a></li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -4230,6 +4293,19 @@ The dependency audit still fails on the <strong>36 existing HA-pinned Pillow/uv
 advisories</strong> above; the simulator adds no dependency, override or audit exclusion.
 No installation settings, learning formats, control defaults or version values
 change, and no release or live deployment is performed.</p>
+<h3 id="review-end-of-day-net-cost-forecast-verification-unreleased">End-of-day net-cost forecast verification — unreleased</h3>
+<p>Local verification on Python 3.14.8 / HA 2026.10.2 passes <strong>514 tests</strong>. New
+invented regressions cover observed-plus-remaining cash accounting, exclusion of
+comparison scores and tomorrow's costs, interval clipping, signed export credits,
+23/25-hour DST days, partial history, missing future coverage, unmodeled equipment,
+automatic data recovery, native sensor registration/stale-plan revocation and
+read-only dashboard placement immediately below the observed net cost.</p>
+<p>Ruff, privacy/history, dependency consistency, whitespace and deterministic UI/brand
+build checks pass. The dependency audit reports <strong>38 advisories: 37 for Pillow
+12.3.0 and one for uv 0.12.23</strong>, the same HA-managed packages in the open finding.
+No dependency pins or advisory exclusions change. Existing settings, learning,
+ledgers, Observation defaults and control permissions are preserved. No release,
+live deployment or physical equipment validation is claimed.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as

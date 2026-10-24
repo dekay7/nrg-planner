@@ -144,5 +144,34 @@ shows the newly tracked estimated hours; cost/coverage entity attributes separat
 These are subsets of the totals, not additional charges. Old ledger history is
 not retroactively classified. See [accounting](accounting.md#observed-ledger).
 
+### Forecast net cost by midnight
+
+Directly below **Net energy cost today**, **Forecast net cost by midnight**
+(`sensor.nrg_net_cost_eod`) adds the covered net cost so far to the remaining
+modeled purchases minus export credits, stopping at midnight in your Home
+Assistant timezone. It includes supply and delivery, but not fixed fees,
+unconfigured taxes, battery wear or a value assigned to leftover stored energy.
+Negative forecasts are possible; they do not establish a cash payout.
+
+This is a read-only estimate requiring no new permissions or settings. In
+**Observation**, it assumes the proposed schedule is followed; NRG still sends no
+commands. Household demand, solar, EV activity and device behavior can change the
+outcome. Monitoring-only EVs include only an already observed charge toward a
+known target, not a prediction of future plug-ins or another controller's schedule.
+
+**Partial day** means earlier missing readings are not included in either total.
+The forecast does not reconstruct setup/restart gaps or claim a complete daily
+bill; check **Today's cost coverage**. More info separates `observed_net_cost`,
+`remaining_net_cost`, `uncovered_past_hours` and future coverage timestamps.
+Remaining interval costs are prorated when the current time or midnight cuts a
+plan interval. The day boundary follows local time, including 23/25-hour DST days.
+
+The forecast waits rather than treating missing future prices or solar as zero.
+It also needs some covered cost today, a fresh plan, an applicable battery outlook
+and sufficient EV charging information/compatible controls. A monitoring-only
+battery's independent dispatch is not predicted, so its forecast stays unknown.
+The explanation below the totals names the blocker. It returns automatically when
+these inputs are ready; no control permission is enabled to obtain a forecast.
+
 Use **Why?** and the linked complete handbook for explanations. The homeowner
 dashboard has no equipment or configuration controls.
