@@ -70,7 +70,13 @@ from the built-in Energy dashboard's lifetime-counter-based totals.
 
 **Forecast net cost by midnight** (`sensor.nrg_net_cost_eod`) is the covered
 ledger's purchases minus export credits plus the selected plan's remaining
-interval cash costs up to the next local midnight. It includes supply and delivery;
+interval cash costs up to the next local midnight. Published prices take priority;
+unpublished future ComEd hours can use explicitly tentative supply estimates as
+[described in pricing](pricing.md#tentative-prices-for-the-end-of-day-cost-forecast).
+These reprice the already selected import/export flows after all planning decisions,
+without reoptimizing equipment against tentative prices. Supply-linked export
+credits use the same tentative supply plus the configured adder; flat credits and
+no-credit settings remain independent of delivery. It includes supply and delivery;
 it does **not** use `modeled_cost` or candidate scores, which include optional
 battery wear and stored-energy replacement value. It excludes tomorrow's costs.
 Current and midnight-crossing intervals are prorated by their real-time overlap.
@@ -90,10 +96,12 @@ portion still needs forecast coverage for each physical array; unavailable sun
 events or real daylight gaps remain unknown. Waiting explanations identify the
 missing input and first uncovered local time when available.
 
-Remaining coverage must be continuous and dependable through midnight. A stale
-plan, missing applicable import/export/solar coverage, an unmodeled installed
-battery or insufficient EV charging information/controls leaves the value unknown
-with a reason. Recovery is automatic when the data is ready. A monitoring-only
+Remaining cash-projection coverage must be continuous through midnight; unlike
+the control/comparison horizon, it can include labeled tentative ComEd hours. A
+stale plan, a missing price without a defensible estimate, missing applicable
+delivery/export/solar coverage, an unmodeled installed battery or insufficient EV
+charging information/controls leaves the value unknown with a reason. Recovery
+is automatic when the data is ready. A monitoring-only
 battery's independent dispatch is not assumed to match a schedule. A monitoring
 EV contributes only its observed charging toward a known target. No future
 plug-in or independent controller schedule is invented.
@@ -103,6 +111,16 @@ Observation still blocks commands; the forecast assumes the proposal is followed
 It is not a utility bill, guaranteed savings or a cash-payout prediction. Entity
 attributes separate observed and remaining net cost, observed estimated-price
 coverage, future coverage timestamps, operating mode and the current status/reason.
+`estimated_forecast_hours` and `estimated_forecast_intervals` identify the remaining
+estimated portions, their supply/import/export rates in USD/kWh, source and available
+sample/reference details. Each real hour is listed separately, including repeated
+DST hours. `confidence` is `tentative` when future or covered observed prices include
+estimates, `limited` for other partial-day totals, `forecast` for covered totals
+without those price estimates, and `unavailable` while waiting. `status` still
+separately reports `ready`, `partial_day` or `waiting`; ready means calculable, not
+certain. The dashboards show tentative hours and retain partial-day warnings too.
+These forecast-only estimates are never written into the observed ledger, learned
+as live prices, or used to extend the dependable economic horizon.
 
 ## Different money figures
 

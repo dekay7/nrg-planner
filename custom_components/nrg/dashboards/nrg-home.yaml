@@ -529,8 +529,8 @@ views:
           Fixed charges and unconfigured taxes are excluded.
 
 
-          **By midnight** adds the remaining energy plan to the covered cost so far. It assumes the modeled schedule
-          is followed, not a guaranteed bill.
+          **By midnight** adds the remaining selected energy flows to the covered cost so far. It assumes the modeled
+          schedule is followed, not a guaranteed bill. Battery wear and remaining-energy valuation are excluded.
 
 
           {% set status = state_attr(''sensor.nrg_net_cost_eod'', ''status'') %}
@@ -542,7 +542,32 @@ views:
           total. Check today''s cost coverage.
 
           {% else %}Low coverage means the day is incomplete; earlier gaps are not filled by the forecast.{% endif
-          %}'
+          %}
+
+
+          {% if state_attr(''sensor.nrg_net_cost_eod'', ''confidence'') == ''tentative'' %}
+
+          **Tentative forecast · lower confidence:** includes estimated prices, not known or settled charges. Equipment-control
+          pricing is unchanged.
+
+          {% set intervals = state_attr(''sensor.nrg_net_cost_eod'', ''estimated_forecast_intervals'') or [] %}
+
+          {% if intervals %}**Estimated remaining hours** ({{ state_attr(''sensor.nrg_net_cost_eod'', ''estimated_forecast_hours'')
+          | round(2) }} h):
+
+          {% for interval in intervals %}
+
+          - {{ interval.start | timestamp_custom(''%H:%M %Z'') }}–{{ interval.end | timestamp_custom(''%H:%M %Z'')
+          }}: {{ (interval.supply_price * 100) | round(2) }}¢/kWh supply · {{ {''recorded_estimate'': ''recorded
+          matching-hour median'', ''published_price_median'': ''recent published-price median'', ''day_ahead'':
+          ''published current-hour estimate''}.get(interval.source, interval.source) }}
+
+          {% endfor %}{% endif %}
+
+          {% if state_attr(''sensor.nrg_net_cost_eod'', ''estimated_observed_coverage_hours'') | float(0) > 0 %}Covered
+          costs so far also include published-price estimates; see today''s forecast-priced coverage.{% endif %}
+
+          {% endif %}'
       grid_options:
         columns: full
     - type: conditional
@@ -671,7 +696,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=5fbf156dbc29
+        url_path: /nrg-planner/guide.html?v=84317e9bc71e
       grid_options:
         columns: full
   - type: grid

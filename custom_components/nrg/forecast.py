@@ -1,6 +1,7 @@
 """Dated ComEd and Forecast.Solar adapters. Missing energy is never a zero forecast."""
 from datetime import datetime, timedelta
 import re
+from statistics import median
 from zoneinfo import ZoneInfo
 
 from .config import age_factor, finite, source_scope, validate_sources, cents_rate, export_price
@@ -111,6 +112,38 @@ def price_at(stamp: float, now: float, config: dict, cache: list[dict], live: fl
              "export_known": export is not None and (config["export_rate"] != "Supply plus adder" or not current_unknown and source in known_sources),
             "supply_period": label if config["supply_plan"] == "Time-of-use supply" else None,
             "delivery_period": delivery_label if config["delivery_plan"] == "Time-of-use delivery" else None}
+
+
+def cost_price_estimate(stamp: float, now: float, config: dict, cache: list[dict],
+                        price: dict, prior=None) -> dict | None:
+    """Read-only cash projection only; never a tariff or control authorization.
+
+    Estimate unpublished future ComEd hours from recorded matching-hour medians,
+    then the median of up to 24 preceding published real hours. The latter needs
+    both a recent fetch and recent dated hours; stale/re-fetched old days do
+    not become a baseline. Current live outages and other tariffs are not filled.
+    """
+    if config["supply_plan"] != "Hourly ComEd":
+        return None
+    stamp = int(stamp // 3600) * 3600
+    if price.get("comed_publication_bridge") or price.get("comed_estimated_price"):
+        return {"source": "day_ahead", "supply_price": price["supply_price"]}
+    if (int(stamp // 3600) <= int(now // 3600)
+            or price["supply_source"] not in ("missing", "recorded_estimate")):
+        return None
+    supply, count = prior(datetime.fromtimestamp(stamp, COMED_ZONE).hour) if prior else (None, 0)
+    supply = finite(supply)
+    if count and supply is not None and -10 <= supply <= 5:
+        return {"source": "recorded_estimate", "supply_price": supply, "samples": count}
+    rows = sorted((row for row in cache if 0 <= now - row["fetched_at"] <= 36 * 3600
+                   and 0 < stamp - row["start"] <= 24 * 3600
+                   and (value := finite(row.get("supply"))) is not None and -10 <= value <= 5),
+                  key=lambda row: row["start"])[-24:]
+    if not rows:
+        return None
+    return {"source": "published_price_median", "supply_price": median(finite(row["supply"]) for row in rows),
+            "samples": len(rows), "reference_start": rows[0]["start"],
+            "reference_end": rows[-1]["start"] + 3600}
 
 
 def solar_response(response: dict, zone: ZoneInfo, fetched_at: float,

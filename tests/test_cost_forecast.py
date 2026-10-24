@@ -125,12 +125,10 @@ def test_real_solar_export_plan_preserves_negative_net_cost():
     assert result["net_cost"] == pytest.approx(-.1 - 6 * 3 * .05)
 
 
-@pytest.mark.parametrize("missing", ["supply", "delivery", "export", "solar"])
+@pytest.mark.parametrize("missing", ["delivery", "export", "solar"])
 def test_real_plan_requires_all_applicable_future_coverage(missing):
     config, prices, solar, telemetry, stats = fixture(has_ev=False, has_battery=False)
-    if missing == "supply":
-        prices = [p for p in prices if p["start"] != NOW + 2 * 3600]
-    elif missing == "delivery":
+    if missing == "delivery":
         config = config | {"delivery_plan": "External delivery entity"}
     elif missing == "export":
         config = config | {"export_rate": "Flat credit", "flat_export_cents": None}

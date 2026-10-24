@@ -518,7 +518,7 @@ update another installation automatically. See <a href="#installation-updates-an
 </tr>
 <tr>
 <td>End-of-day net-cost forecast</td>
-<td>Read-only covered cost so far plus remaining planned purchases minus export credits to local midnight, shown under today's net cost. Partial past coverage is labeled; missing future coverage or unmodeled equipment leaves it unknown. No new permissions. Unreleased after 0.2.0. <a href="#homeowner-guide-forecast-net-cost-by-midnight">Dashboard forecast</a> and <a href="#accounting-end-of-day-net-cost-forecast">accounting</a>.</td>
+<td>Read-only covered cost so far plus remaining selected purchases minus export credits to local midnight. Published prices take priority; unpublished future ComEd hours use labeled matching-hour or recent published medians, with estimated-hour details and lower confidence. No defensible baseline, other missing coverage or unmodeled equipment still leaves it unknown; partial past coverage remains labeled. No new settings/permissions or changes to control pricing. Unreleased after 0.2.0. <a href="#homeowner-guide-forecast-net-cost-by-midnight">Dashboard forecast</a>, <a href="#pricing-tentative-prices-for-the-end-of-day-cost-forecast">tentative pricing</a> and <a href="#accounting-end-of-day-net-cost-forecast">accounting</a>.</td>
 </tr>
 <tr>
 <td>Forecast-priced accounting</td>
@@ -565,7 +565,7 @@ There is no separately calculated capacity-charge saving. See
 </tr>
 <tr>
 <td><strong>Unreleased development after 0.2.0</strong></td>
-<td>Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs; modeling/forecasting robustness fixes and permanent independent-oracle regressions; offline seeded simulation of forecasts, learning and decision outcomes against independent synthetic physics; read-only end-of-day net-cost forecast with local-midnight and coverage safeguards, astronomical completion of covered dawn/dusk edges and input-specific gap explanations.</td>
+<td>Guided price-data fallback and alerts; pricing-health cards hidden when no warning/request exists; dependable-horizon advice and feasible/common battery-refill valuation; bounded new-hour publication bridge; opt-in brief published estimates with persistent limits and separately tracked forecast-priced costs; modeling/forecasting robustness fixes and permanent independent-oracle regressions; offline seeded simulation of forecasts, learning and decision outcomes against independent synthetic physics; read-only end-of-day net-cost forecast with local-midnight and coverage safeguards, astronomical completion of covered dawn/dusk edges, input-specific gap explanations and clearly tentative estimates for unpublished ComEd hours, separate from control prices.</td>
 </tr>
 </tbody>
 </table></div>
@@ -965,11 +965,29 @@ bill; check <strong>Today's cost coverage</strong>. More info separates <code>ob
 <code>remaining_net_cost</code>, <code>uncovered_past_hours</code> and future coverage timestamps.
 Remaining interval costs are prorated when the current time or midnight cuts a
 plan interval. The day boundary follows local time, including 23/25-hour DST days.</p>
+<p>Before ComEd publishes every remaining hour, the forecast can still be useful.
+It uses published prices first, then a <strong>tentative</strong> estimate for an unpublished
+future supply hour: the median of recorded prices for that Central clock hour,
+or a recent published-price median if there is no matching history. No built-in
+household rate or assumed zero price is substituted. More info and the note below the
+totals identify the estimated hours, rates and sources; <strong>Tentative forecast ·
+lower confidence</strong> remains visible even with partial-day coverage. Published
+prices replace estimates automatically on a normal planning refresh. See
+<a href="#pricing-tentative-prices-for-the-end-of-day-cost-forecast">tentative pricing</a>
+for freshness limits and fallback details.</p>
+<p>This estimates the cost of the already selected energy flows; it does not change
+EV/battery schedules, buying-price sensors, household advice or equipment-control
+pricing rules. It requires no opt-in to the separate ComEd live-delay policy.
+Estimated current-hour prices from that bounded policy and estimated observed
+costs also lower forecast confidence. This is still an uncertain energy forecast,
+not a promise that the selected schedule or price will occur.</p>
 <p>Normal sunrise/sunset boundaries do not need a full-hour provider point: NRG
 combines the covered daylight portion with HA's known nighttime zero. It never
 fills genuinely missing daylight this way. If coverage is still missing, the
 explanation names the input and first uncovered local time.</p>
-<p>The forecast waits rather than treating missing future prices or solar as zero.
+<p>The forecast still waits for a missing price without a defensible estimate, a
+current live-price outage beyond its existing bounded policy, missing delivery or
+export settings, or missing solar coverage; none is treated as zero.
 It also needs some covered cost today, a fresh plan, an applicable battery outlook
 and sufficient EV charging information/compatible controls. A monitoring-only
 battery's independent dispatch is not predicted, so its forecast stays unknown.
@@ -1356,6 +1374,7 @@ to prepare a useful report for the
 <li><a href="#pricing-comed-price-sources-and-freshness">ComEd price sources and freshness</a></li>
 <li><a href="#pricing-comeds-new-hour-publication-window">ComEd's new-hour publication window</a></li>
 <li><a href="#pricing-brief-comed-live-data-delays">Brief ComEd live-data delays</a></li>
+<li><a href="#pricing-tentative-prices-for-the-end-of-day-cost-forecast">Tentative prices for the end-of-day cost forecast</a></li>
 <li><a href="#pricing-editing-timed-periods-in-ha">Editing timed periods in HA</a><ul>
 <li><a href="#pricing-boundary-and-weekday-rules">Boundary and weekday rules</a></li>
 </ul>
@@ -1463,6 +1482,51 @@ least two minutes and a new plan. Manual requests remain active until ended.
 The automatic outage latch and verified-observation timestamp survive restarts.
 Switching between live and estimated pricing invalidates the old plan promptly.
 No choice enables equipment control or bypasses Observation/protection guards.</p>
+<h3 id="pricing-tentative-prices-for-the-end-of-day-cost-forecast">Tentative prices for the end-of-day cost forecast</h3>
+<p><strong>Unreleased after 0.2.0.</strong> The read-only <strong>Forecast net cost by midnight</strong> can
+estimate unpublished <strong>future ComEd supply hours</strong> for the remaining local day,
+without waiting for the next-day feed. ComEd's hour-ending labels mean today's
+feed ends at 23:00; the next-day feed supplies today's 23:00–midnight hour. There
+is no hard-coded afternoon publication time.</p>
+<p>The cash forecast uses this order:</p>
+<ol>
+<li>Use the applicable published exact-hour price (and current live price where
+   available) under the existing pricing rules.</li>
+<li>For an unpublished future hour, use the median of this installation's recorded
+   live supply observations for the matching <strong>Central clock hour</strong>, when present
+   in the existing bounded learning history. Label it <code>recorded_estimate</code>, with
+   its sample count. These observations are running estimates, not settlements.</li>
+<li>Without matching history, use the <strong>median of published supply prices in the
+   preceding 24 real hours</strong>, labeled <code>published_price_median</code>, with sample count
+   and reference timestamps. Rows must also satisfy the normal 36-hour fetch-age
+   limit; future fetch timestamps, old dated hours and later published hours do
+   not qualify. A single spike does not dominate this median. The baseline stays
+   constant within each real hour. A new installation can use this baseline
+   without inventing a learned household profile.</li>
+<li>Without either baseline, keep the forecast unknown and explain the gap. Never
+   use an unconfigured rate, a flat-rate placeholder, the last live price carried
+   forward, or zero as a missing supply estimate. A genuine signed or zero median
+   remains signed or zero.</li>
+</ol>
+<p>These estimates reprice the <strong>already selected energy flows</strong>, including applicable
+supply-linked export credits, only after equipment planning. They do not set
+<code>price_known</code>/<code>export_known</code>, change ordinary slot costs, extend the dependable
+comparison horizon, authorize charging, alter advice/notifications, make a current
+live-price outage usable, or update the observed ledger. Missing delivery,
+applicable export settings, daylight coverage or equipment inputs still block the
+forecast. Other providers and unconfigured flat/time-of-use rates are not filled
+from ComEd data.</p>
+<p>The sensor exposes <code>estimated_forecast_hours</code>, <code>estimated_forecast_intervals</code> and
+<code>confidence: tentative</code>; both dashboards show which remaining hours use estimates
+and their supply rates/sources. Covered observed costs that include published-price
+estimates also lower confidence. Partial-day omissions remain separately labeled.
+A normal fresh plan replaces tentative prices when ComEd publishes exact-hour
+coverage, automatically removing the tentative label if no other estimated prices
+remain. See <a href="#accounting-end-of-day-net-cost-forecast">forecast accounting</a>.</p>
+<p>This default forecast behavior needs <strong>no new setting or permission</strong> and is
+independent of the opt-in <strong>Allow brief published estimates</strong> control policy.
+Observation defaults, live-price guards, equipment permissions, fallback/recovery,
+user settings and learning are unchanged.</p>
 <h3 id="pricing-editing-timed-periods-in-ha">Editing timed periods in HA</h3>
 <ol>
 <li>Open <strong>Settings → Devices &amp; services → NRG Planner → Configure → Pricing periods</strong>.</li>
@@ -3566,7 +3630,13 @@ from the built-in Energy dashboard's lifetime-counter-based totals.</p>
 <h3 id="accounting-end-of-day-net-cost-forecast">End-of-day net-cost forecast</h3>
 <p><strong>Forecast net cost by midnight</strong> (<code>sensor.nrg_net_cost_eod</code>) is the covered
 ledger's purchases minus export credits plus the selected plan's remaining
-interval cash costs up to the next local midnight. It includes supply and delivery;
+interval cash costs up to the next local midnight. Published prices take priority;
+unpublished future ComEd hours can use explicitly tentative supply estimates as
+<a href="#pricing-tentative-prices-for-the-end-of-day-cost-forecast">described in pricing</a>.
+These reprice the already selected import/export flows after all planning decisions,
+without reoptimizing equipment against tentative prices. Supply-linked export
+credits use the same tentative supply plus the configured adder; flat credits and
+no-credit settings remain independent of delivery. It includes supply and delivery;
 it does <strong>not</strong> use <code>modeled_cost</code> or candidate scores, which include optional
 battery wear and stored-energy replacement value. It excludes tomorrow's costs.
 Current and midnight-crossing intervals are prorated by their real-time overlap.
@@ -3583,10 +3653,12 @@ nighttime zero without scaling the partial energy to a full hour. Every daylight
 portion still needs forecast coverage for each physical array; unavailable sun
 events or real daylight gaps remain unknown. Waiting explanations identify the
 missing input and first uncovered local time when available.</p>
-<p>Remaining coverage must be continuous and dependable through midnight. A stale
-plan, missing applicable import/export/solar coverage, an unmodeled installed
-battery or insufficient EV charging information/controls leaves the value unknown
-with a reason. Recovery is automatic when the data is ready. A monitoring-only
+<p>Remaining cash-projection coverage must be continuous through midnight; unlike
+the control/comparison horizon, it can include labeled tentative ComEd hours. A
+stale plan, a missing price without a defensible estimate, missing applicable
+delivery/export/solar coverage, an unmodeled installed battery or insufficient EV
+charging information/controls leaves the value unknown with a reason. Recovery
+is automatic when the data is ready. A monitoring-only
 battery's independent dispatch is not assumed to match a schedule. A monitoring
 EV contributes only its observed charging toward a known target. No future
 plug-in or independent controller schedule is invented.</p>
@@ -3594,7 +3666,17 @@ plug-in or independent controller schedule is invented.</p>
 Observation still blocks commands; the forecast assumes the proposal is followed.
 It is not a utility bill, guaranteed savings or a cash-payout prediction. Entity
 attributes separate observed and remaining net cost, observed estimated-price
-coverage, future coverage timestamps, operating mode and the current status/reason.</p>
+coverage, future coverage timestamps, operating mode and the current status/reason.
+<code>estimated_forecast_hours</code> and <code>estimated_forecast_intervals</code> identify the remaining
+estimated portions, their supply/import/export rates in USD/kWh, source and available
+sample/reference details. Each real hour is listed separately, including repeated
+DST hours. <code>confidence</code> is <code>tentative</code> when future or covered observed prices include
+estimates, <code>limited</code> for other partial-day totals, <code>forecast</code> for covered totals
+without those price estimates, and <code>unavailable</code> while waiting. <code>status</code> still
+separately reports <code>ready</code>, <code>partial_day</code> or <code>waiting</code>; ready means calculable, not
+certain. The dashboards show tentative hours and retain partial-day warnings too.
+These forecast-only estimates are never written into the observed ledger, learned
+as live prices, or used to extend the dependable economic horizon.</p>
 <h3 id="accounting-different-money-figures">Different money figures</h3>
 <ol>
 <li><strong>Observed net variable cost:</strong> grid meter readings and contemporaneous rates,
@@ -3959,6 +4041,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 <li><a href="#review-offline-synthetic-simulation-verification-unreleased">Offline synthetic simulation verification (unreleased)</a></li>
 <li><a href="#review-end-of-day-net-cost-forecast-verification-unreleased">End-of-day net-cost forecast verification — unreleased</a></li>
 <li><a href="#review-solar-dawndusk-coverage-correction-unreleased">Solar dawn/dusk coverage correction — unreleased</a></li>
+<li><a href="#review-tentative-unpublished-comed-cost-forecast-unreleased">Tentative unpublished ComEd cost forecast — unreleased</a></li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -4341,6 +4424,27 @@ failed refreshes retain their original age and cannot manufacture coverage.</p>
 assets pass. The same <strong>38 HA-pinned Pillow/uv advisories</strong> remain open; no package
 overrides, workflow changes or audit exclusions are introduced. This record is
 source-and-test verification, not a claim of independent review or a release.</p>
+<h3 id="review-tentative-unpublished-comed-cost-forecast-unreleased">Tentative unpublished ComEd cost forecast — unreleased</h3>
+<p>Local verification on Python 3.14.8 / HA 2026.10.2 passes <strong>570 tests</strong>. The
+read-only EOD cash projection now prices unpublished future ComEd hours with a
+recorded matching-hour median or a recent published-price median, after selecting
+all equipment actions. Separate cash-projection fields leave ordinary tariffs,
+slot costs, economic coverage, advice and control guards unchanged. Sensor
+attributes and both generated dashboards identify estimated hours/rates/sources
+and tentative confidence; partial-day omissions remain visible.</p>
+<p>Invented regressions cover the morning 23:00–midnight gap, publication handover,
+recorded-history precedence, median spike resistance, signed/zero rates,
+supply-linked and independent export credits, baseline freshness, unchanged other
+tariffs, current live outages, remaining coverage/equipment blockers, elapsed
+clipping, DST hours, real HA sensor updates and dashboard-template rendering. A
+comparison with forecast repricing disabled verifies identical selected flows,
+controls, advice and comparison costs.</p>
+<p>Ruff, dependency consistency, privacy/history, whitespace and reproducible UI/brand
+build checks pass. The dependency audit still reports the existing <strong>38 advisories
+in HA-managed Pillow 12.3.0 / uv 0.12.23</strong>; no dependencies or audit exclusions are
+changed. Settings, learning, observed ledgers, Observation defaults and explicit
+control permissions are preserved. No version bump, release, live deployment or
+physical-equipment validation is claimed.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as
