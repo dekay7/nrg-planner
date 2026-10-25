@@ -8,7 +8,8 @@ control-state name and script-adapter role.
 
 ## Which features are in my installation?
 
-The latest numbered release is **0.3.0**, including the features indexed below.
+The latest numbered release is **0.3.0**, including the released features indexed below.
+The explicitly inactive development foundation described later is not in that release.
 Work merged after a release is **unreleased development** until the next release
 is published, even if its source manifest still has the previous version.
 Documentation on GitHub's main branch can therefore describe features not present
@@ -100,6 +101,18 @@ is cleaned up automatically and it no longer constrains charging. Use actual
 supply/delivery schedules and configured permissions, not a seasonal switch.
 There is no separately calculated capacity-charge saving. See
 [the current planning rules](design.md#time-and-prices).
+
+## Unreleased inactive foundation
+
+A pure ComEd five-minute parser and hourly reconstruction model has invented-data
+regressions for equal-weight hourly prices, corrections, completeness and DST.
+**It is not connected to runtime, persisted history, daily totals, EOD, learning
+or controls**, and adds no setting or permission. Provider retention terms and
+an authoritative settled-price source remain open review gates. Existing settings,
+learning, legacy costs and all safeguards are unchanged. See
+[accounting development status](accounting.md#hourly-accounting-development-status).
+A separate planner-horizon reproduction documents an unresolved discontinuity;
+no optimizer fix or control-policy change is included.
 
 ## Development milestones since creation
 

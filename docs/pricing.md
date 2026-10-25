@@ -37,6 +37,15 @@ refresh the underlying live observation. A mapped **Current supply price** senso
 can replace the live API; its HA report timestamp and declared units are validated.
 That report is not proof that the upstream provider took a new measurement.
 
+### Completed-hour source work is not active
+
+The unreleased pure five-minute normalizer is a development foundation, not an
+additional live source. Its reconstructed hours are labeled complete public data,
+never utility-final merely because twelve intervals exist or 24 hours passed.
+ComEd's public API terms restrict retention; a permitted persistent source/cache
+policy still needs clarification. No new polling, settings, history replacement
+or control allowance is activated. See [accounting development status](accounting.md#hourly-accounting-development-status).
+
 ## ComEd's new-hour publication window
 
 With the default **Strict live pricing** policy, the first live running average

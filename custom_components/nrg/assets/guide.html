@@ -299,6 +299,7 @@ missing, use <a href="#troubleshooting">troubleshooting</a>; unfamiliar terms ar
 <li><a href="#features-learning-forecasts-and-measurement-quality">Learning, forecasts and measurement quality</a></li>
 <li><a href="#features-advice-accounting-and-notifications">Advice, accounting and notifications</a></li>
 <li><a href="#features-privacy-lifecycle-and-retired-behavior">Privacy, lifecycle and retired behavior</a></li>
+<li><a href="#features-unreleased-inactive-foundation">Unreleased inactive foundation</a></li>
 <li><a href="#features-development-milestones-since-creation">Development milestones since creation</a></li>
 </ul>
 </div>
@@ -309,7 +310,8 @@ links to the guide that explains how to use the feature and its limits. The
 <a href="#settings">settings reference</a> lists every catalogue default, mapping role,
 control-state name and script-adapter role.</p>
 <h3 id="features-which-features-are-in-my-installation">Which features are in my installation?</h3>
-<p>The latest numbered release is <strong>0.3.0</strong>, including the features indexed below.
+<p>The latest numbered release is <strong>0.3.0</strong>, including the released features indexed below.
+The explicitly inactive development foundation described later is not in that release.
 Work merged after a release is <strong>unreleased development</strong> until the next release
 is published, even if its source manifest still has the previous version.
 Documentation on GitHub's main branch can therefore describe features not present
@@ -547,6 +549,16 @@ is cleaned up automatically and it no longer constrains charging. Use actual
 supply/delivery schedules and configured permissions, not a seasonal switch.
 There is no separately calculated capacity-charge saving. See
 <a href="#design-time-and-prices">the current planning rules</a>.</p>
+<h3 id="features-unreleased-inactive-foundation">Unreleased inactive foundation</h3>
+<p>A pure ComEd five-minute parser and hourly reconstruction model has invented-data
+regressions for equal-weight hourly prices, corrections, completeness and DST.
+<strong>It is not connected to runtime, persisted history, daily totals, EOD, learning
+or controls</strong>, and adds no setting or permission. Provider retention terms and
+an authoritative settled-price source remain open review gates. Existing settings,
+learning, legacy costs and all safeguards are unchanged. See
+<a href="#accounting-hourly-accounting-development-status">accounting development status</a>.
+A separate planner-horizon reproduction documents an unresolved discontinuity;
+no optimizer fix or control-policy change is included.</p>
 <h3 id="features-development-milestones-since-creation">Development milestones since creation</h3>
 <div class="table-scroll" role="region" aria-label="Features &amp; development history table 6" tabindex="0"><table>
 <thead>
@@ -948,6 +960,10 @@ shows the newly tracked estimated hours; cost/coverage entity attributes separat
 <code>estimated_import_cost</code>, <code>estimated_export_credit</code> and <code>estimated_coverage_hours</code>.
 These are subsets of the totals, not additional charges. Old ledger history is
 not retroactively classified. See <a href="#accounting-observed-ledger">accounting</a>.</p>
+<p>Completed-hour ComEd reconciliation is still inactive development. Today's total
+continues to use contemporaneous estimates; it is not automatically corrected to
+the eventual whole-hour price. See
+<a href="#accounting-hourly-accounting-development-status">the current accounting limits</a>.</p>
 <h4 id="homeowner-guide-forecast-net-cost-by-midnight">Forecast net cost by midnight</h4>
 <p>Directly below <strong>Net energy cost today</strong>, <strong>Forecast net cost by midnight</strong>
 (<code>sensor.nrg_net_cost_eod</code>) adds the covered net cost so far to the remaining
@@ -1375,7 +1391,10 @@ to prepare a useful report for the
 <a href="#security">security policy</a> to report suspected vulnerabilities privately.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="pricing" aria-label="Electricity pricing"><h2 id="pricing-supply-delivery-and-time-of-use-plans">Supply, delivery and time-of-use plans</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Electricity pricing topics"><div class="toc">
 <ul>
 <li><a href="#pricing-the-prominent-buying-price">The prominent buying price</a></li>
-<li><a href="#pricing-comed-price-sources-and-freshness">ComEd price sources and freshness</a></li>
+<li><a href="#pricing-comed-price-sources-and-freshness">ComEd price sources and freshness</a><ul>
+<li><a href="#pricing-completed-hour-source-work-is-not-active">Completed-hour source work is not active</a></li>
+</ul>
+</li>
 <li><a href="#pricing-comeds-new-hour-publication-window">ComEd's new-hour publication window</a></li>
 <li><a href="#pricing-brief-comed-live-data-delays">Brief ComEd live-data delays</a></li>
 <li><a href="#pricing-tentative-prices-for-the-end-of-day-cost-forecast">Tentative prices for the end-of-day cost forecast</a></li>
@@ -1433,6 +1452,13 @@ usable independently.</p>
 refresh the underlying live observation. A mapped <strong>Current supply price</strong> sensor
 can replace the live API; its HA report timestamp and declared units are validated.
 That report is not proof that the upstream provider took a new measurement.</p>
+<h4 id="pricing-completed-hour-source-work-is-not-active">Completed-hour source work is not active</h4>
+<p>The unreleased pure five-minute normalizer is a development foundation, not an
+additional live source. Its reconstructed hours are labeled complete public data,
+never utility-final merely because twelve intervals exist or 24 hours passed.
+ComEd's public API terms restrict retention; a permitted persistent source/cache
+policy still needs clarification. No new polling, settings, history replacement
+or control allowance is activated. See <a href="#accounting-hourly-accounting-development-status">accounting development status</a>.</p>
 <h3 id="pricing-comeds-new-hour-publication-window">ComEd's new-hour publication window</h3>
 <p>With the default <strong>Strict live pricing</strong> policy, the first live running average
 is not necessarily available at the hour boundary. For the first ten minutes,
@@ -1904,6 +1930,7 @@ measurement mismatch; do not assume one manufacturer's defaults apply to your ho
 </ul>
 </li>
 <li><a href="#learning-solar-alternative-weight">Solar alternative weight</a></li>
+<li><a href="#learning-recorded-comed-prices">Recorded ComEd prices</a></li>
 <li><a href="#learning-resetting-or-disabling-learning">Resetting or disabling learning</a></li>
 </ul>
 </div>
@@ -2085,6 +2112,14 @@ count or capacity multiplier.</p>
 <p>After averaging alternatives, forecasts for different physical arrays are added.
 A separate west roof forecast of 5 kWh would make the total 18 kWh. Weights are
 explicit user choices; the whole-system solar calibration is a separate operation.</p>
+<h3 id="learning-recorded-comed-prices">Recorded ComEd prices</h3>
+<p>The current matching-hour price prior uses saved live running estimates, not
+completed settlement rates. The unreleased hourly-normalization foundation is
+not connected to learning and does not replace or clear these samples. A later
+price-learning migration must update one sample per physical hour without
+rewriting household, EV, solar or battery measurements. Historical backfill must
+never count as live recovery evidence. See
+<a href="#accounting-hourly-accounting-development-status">accounting development status</a>.</p>
 <h3 id="learning-resetting-or-disabling-learning">Resetting or disabling learning</h3>
 <p>Each learning switch can be turned off independently. Reset learning clears the
 learned profiles, battery observations, EV sessions and forecast comparisons, while
@@ -2798,6 +2833,7 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <li><a href="#troubleshooting-charts-say-custom-element-does-not-exist-or-are-blank">Charts say Custom element does not exist or are blank</a></li>
 <li><a href="#troubleshooting-electricity-price-is-unknown-too-high-or-100-times-wrong">Electricity price is unknown, too high, or 100 times wrong</a></li>
 <li><a href="#troubleshooting-comed-responds-but-pricing-health-repeatedly-enters-fallback">ComEd responds, but Pricing health repeatedly enters fallback</a></li>
+<li><a href="#troubleshooting-the-comed-eod-forecast-or-battery-plan-jumps-during-a-price-delay">The ComEd EOD forecast or battery plan jumps during a price delay</a></li>
 <li><a href="#troubleshooting-advice-says-waiting-for-dependable-coverage">Advice says Waiting for dependable coverage</a></li>
 <li><a href="#troubleshooting-power-flows-are-missing-reversed-or-inconsistent">Power flows are missing, reversed, or inconsistent</a></li>
 <li><a href="#troubleshooting-the-plan-exists-but-my-car-or-battery-is-not-following-it">The plan exists, but my car or battery is not following it</a></li>
@@ -2888,6 +2924,18 @@ new-hour bridge; source <code>day_ahead</code> means published forecast, not liv
 It does not change your fallback actions, control permissions, or manual request.
 Forecasts cannot release an already active automatic fallback: wait for confirmed
 fresh live recovery. See <a href="#pricing-brief-comed-live-data-delays">the limits and safeguards</a>.</p>
+<h3 id="troubleshooting-the-comed-eod-forecast-or-battery-plan-jumps-during-a-price-delay">The ComEd EOD forecast or battery plan jumps during a price delay</h3>
+<p>Check Pricing health, the fixed estimate deadline and the dependable comparison
+endpoint, not just the displayed price. A known planner limitation can truncate
+the economic horizon at a current-hour pricing gap and assume hold for the entire
+remaining outlook, even if later forecast prices are present and unchanged.
+This can change both the modeled battery mode and EOD total. A separate invented
+regression reproduces it; the hourly-accounting foundation does not fix it.</p>
+<p>Do not extend price allowances, reset learning or weaken reserve/permission guards
+to hide the discontinuity. Real authorization/fallback changes must still take
+effect. See <a href="#design-battery-search">the planning limitation</a> and
+<a href="#accounting-hourly-accounting-development-status">accounting development status</a>.
+No settled-hour correction of today's or legacy costs is active yet.</p>
 <h3 id="troubleshooting-advice-says-waiting-for-dependable-coverage">Advice says Waiting for dependable coverage</h3>
 <p>NRG needs enough trustworthy information to compare a <strong>complete</strong> run of the
 reference task. Check price coverage first, then the forecasts and enabled
@@ -3484,6 +3532,14 @@ a later island of known prices cannot justify an earlier economic action. The lo
 outlook retains EV feasibility and physical energy with battery hold after that
 boundary. An active price-data fallback instead retains its explicitly selected
 baseline. Replanning can extend the economic horizon as coverage improves.</p>
+<p><strong>Known limitation under separate review:</strong> an allowance ending partway through
+the current ComEd hour can introduce a gap even when the numerical forecast price
+is unchanged. The contiguous-prefix rule can then discard later known refill
+information and assume hold for the whole remaining outlook. This can change the
+modeled current mode and EOD cost, not just the chart. An invented reproduction
+is now tested separately; no horizon correction or extended control allowance is
+implemented. A later correction must preserve unknown-tail/refill and command-time
+safeguards rather than simply skipping gaps or treating estimates as known.</p>
 <p>No battery, monitoring-only battery, missing controls or invalid SOC yields no
 discretionary battery trajectory. No charge-capable mode/switch means grid charging
 is excluded rather than invented. Unknown current prices/solar permit hold only.</p>
@@ -3577,6 +3633,7 @@ Home Assistant's built-in live data view of the Energy dashboard configuration;
 ApexCharts is a separately installed optional chart dependency used for timelines.</p><p class="back"><a href="#contents">Back to contents ↑</a></p></section><section id="accounting" aria-label="Costs &amp; accounting"><h2 id="accounting-prices-costs-and-savings-estimates">Prices, costs and savings estimates</h2><details class="chapter-contents"><summary>In this chapter</summary><nav aria-label="Costs &amp; accounting topics"><div class="toc">
 <ul>
 <li><a href="#accounting-supply-and-delivery">Supply and delivery</a></li>
+<li><a href="#accounting-hourly-accounting-development-status">Hourly accounting development status</a></li>
 <li><a href="#accounting-observed-ledger">Observed ledger</a></li>
 <li><a href="#accounting-end-of-day-net-cost-forecast">End-of-day net-cost forecast</a></li>
 <li><a href="#accounting-different-money-figures">Different money figures</a></li>
@@ -3599,6 +3656,20 @@ cash-out and billing-period restrictions are not automatically reconstructed.</p
 <p>Fixed customer fees do not change which hour is cheaper. Capacity charges and
 unconfigured taxes are excluded; there is no modeled capacity-charge saving or
 active seasonal charging heuristic.</p>
+<h3 id="accounting-hourly-accounting-development-status">Hourly accounting development status</h3>
+<p><strong>Unreleased, inactive foundation only.</strong> ComEd describes its hourly market rate
+as the average of twelve five-minute prices. The source now includes a pure,
+tested normalizer and hourly reconstruction model, but it is not connected to
+the observed ledger, forecasts, learning or controls. New provider polling and
+persistent price retention are gated on clarifying the API's retention terms;
+no authoritative billing-final hourly series has been verified. There is no new
+setting to enable this foundation. Existing costs, settings and learning remain
+unchanged, including legacy totals and forecast-priced subsets.</p>
+<p><strong>The current ledger still integrates contemporaneous running estimates.</strong> It
+does not yet reconcile a completed ComEd hour to one hourly rate. Do not interpret
+this development work as corrected past costs, settled utility charges or repaired
+Home Assistant Energy statistics. Export compensation stays as configured; the
+applicable net-metering class/netting rules are not automatically inferred.</p>
 <h3 id="accounting-observed-ledger">Observed ledger</h3>
 <pre tabindex="0" aria-label="Code example"><code class="language-text">purchase cost = positive grid kW × hours × buying price at that time
 export credit = negative grid kW magnitude × hours × configured export credit
@@ -4055,6 +4126,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 <li><a href="#review-solar-dawndusk-coverage-correction-unreleased">Solar dawn/dusk coverage correction — unreleased</a></li>
 <li><a href="#review-tentative-unpublished-comed-cost-forecast-unreleased">Tentative unpublished ComEd cost forecast — unreleased</a></li>
 <li><a href="#review-030-release-candidate-verification-2026-10-24">0.3.0 release-candidate verification — 2026-10-24</a></li>
+<li><a href="#review-comed-hourly-foundation-and-separate-horizon-gate-unreleased-2026-10-25">ComEd hourly foundation and separate horizon gate — unreleased, 2026-10-25</a></li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -4489,6 +4561,45 @@ the outstanding publication gate for the requested release. This is owner-report
 validation, not independent physical-equipment verification. Final publication
 requires the exact-commit hosted checks above; the known upstream dependency
 findings remain visible and published tags stay fixed.</p>
+<h3 id="review-comed-hourly-foundation-and-separate-horizon-gate-unreleased-2026-10-25">ComEd hourly foundation and separate horizon gate — unreleased, 2026-10-25</h3>
+<p>Started from <code>31303b8</code> / 0.3.0; the baseline passes <strong>577 tests</strong>. Public source
+verification supports interval-start UTC five-minute identities and Central
+inclusive queries, but does not establish a billing-final hourly series, exact
+feed-to-tariff equivalence or a universal net-metering class. The API terms also
+restrict permanent copies/cache retention, and a sampled response supplies no
+cache lifetime. Permitted retention and ambiguous-DST catch-up behavior remain
+open gates. Detailed evidence and the remaining staged work are recorded in
+<code>docs/plans/comed-source-verification.md</code>; the handoff is not declared complete.</p>
+<p>Only the pure, standard-library parser and bounded <strong>in-memory</strong> hourly model are
+implemented. They are not imported by runtime, expose no Store/serialization API,
+and activate no new polling, persistent history, cost corrections, learning or
+controls. Invented regressions cover equal-weight hourly arithmetic, interval
+completeness, inclusive boundaries, corrections/idempotence, precision, signed
+rates, malformed responses, bounded retention and real 23/25-hour DST days. Source
+verification has not copied provider responses or household data into fixtures.
+Existing settings, learning, legacy costs, storage version, fallback continuity,
+Observation defaults and every control safeguard remain unchanged. No version is
+bumped and no release or live deployment is performed.</p>
+<p>The separately isolated planner reproduction changes a modeled first action from
+serve to hold and changes an invented EOD total by <strong>49 cents</strong>, despite identical
+numerical prices/current feasible actions. Its characterization passes; a desired-
+invariance assertion remains <strong>strict xfail</strong>, explicitly an unresolved defect,
+not an implemented correction. The independent design gate is recorded in
+<code>docs/plans/comed-planner-horizon.md</code>. Neither <code>trusted_prefix()</code> nor optimizer,
+reserve, cutoff, fallback or command policies are changed.</p>
+<p>Local verification on Python 3.14.8 / HA 2026.10.2 passes <strong>631 tests</strong>, with <strong>one
+explicit expected failure</strong> at that horizon gate. Ruff's configured <code>F</code> rules,
+dependency consistency, privacy/history, whitespace and deterministic UI/brand
+rebuilds pass. The existing 12-scenario invented simulation sweep completes with
+no physical/request invariant violations or missed EV departures. It exercises
+the unchanged runtime-independent planner, not a newly integrated hourly ledger
+or live equipment, and demonstrates no real-home savings/accuracy improvement.</p>
+<p>The dependency audit still fails on the same <strong>38 HA-managed advisories</strong>: 37 in
+Pillow 12.3.0 and one in uv 0.12.23. No dependencies, overrides or advisory
+exclusions change. Hosted validation and independent review are not claimed.
+Provider polling/persistence, hourly energy migration/reconciliation, consistent
+current-hour/EOD valuation and price-learning integration are deliberately deferred
+behind the source/retention review gate. Existing cost totals are <strong>not yet fixed</strong>.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as
