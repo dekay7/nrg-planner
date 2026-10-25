@@ -144,6 +144,11 @@ shows the newly tracked estimated hours; cost/coverage entity attributes separat
 These are subsets of the totals, not additional charges. Old ledger history is
 not retroactively classified. See [accounting](accounting.md#observed-ledger).
 
+Completed-hour ComEd reconciliation is still inactive development. Today's total
+continues to use contemporaneous estimates; it is not automatically corrected to
+the eventual whole-hour price. See
+[the current accounting limits](accounting.md#hourly-accounting-development-status).
+
 ### Forecast net cost by midnight
 
 Directly below **Net energy cost today**, **Forecast net cost by midnight**

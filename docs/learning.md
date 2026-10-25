@@ -212,6 +212,16 @@ After averaging alternatives, forecasts for different physical arrays are added.
 A separate west roof forecast of 5 kWh would make the total 18 kWh. Weights are
 explicit user choices; the whole-system solar calibration is a separate operation.
 
+## Recorded ComEd prices
+
+The current matching-hour price prior uses saved live running estimates, not
+completed settlement rates. The unreleased hourly-normalization foundation is
+not connected to learning and does not replace or clear these samples. A later
+price-learning migration must update one sample per physical hour without
+rewriting household, EV, solar or battery measurements. Historical backfill must
+never count as live recovery evidence. See
+[accounting development status](accounting.md#hourly-accounting-development-status).
+
 ## Resetting or disabling learning
 
 Each learning switch can be turned off independently. Reset learning clears the

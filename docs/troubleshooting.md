@@ -86,6 +86,21 @@ It does not change your fallback actions, control permissions, or manual request
 Forecasts cannot release an already active automatic fallback: wait for confirmed
 fresh live recovery. See [the limits and safeguards](pricing.md#brief-comed-live-data-delays).
 
+## The ComEd EOD forecast or battery plan jumps during a price delay
+
+Check Pricing health, the fixed estimate deadline and the dependable comparison
+endpoint, not just the displayed price. A known planner limitation can truncate
+the economic horizon at a current-hour pricing gap and assume hold for the entire
+remaining outlook, even if later forecast prices are present and unchanged.
+This can change both the modeled battery mode and EOD total. A separate invented
+regression reproduces it; the hourly-accounting foundation does not fix it.
+
+Do not extend price allowances, reset learning or weaken reserve/permission guards
+to hide the discontinuity. Real authorization/fallback changes must still take
+effect. See [the planning limitation](design.md#battery-search) and
+[accounting development status](accounting.md#hourly-accounting-development-status).
+No settled-hour correction of today's or legacy costs is active yet.
+
 ## Advice says Waiting for dependable coverage
 
 NRG needs enough trustworthy information to compare a **complete** run of the

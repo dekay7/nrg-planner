@@ -121,6 +121,15 @@ outlook retains EV feasibility and physical energy with battery hold after that
 boundary. An active price-data fallback instead retains its explicitly selected
 baseline. Replanning can extend the economic horizon as coverage improves.
 
+**Known limitation under separate review:** an allowance ending partway through
+the current ComEd hour can introduce a gap even when the numerical forecast price
+is unchanged. The contiguous-prefix rule can then discard later known refill
+information and assume hold for the whole remaining outlook. This can change the
+modeled current mode and EOD cost, not just the chart. An invented reproduction
+is now tested separately; no horizon correction or extended control allowance is
+implemented. A later correction must preserve unknown-tail/refill and command-time
+safeguards rather than simply skipping gaps or treating estimates as known.
+
 No battery, monitoring-only battery, missing controls or invalid SOC yields no
 discretionary battery trajectory. No charge-capable mode/switch means grid charging
 is excluded rather than invented. Unknown current prices/solar permit hold only.

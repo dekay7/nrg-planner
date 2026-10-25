@@ -20,6 +20,23 @@ Fixed customer fees do not change which hour is cheaper. Capacity charges and
 unconfigured taxes are excluded; there is no modeled capacity-charge saving or
 active seasonal charging heuristic.
 
+## Hourly accounting development status
+
+**Unreleased, inactive foundation only.** ComEd describes its hourly market rate
+as the average of twelve five-minute prices. The source now includes a pure,
+tested normalizer and hourly reconstruction model, but it is not connected to
+the observed ledger, forecasts, learning or controls. New provider polling and
+persistent price retention are gated on clarifying the API's retention terms;
+no authoritative billing-final hourly series has been verified. There is no new
+setting to enable this foundation. Existing costs, settings and learning remain
+unchanged, including legacy totals and forecast-priced subsets.
+
+**The current ledger still integrates contemporaneous running estimates.** It
+does not yet reconcile a completed ComEd hour to one hourly rate. Do not interpret
+this development work as corrected past costs, settled utility charges or repaired
+Home Assistant Energy statistics. Export compensation stays as configured; the
+applicable net-metering class/netting rules are not automatically inferred.
+
 ## Observed ledger
 
 ```text

@@ -411,6 +411,51 @@ validation, not independent physical-equipment verification. Final publication
 requires the exact-commit hosted checks above; the known upstream dependency
 findings remain visible and published tags stay fixed.
 
+## ComEd hourly foundation and separate horizon gate — unreleased, 2026-10-25
+
+Started from `31303b8` / 0.3.0; the baseline passes **577 tests**. Public source
+verification supports interval-start UTC five-minute identities and Central
+inclusive queries, but does not establish a billing-final hourly series, exact
+feed-to-tariff equivalence or a universal net-metering class. The API terms also
+restrict permanent copies/cache retention, and a sampled response supplies no
+cache lifetime. Permitted retention and ambiguous-DST catch-up behavior remain
+open gates. Detailed evidence and the remaining staged work are recorded in
+`docs/plans/comed-source-verification.md`; the handoff is not declared complete.
+
+Only the pure, standard-library parser and bounded **in-memory** hourly model are
+implemented. They are not imported by runtime, expose no Store/serialization API,
+and activate no new polling, persistent history, cost corrections, learning or
+controls. Invented regressions cover equal-weight hourly arithmetic, interval
+completeness, inclusive boundaries, corrections/idempotence, precision, signed
+rates, malformed responses, bounded retention and real 23/25-hour DST days. Source
+verification has not copied provider responses or household data into fixtures.
+Existing settings, learning, legacy costs, storage version, fallback continuity,
+Observation defaults and every control safeguard remain unchanged. No version is
+bumped and no release or live deployment is performed.
+
+The separately isolated planner reproduction changes a modeled first action from
+serve to hold and changes an invented EOD total by **49 cents**, despite identical
+numerical prices/current feasible actions. Its characterization passes; a desired-
+invariance assertion remains **strict xfail**, explicitly an unresolved defect,
+not an implemented correction. The independent design gate is recorded in
+`docs/plans/comed-planner-horizon.md`. Neither `trusted_prefix()` nor optimizer,
+reserve, cutoff, fallback or command policies are changed.
+
+Local verification on Python 3.14.8 / HA 2026.10.2 passes **631 tests**, with **one
+explicit expected failure** at that horizon gate. Ruff's configured `F` rules,
+dependency consistency, privacy/history, whitespace and deterministic UI/brand
+rebuilds pass. The existing 12-scenario invented simulation sweep completes with
+no physical/request invariant violations or missed EV departures. It exercises
+the unchanged runtime-independent planner, not a newly integrated hourly ledger
+or live equipment, and demonstrates no real-home savings/accuracy improvement.
+
+The dependency audit still fails on the same **38 HA-managed advisories**: 37 in
+Pillow 12.3.0 and one in uv 0.12.23. No dependencies, overrides or advisory
+exclusions change. Hosted validation and independent review are not claimed.
+Provider polling/persistence, hourly energy migration/reconciliation, consistent
+current-hour/EOD valuation and price-learning integration are deliberately deferred
+behind the source/retention review gate. Existing cost totals are **not yet fixed**.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public
