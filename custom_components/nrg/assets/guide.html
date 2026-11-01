@@ -309,7 +309,8 @@ links to the guide that explains how to use the feature and its limits. The
 <a href="#settings">settings reference</a> lists every catalogue default, mapping role,
 control-state name and script-adapter role.</p>
 <h3 id="features-which-features-are-in-my-installation">Which features are in my installation?</h3>
-<p>The latest numbered release is <strong>0.3.0</strong>, including the features indexed below.
+<p>The latest numbered release is <strong>0.3.0</strong>. Entries explicitly marked <strong>unreleased</strong>
+below are later development work, not part of that release.
 Work merged after a release is <strong>unreleased development</strong> until the next release
 is published, even if its source manifest still has the previous version.
 Documentation on GitHub's main branch can therefore describe features not present
@@ -387,6 +388,10 @@ update another installation automatically. See <a href="#installation-updates-an
 <tr>
 <td>ComEd live, published and tentative prices</td>
 <td>Current-hour running average, dated published forecasts and locally recorded tentative estimates are distinct sources. Old HTTP-success responses do not become fresh observations. <a href="#pricing-comed-price-sources-and-freshness">Sources and freshness</a>.</td>
+</tr>
+<tr>
+<td>ComEd DST-day forecast recovery (<strong>unreleased after 0.3.0</strong>)</td>
+<td>Preserve unambiguous published hours when one local hour-ending label repeats or does not exist. Missing intervals are not guessed, and source health explains omissions; live-price/control guards are unchanged. <a href="#pricing-comed-price-sources-and-freshness">Sources and DST limits</a>.</td>
 </tr>
 <tr>
 <td>New-hour publication bridge</td>
@@ -1404,9 +1409,21 @@ unknown rates remain unknown until supplied. Enter zero explicitly if applicable
 It combines the public current-hour-average API with dated published forecasts.
 ComEd forecast labels use Central hour-ending times; the parser converts them to
 real hour starts rather than treating the website's <code>Date.UTC</code> label as UTC.
-Ambiguous/nonexistent DST labels and incomplete forecasts are rejected rather
-than guessed. A previously valid cache or current live observation may still be
-usable independently.</p>
+The complete 00–23 wall-label grid is still required, with one dated, valid price
+per label. <strong>Unreleased DST fix:</strong> an ambiguous or nonexistent hour-ending label
+is omitted without discarding the other published hours. No fold or replacement
+price is guessed. On fall-back days, an omitted 01:00 endpoint leaves both of its
+possible preceding real hours without a publication; the unambiguous 02:00
+endpoint still prices the second 01:00–02:00 interval. On spring-forward days,
+the nonexistent 02:00 endpoint is omitted, while 03:00 prices the preceding real
+hour across the clock jump. Partial, duplicate, wrong-date and invalid-value
+feeds remain rejected.</p>
+<p>Forecast source-health status explains DST omissions. Missing intervals retain
+the existing unknown/tentative-price and control-protection rules; a previously
+valid cache or current live observation may still be usable independently.
+There is no new setting or permission, and live-price freshness, fallback and
+recovery policies are unchanged. This fix is development work after 0.3.0,
+not included in the published 0.3.0 release.</p>
 <div class="table-scroll" role="region" aria-label="Electricity pricing table 1" tabindex="0"><table>
 <thead>
 <tr>

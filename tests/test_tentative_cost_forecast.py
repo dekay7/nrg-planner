@@ -271,16 +271,18 @@ def test_existing_published_estimate_coverage_also_lowers_forecast_confidence(es
         assert result["estimated_forecast_intervals"][0]["source"] == "day_ahead"
 
 
-async def test_runtime_sensor_publishes_tentative_total_and_removes_estimate_when_feed_arrives(hass, installed):
+@pytest.mark.parametrize("day", [(2026, 10, 20), (2026, 3, 8), (2026, 11, 1)])
+async def test_runtime_sensor_publishes_tentative_total_and_removes_estimate_when_feed_arrives(hass, installed, day):
     runtime = installed.runtime_data
     runtime.get_text = AsyncMock(return_value=json.dumps([{"millisUTC": time.time() * 1000, "price": 10}]))
     await runtime.update_options({"supply_plan": "Hourly ComEd", "house_kw": 2})
     await hass.async_block_till_done()
-    now = datetime.now(ZONE).replace(hour=10, minute=15, second=0, microsecond=0).timestamp()
+    now = datetime(*day, 10, 15, tzinfo=ZONE).timestamp()
     runtime.prices = published_today(now)
     runtime.last_fetch = now
     runtime.live_cache = {"time": now, "supply": .1}
-    runtime.stats.ledger[datetime.fromtimestamp(now, ZONE).date().isoformat()] = ledger(coverage=10.25)
+    midnight = datetime.fromtimestamp(now, ZONE).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+    runtime.stats.ledger[datetime.fromtimestamp(now, ZONE).date().isoformat()] = ledger(coverage=(now - midnight) / 3600)
     runtime.stats.previous = None
     with patch("custom_components.nrg.runtime.time.time", return_value=now):
         runtime.force_plan = True

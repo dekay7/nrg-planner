@@ -8,7 +8,8 @@ control-state name and script-adapter role.
 
 ## Which features are in my installation?
 
-The latest numbered release is **0.3.0**, including the features indexed below.
+The latest numbered release is **0.3.0**. Entries explicitly marked **unreleased**
+below are later development work, not part of that release.
 Work merged after a release is **unreleased development** until the next release
 is published, even if its source manifest still has the previous version.
 Documentation on GitHub's main branch can therefore describe features not present
@@ -42,6 +43,7 @@ update another installation automatically. See [updates](installation.md#updates
 | External price entities and forecasts | Separate current/forecast mappings, supported interval aliases and currency units, configurable attribute names and validation. No ComEd substitution for another provider's missing prices. [External pricing](pricing.md#external-utility-price-integrations). |
 | Separate export compensation and permission | No credit, flat credit or supply plus an adder; export permission does not schedule a forced battery sale or reconstruct credit banks. [Export compensation](pricing.md#export-compensation). |
 | ComEd live, published and tentative prices | Current-hour running average, dated published forecasts and locally recorded tentative estimates are distinct sources. Old HTTP-success responses do not become fresh observations. [Sources and freshness](pricing.md#comed-price-sources-and-freshness). |
+| ComEd DST-day forecast recovery (**unreleased after 0.3.0**) | Preserve unambiguous published hours when one local hour-ending label repeats or does not exist. Missing intervals are not guessed, and source health explains omissions; live-price/control guards are unchanged. [Sources and DST limits](pricing.md#comed-price-sources-and-freshness). |
 | New-hour publication bridge | Under Strict live pricing, a valid exact-hour forecast can bridge the first ten minutes. Prior-hour live values are never relabeled, and forecasts cannot release an existing outage. [Publication window](pricing.md#comeds-new-hour-publication-window). |
 | Opt-in brief published estimates | Up to 60 minutes from the last verified live observation, with Degraded status, a fixed persistent deadline, continued EV planning and blocked battery grid charging. Refreshes/restarts cannot renew it. [Brief delays](pricing.md#brief-comed-live-data-delays). |
 | Guarded price-data fallback | Standard protection or guided custom EV/battery actions; manual start/end requests; higher native reserve retention, export limits, per-device results and separate alerts. [Fallback actions](operations.md#price-data-fallback). |
