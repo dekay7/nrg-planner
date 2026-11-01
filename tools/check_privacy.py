@@ -138,7 +138,8 @@ def scan(root, *, history=False, indicators=()):
             fields = identity.splitlines()
             dependabot = (len(fields) == 4 and fields[0].casefold() in {"dependabot", "dependabot[bot]"}
                           and fields[1].casefold().endswith("@users.noreply.github.com")
-                          and fields[3].casefold().endswith("@users.noreply.github.com"))
+                          and (fields[3].casefold().endswith("@users.noreply.github.com")
+                               or (fields[2] == "GitHub" and fields[3].casefold() == "noreply@github.com")))
             message = git(root, "show", "-s", "--format=%B", commit).decode()
             findings.extend((f"commit {commit[:12]} metadata", line, label) for line, label in check_text(identity, indicators))
             # Dependabot release notes quote upstream public contact addresses;

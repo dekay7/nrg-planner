@@ -188,17 +188,60 @@ def test_publication_gate_checks_annotated_tag_metadata(publication_repo):
     assert private_email not in repr(findings)
 
 
-def test_history_scan_handles_github_dependabot_release_notes_without_ignoring_secrets(publication_repo):
+@pytest.mark.parametrize("committer_name, committer_email", [
+    ("dependabot[bot]", "49699333+dependabot[bot]@users.noreply.github.com"),
+    ("GitHub", "noreply@github.com"),
+])
+def test_history_scan_handles_github_dependabot_release_notes_without_ignoring_secrets(publication_repo, committer_name, committer_email):
     root, run = publication_repo
     (root / "README.md").write_text("Generic Dependabot test project\n")
     run("add", "README.md")
     contact = "maintainer" + "@" + "package.invalid"
     run("commit", "-m", f"Update package\n\nUpstream contact: {contact}\nPrivate marker: local-secret-marker",
         GIT_AUTHOR_NAME="dependabot[bot]", GIT_AUTHOR_EMAIL="49699333+dependabot[bot]@users.noreply.github.com",
-        GIT_COMMITTER_NAME="dependabot[bot]", GIT_COMMITTER_EMAIL="49699333+dependabot[bot]@users.noreply.github.com")
+        GIT_COMMITTER_NAME=committer_name, GIT_COMMITTER_EMAIL=committer_email)
     assert scan(root, history=True)[1] == []
     assert any(label == "owner-supplied private indicator" for _, _, label in
                scan(root, history=True, indicators=["local-secret-marker"])[1])
+
+
+@pytest.mark.parametrize("committer_name, committer_email", [
+    ("dependabot[bot]", "49699333+dependabot[bot]@users.noreply.github.com"),
+    ("GitHub", "noreply@github.com"),
+])
+def test_dependabot_release_note_exemption_still_rejects_credentials(publication_repo, committer_name, committer_email):
+    root, run = publication_repo
+    credential = "ghp_" + "A" * 36
+    contact = "maintainer" + "@" + "package.invalid"
+    run("commit", "--allow-empty", "-m", f"Upstream contact: {contact}\n{credential}",
+        GIT_AUTHOR_NAME="dependabot[bot]", GIT_AUTHOR_EMAIL="49699333+dependabot[bot]@users.noreply.github.com",
+        GIT_COMMITTER_NAME=committer_name, GIT_COMMITTER_EMAIL=committer_email)
+    findings = scan(root, history=True)[1]
+    assert {label for _, _, label in findings} == {"GitHub credential"}
+    assert credential not in repr(findings)
+
+
+@pytest.mark.parametrize("field", ["GIT_AUTHOR_EMAIL", "GIT_COMMITTER_EMAIL"])
+def test_dependabot_exemption_cannot_hide_private_commit_metadata(publication_repo, field):
+    root, run = publication_repo
+    identity = {"GIT_AUTHOR_NAME": "dependabot[bot]", "GIT_AUTHOR_EMAIL": "49699333+dependabot[bot]@users.noreply.github.com",
+                "GIT_COMMITTER_NAME": "GitHub", "GIT_COMMITTER_EMAIL": "noreply@github.com"}
+    private_email = "owner" + "@" + "mail.invalid"
+    identity[field] = private_email
+    run("commit", "--allow-empty", "-m", "Generic update", **identity)
+    findings = scan(root, history=True)[1]
+    assert any(name.endswith("metadata") and label == "non-placeholder email address" for name, _, label in findings)
+    assert private_email not in repr(findings)
+
+
+def test_dependabot_github_committer_exception_requires_the_github_name(publication_repo):
+    root, run = publication_repo
+    contact = "maintainer" + "@" + "package.invalid"
+    run("commit", "--allow-empty", "-m", f"Upstream contact: {contact}",
+        GIT_AUTHOR_NAME="dependabot[bot]", GIT_AUTHOR_EMAIL="49699333+dependabot[bot]@users.noreply.github.com",
+        GIT_COMMITTER_NAME="review-test", GIT_COMMITTER_EMAIL="noreply@github.com")
+    assert any(name.endswith("message") and label == "non-placeholder email address"
+               for name, _, label in scan(root, history=True)[1])
 
 
 def test_history_scan_rejects_incomplete_or_missing_history(publication_repo):
