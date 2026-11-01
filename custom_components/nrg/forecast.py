@@ -33,28 +33,29 @@ def comed_publication_window(now: float) -> bool:
 def parse_comed(text: str, now: float) -> list[dict]:
     """Website Date.UTC fields are CENTRAL HOUR-ENDING labels, not UTC.
 
-    Ambiguous/nonexistent DST labels are rejected, rather than guessed. A valid
-    existing cache/live price and locally learned estimates remain available.
+    Validate the complete 00–23 wall-label grid, then omit only ambiguous or
+    nonexistent DST endpoints. Other hours remain usable; omitted intervals
+    are not assigned a guessed fold, copied price or zero.
     """
     rows = PRICE_PATTERN.findall(text)
     if len(rows) != 24:
         raise ValueError("ComEd did not return 24 complete forecast rows")
     today = datetime.fromtimestamp(now, COMED_ZONE).date()
-    result, dates = [], set()
+    result, dates, hours = [], set(), set()
     for row in rows:
         y, m, d, h, minute, second = map(int, row[:6])
         value = finite(row[6])
         end = datetime(y, m + 1, d, h, minute, second, tzinfo=COMED_ZONE)
-        if end.replace(fold=0).utcoffset() != end.replace(fold=1).utcoffset():
-            raise ValueError("Ambiguous or nonexistent ComEd DST hour label")
         if value is None or not -1000 <= value <= 500 or minute or second:
             raise ValueError("Invalid ComEd price or hour label")
         dates.add(end.date())
+        hours.add(h)
+        if end.replace(fold=0).utcoffset() != end.replace(fold=1).utcoffset():
+            continue
         result.append({"start": end.timestamp() - 3600, "supply": value / 100,
                        "source": "day_ahead", "fetched_at": now})
-    starts = sorted(r["start"] for r in result)
-    if len(dates) != 1 or not dates <= {today, today + timedelta(days=1)} or any(b - a != 3600 for a, b in zip(starts, starts[1:])):
-        raise ValueError("Wrong ComEd forecast date or incomplete real-hour coverage")
+    if len(dates) != 1 or not dates <= {today, today + timedelta(days=1)} or hours != set(range(24)):
+        raise ValueError("Wrong ComEd forecast date or incomplete wall-hour coverage")
     return result
 
 

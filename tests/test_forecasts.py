@@ -96,13 +96,10 @@ def test_current_comed_live_price_takes_priority_over_publication_bridge():
     assert result["price_known"] and not result["comed_publication_bridge"]
 
 
-def test_comed_rejects_partial_wrong_date_and_ambiguous_dst():
+def test_comed_rejects_partial_and_wrong_date():
     for text in ("", " ".join(f"Date.UTC(2026,9,28,{h},0,0),4" for h in range(24))):
         with pytest.raises(ValueError):
             parse_comed(text, NOW)
-    text = " ".join(f"Date.UTC(2026,10,1,{h},0,0),4" for h in range(24))
-    with pytest.raises(ValueError, match="DST"):
-        parse_comed(text, datetime(2026, 10, 31, 18, tzinfo=ZONE).timestamp())
 
 
 def test_age_is_compounded_fractional_and_does_not_double_apply():

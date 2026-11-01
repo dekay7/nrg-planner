@@ -383,22 +383,28 @@ class NRGRuntime(DataUpdateCoordinator):
         now = time.time()
         if self.config["supply_plan"] == "Hourly ComEd":
             merged = {r["start"]: r for r in self.prices if 0 <= now - r["fetched_at"] <= 36 * 3600}
-            errors = []
+            notes = []
             today = datetime.fromtimestamp(now, ZoneInfo("America/Chicago")).strftime("%Y%m%d")
             try:
                 text = await self.get_text(COMED, {"type": "daynexttoday", "date": today})
-                merged.update({r["start"]: r for r in parse_comed(text, now)})
+                rows = parse_comed(text, now)
+                merged.update({r["start"]: r for r in rows})
+                if len(rows) < 24:
+                    notes.append(f"Today: {len(rows)} published hours loaded; ambiguous/nonexistent DST labels omitted")
             except (ClientError, TimeoutError, ValueError, TypeError) as error:
-                errors.append(f"Today: {error}")
+                notes.append(f"Today: {error}")
             try:
                 available = await self.get_text(COMED, {"type": "hasdaynexttomorrow"})
                 if available.strip().lower() == "true":
                     text = await self.get_text(COMED, {"type": "daynexttomorrow"})
-                    merged.update({r["start"]: r for r in parse_comed(text, now)})
+                    rows = parse_comed(text, now)
+                    merged.update({r["start"]: r for r in rows})
+                    if len(rows) < 24:
+                        notes.append(f"Tomorrow: {len(rows)} published hours loaded; ambiguous/nonexistent DST labels omitted")
             except (ClientError, TimeoutError, ValueError, TypeError) as error:
-                errors.append(f"Tomorrow: {error}")
+                notes.append(f"Tomorrow: {error}")
             self.prices = sorted(merged.values(), key=lambda r: r["start"])
-            self.forecast_status["comed"] = "; ".join(errors) if errors else "Published forecast loaded"
+            self.forecast_status["comed"] = "; ".join(notes) if notes else "Published forecast loaded"
         daylight = self.solar_daylight(now) if self.config["has_solar"] else {}
         for source in self.entry.options.get("solar_sources", []) if self.config["has_solar"] else []:
             key = source["config_entry_id"]

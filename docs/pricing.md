@@ -22,9 +22,22 @@ ComEd is an optional supply adapter, not a fallback provider for other tariffs.
 It combines the public current-hour-average API with dated published forecasts.
 ComEd forecast labels use Central hour-ending times; the parser converts them to
 real hour starts rather than treating the website's `Date.UTC` label as UTC.
-Ambiguous/nonexistent DST labels and incomplete forecasts are rejected rather
-than guessed. A previously valid cache or current live observation may still be
-usable independently.
+The complete 00–23 wall-label grid is still required, with one dated, valid price
+per label. **Unreleased DST fix:** an ambiguous or nonexistent hour-ending label
+is omitted without discarding the other published hours. No fold or replacement
+price is guessed. On fall-back days, an omitted 01:00 endpoint leaves both of its
+possible preceding real hours without a publication; the unambiguous 02:00
+endpoint still prices the second 01:00–02:00 interval. On spring-forward days,
+the nonexistent 02:00 endpoint is omitted, while 03:00 prices the preceding real
+hour across the clock jump. Partial, duplicate, wrong-date and invalid-value
+feeds remain rejected.
+
+Forecast source-health status explains DST omissions. Missing intervals retain
+the existing unknown/tentative-price and control-protection rules; a previously
+valid cache or current live observation may still be usable independently.
+There is no new setting or permission, and live-price freshness, fallback and
+recovery policies are unchanged. This fix is development work after 0.3.0,
+not included in the published 0.3.0 release.
 
 | Source | Meaning and limits |
 |---|---|
