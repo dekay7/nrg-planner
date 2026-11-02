@@ -1,4 +1,4 @@
-"""Release metadata and restoration of an invented 0.2.0-format HA store."""
+"""Release metadata and restoration of invented previous-release HA stores."""
 from datetime import datetime, timedelta
 import json
 from pathlib import Path
@@ -21,23 +21,42 @@ def test_release_versions_and_ha_baseline_are_aligned():
     assert f"Home Assistant **{hacs['homeassistant']} or newer**" in (ROOT / "README.md").read_text()
 
 
-@pytest.mark.parametrize("mode,permission", [("Observation", False), ("Control", True)])
-async def test_upgrade_restores_020_store_settings_learning_and_ledger(hass, installed, mode, permission):
+async def test_fresh_release_setup_keeps_conservative_defaults(installed):
     runtime = installed.runtime_data
+    assert runtime.config["mode"] == "Observation"
+    for key in ("ev_control", "battery_control", "notifications", "fallback_notifications", "battery_learning"):
+        assert runtime.config[key] is False
+    assert runtime.config["comed_price_resilience"] == "Strict live pricing"
+    assert runtime.config["price_fallback"] == "Existing behavior"
+    assert runtime.controller.last == {}
+
+
+@pytest.mark.parametrize("store_version", ["0.2.0", "0.3.0"])
+@pytest.mark.parametrize("mode,permission", [("Observation", False), ("Control", True)])
+async def test_upgrade_restores_previous_store_settings_learning_and_ledger(hass, installed, mode, permission, store_version):
+    runtime = installed.runtime_data
+    previous_release = store_version == "0.3.0"
     departure = (datetime.now(runtime.zone) + timedelta(days=3)).isoformat()
+    previous_options = {
+        "supply_plan": "Hourly ComEd", "price_fallback": "Custom fallback",
+        "comed_price_resilience": "Allow brief published estimates",
+        "fallback_ev": "Maintain departure readiness", "fallback_battery": "Self-consumption",
+    } if previous_release else {}
     await runtime.update_options({
         "mode": mode, "has_ev": True, "has_battery": True, "has_solar": False,
         "ev_control": permission, "battery_control": permission, "battery_learning": True,
         "battery_capacity": 17, "round_trip_efficiency": 91, "ev_kwh_per_percent": .65,
         "departure_override": departure,
-        "mappings": {"ev_soc": "sensor.example_ev_soc", "battery_soc": "sensor.example_battery_soc"},
+        "mappings": {"ev_soc": "sensor.example_ev_soc", "battery_soc": "sensor.example_battery_soc",
+                     **({"live_supply": "sensor.example_supply"} if previous_release else {})},
+        **previous_options,
     })
     await hass.async_block_till_done()
     options = dict(installed.options)
     assert await hass.config_entries.async_unload(installed.entry_id)
 
-    # These are the fields written by v0.2.0: no fallback/ComEd-continuity keys
-    # or estimated-cost subsets. Keep all completed samples inside retention.
+    # v0.2.0 has no fallback/ComEd-continuity keys or estimated-cost subsets.
+    # v0.3.0 adds those without changing the storage version. Keep samples recent.
     now = time.time()
     hour = int(now // 3600) * 3600 - 3600
     day = datetime.fromtimestamp(now, runtime.zone).date().isoformat()
@@ -59,6 +78,15 @@ async def test_upgrade_restores_020_store_settings_learning_and_ledger(hass, ins
         "prices": [{"start": hour, "supply": .06, "fetched_at": now - 600}],
         "solar": {}, "solar_signature": runtime.solar_signature, "delivered": {},
     }
+    if previous_release:
+        statistics["ledger"][day].update({
+            "estimated_coverage_hours": .5, "estimated_import_cost": .6, "estimated_export_credit": .1,
+        })
+        saved.update({
+            "manual_fallback": True, "automatic_fallback": True,
+            "comed_continuity": {"source": "sensor.example_supply", "last_live": now - 1800},
+            "delivered": {"notify.example": "invented-notification-key"},
+        })
     await runtime.store.async_save(saved)
     assert await hass.config_entries.async_setup(installed.entry_id)
     await hass.async_block_till_done()
@@ -70,10 +98,14 @@ async def test_upgrade_restores_020_store_settings_learning_and_ledger(hass, ins
     assert restored.config["ev_control"] is permission
     assert restored.config["battery_control"] is permission
     assert restored.config["battery_learning"] is True
-    assert restored.config["comed_price_resilience"] == "Strict live pricing"
-    assert restored.config["price_fallback"] == "Existing behavior"
-    assert not restored.fallback.manual and not restored.fallback.automatic
-    assert restored.comed_continuity == {}
+    assert restored.config["comed_price_resilience"] == ("Allow brief published estimates" if previous_release else "Strict live pricing")
+    assert restored.config["price_fallback"] == ("Custom fallback" if previous_release else "Existing behavior")
+    assert restored.fallback.manual is previous_release
+    assert restored.fallback.automatic is previous_release
+    assert restored.comed_continuity == saved.get("comed_continuity", {})
+    assert restored.delivered == saved["delivered"]
+    for key, value in previous_options.items():
+        assert restored.config[key] == value
     assert not restored.charge_now and restored.stats.session is None
     assert restored.stats.battery.previous is None and restored.stats.battery.cycle is None
     for key in ("hours", "ev_sessions", "battery", "ledger"):
@@ -82,4 +114,7 @@ async def test_upgrade_restores_020_store_settings_learning_and_ledger(hass, ins
     assert restored.prices == saved["prices"]
     assert restored.data["cost_forecast"]["observed_net_cost"] == 1.3
     assert hass.states.get("sensor.nrg_net_cost_eod") is not None
+    hourly = hass.states.get("sensor.nrg_plan").attributes["hourly"]
+    assert isinstance(hourly["rows"], list)
+    assert hourly["timezone"] == str(restored.zone)
     assert restored.controller.last == {}

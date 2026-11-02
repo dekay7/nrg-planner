@@ -456,6 +456,59 @@ The dependency audit **still fails**, now with **40 advisories: 39 for Pillow
 Reported fixes remain Pillow 13.0.0 and uv 0.13.4. No pins, overrides, advisory
 exclusions or audit workflows change; these findings are not resolved by the graph.
 
+## 0.4.0 release-draft preparation — 2026-11-02
+
+The owner requested a **draft**, not publication. Version 0.4.0 batches the merged
+hourly Home Energy dashboard (#24) and ComEd DST/privacy fixes (#23) since 0.3.0.
+Open feature/dependency pull requests are not included. The manifest, runtime
+version and README agree; the guides distinguish this unpublished candidate from
+stable 0.3.0. See the [draft release notes](https://github.com/dekay7/nrg-planner/blob/release/v0.4.0/docs/releases/0.4.0.md).
+
+Home Assistant 2026.10.2 remains the minimum/tested baseline. There is no runtime
+or frontend dependency, storage-version change or required manual migration.
+Release regressions cover fresh conservative defaults and invented 0.2.0/0.3.0
+store restoration in Observation and Control, including existing settings,
+permissions, completed learning, observed/estimated ledgers, fallback latches and
+ComEd continuity. These are native HA source tests, not physical-equipment tests.
+
+Local verification on Python 3.14.8, HA 2026.10.2 and Node.js 22.23.4 passes
+**655 tests**. Ruff F checks, dependency consistency, privacy/history, whitespace
+and deterministic UI/handbook/dashboard/brand builds pass. The dependency audit
+**still fails with 40 advisories: 39 for Pillow 12.3.0 and one for uv 0.12.23**,
+unchanged from the merged hourly-graph work. Reported fixes remain Pillow 13.0.0
+and uv 0.13.4; no pins, overrides or advisory exclusions change.
+
+Exact-commit hosted tests/privacy, asset reproducibility, Hassfest and HACS must
+be reviewed before publication; their results will be linked from the GitHub
+draft and release-preparation PR. Installed-HA desktop/mobile dashboard review
+and live behavior revalidation are still pending for this candidate. The earlier
+0.3.0 live confirmation does not validate the new dashboards. No deployment,
+published release or published-tag movement is authorized by this draft request.
+
+## 0.4.0 publication authorization — 2026-11-02
+
+After reviewing the draft, the owner explicitly requested publication and an
+update of the existing Home Assistant installation. The 0.4.0 availability wording
+is finalized, and generated assets are rebuilt from source. The release includes
+only merged work plus version/documentation and upgrade-regression preparation;
+no equipment permission, setting default or control action is added.
+
+The draft candidate `d9e6c9b` passes 655 local tests and hosted tests/privacy,
+asset reproduction, Hassfest and HACS in [push validation](https://github.com/dekay7/nrg-planner/actions/runs/41404180715)
+and [PR validation](https://github.com/dekay7/nrg-planner/actions/runs/41404209048).
+Both hosted dependency audits confirm the same 40 HA-pinned Pillow/uv advisories
+documented above. Final release-commit checks are linked from the GitHub release
+and [preparation PR #25](https://github.com/dekay7/nrg-planner/pull/25); the audit
+failure is not suppressed or described as fully green validation.
+
+Deployment is a separate, owner-authorized operation using a private backup,
+component-only replacement, configuration checking and restart. Settings, learning,
+ledgers and explicit control permissions must be retained; no household deployment
+data or credentials belong in this public record. Automated installed-version and
+persistence checks do not constitute an installed-browser walkthrough or independent
+verification of physical-equipment response. Those limits remain explicit in the
+release notes. Published tags stay fixed.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public
