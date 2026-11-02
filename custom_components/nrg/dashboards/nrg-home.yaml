@@ -1338,7 +1338,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=75fe6d8a783a
+        url_path: /nrg-planner/guide.html?v=4b83ca027acf
       grid_options:
         columns: full
   - type: grid

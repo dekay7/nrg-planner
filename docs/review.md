@@ -456,6 +456,35 @@ The dependency audit **still fails**, now with **40 advisories: 39 for Pillow
 Reported fixes remain Pillow 13.0.0 and uv 0.13.4. No pins, overrides, advisory
 exclusions or audit workflows change; these findings are not resolved by the graph.
 
+## 0.4.0 release-draft preparation — 2026-11-02
+
+The owner requested a **draft**, not publication. Version 0.4.0 batches the merged
+hourly Home Energy dashboard (#24) and ComEd DST/privacy fixes (#23) since 0.3.0.
+Open feature/dependency pull requests are not included. The manifest, runtime
+version and README agree; the guides distinguish this unpublished candidate from
+stable 0.3.0. See the [draft release notes](https://github.com/dekay7/nrg-planner/blob/release/v0.4.0/docs/releases/0.4.0.md).
+
+Home Assistant 2026.10.2 remains the minimum/tested baseline. There is no runtime
+or frontend dependency, storage-version change or required manual migration.
+Release regressions cover fresh conservative defaults and invented 0.2.0/0.3.0
+store restoration in Observation and Control, including existing settings,
+permissions, completed learning, observed/estimated ledgers, fallback latches and
+ComEd continuity. These are native HA source tests, not physical-equipment tests.
+
+Local verification on Python 3.14.8, HA 2026.10.2 and Node.js 22.23.4 passes
+**655 tests**. Ruff F checks, dependency consistency, privacy/history, whitespace
+and deterministic UI/handbook/dashboard/brand builds pass. The dependency audit
+**still fails with 40 advisories: 39 for Pillow 12.3.0 and one for uv 0.12.23**,
+unchanged from the merged hourly-graph work. Reported fixes remain Pillow 13.0.0
+and uv 0.13.4; no pins, overrides or advisory exclusions change.
+
+Exact-commit hosted tests/privacy, asset reproducibility, Hassfest and HACS must
+be reviewed before publication; their results will be linked from the GitHub
+draft and release-preparation PR. Installed-HA desktop/mobile dashboard review
+and live behavior revalidation are still pending for this candidate. The earlier
+0.3.0 live confirmation does not validate the new dashboards. No deployment,
+published release or published-tag movement is authorized by this draft request.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public
