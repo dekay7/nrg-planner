@@ -5,6 +5,7 @@ import time
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 
 from .entity import NRGEntity
+from .hourly import hourly_plan
 
 # key: (name, units, device class). Price displays use cents; Energy uses USD alias.
 METRICS = {
@@ -203,7 +204,9 @@ class NRGSensor(NRGEntity, SensorEntity):
                     "comed_publication_bridge": components.get("comed_publication_bridge", False),
                     "comed_estimated_price": components.get("comed_estimated_price", False)}
         if self.key == "plan":
-            return {"plan": plan, "basis": "Modeled feasible plans, not guaranteed savings or an export watt setpoint.", "operating_mode": self.coordinator.config["mode"]}
+            return {"plan": plan, "hourly": hourly_plan(plan, self.coordinator.zone, time.time()),
+                    "basis": "Modeled feasible plans, not guaranteed savings or an export watt setpoint.",
+                    "operating_mode": self.coordinator.config["mode"]}
         if self.key == "advice":
             return plan.get("household", {}) | {"operating_mode": self.coordinator.config["mode"]}
         if self.key == "battery_action":

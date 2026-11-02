@@ -49,6 +49,10 @@ administrators. You can configure and use native entities without these views.
   Add a supported forecast or use your contracted flat/timed rates.
 - If entity IDs were renamed, the bundled dashboard still refers to the initial
   `nrg_*` IDs. Update the references in your own dashboard copy.
+- If an hourly energy tooltip is unusually wide, refresh the dashboard after
+  updating its bundled YAML. Newer development templates wrap long midnight/DST
+  date labels within the available chart width. Updating NRG does not replace a
+  separate dashboard copy you maintain yourself.
 
 ## Electricity price is unknown, too high, or 100 times wrong
 
@@ -134,6 +138,50 @@ Read **Operation → Control status** before checking the device.
 device is ready. **Protection guards**, **EV ready**, and **Battery ready** identify
 additional checks. Commands and device response may take time; feedback should
 confirm settings. Do not map forced battery export to NRG's serve-home action.
+
+## The Home Energy plan is empty or incomplete
+
+The hourly Home Energy graph is **unreleased development after 0.3.0**. Installed
+0.3.0 dashboards still show the price/appliance-window graph in that location.
+In newer source, that price graph is on **Why?** beside its explanation.
+
+1. Open **Hourly plan details** beneath the graph. Its reasons distinguish stale
+   plans, missing solar/EV coverage, battery monitoring-only operation and unready
+   controls/guards. Unknown whole-site flows are not zero; independent demand or
+   solar values may still be shown in the details.
+2. For a battery forecast, follow the battery-input/readiness checks below.
+   Do not enable live Control just to obtain a graph: Observation supports a
+   proposed schedule when the modeled equipment and guards are ready. Monitoring
+   another controller does not make its future dispatch predictable.
+3. Missing daylight earlier in the plan also invalidates later battery/grid
+   trajectories. Fix the solar source coverage rather than reading later points
+   as a complete forecast. Known absent equipment, unlike missing data, contributes
+   zero without needing mappings.
+4. A fresh price is not required to label an already selected physical baseline,
+   but later conservative/fallback hours are not guaranteed economic decisions.
+   Review the displayed coverage and baseline labels.
+5. If hourly details are absent after updating a dashboard separately, update the
+   integration and generated dashboard together, restart as required and refresh
+   the browser. Older plans do not contain the new flow details. Check the separately
+   installed ApexCharts Card 2.2.3 resource if there is a card error.
+
+No new permission, reset or learning deletion is needed. Valid fresh inputs restore
+the graph automatically; zoom/reset only affects the view. Full date/time/offset
+labels in the native details distinguish repeated DST hours. See
+[reading the hourly graph](homeowner-guide.md#home-energy-plan-the-next-24-hours).
+
+## Charging peaks make household flows hard to read
+
+The newer development dashboard separates **Household flows** from **Charging &
+grid import**, with independent linear, zero-based kWh axes. EV charging, battery
+charging and grid-import peaks no longer set the household panel's scale. Every
+amount remains available in the graphs and **Hourly plan details**; no peak is
+clipped or log-compressed. Compare numeric axis values rather than heights between
+panels. Total grid imports and charging overlap, so the lower panel is not stacked.
+
+Refresh the dashboard after updating its bundled YAML. A separate dashboard copy
+you maintain yourself will need the corresponding layout update too. This display
+change requires no new setting, permission, learning reset or equipment command.
 
 ## The modeled battery line is missing
 

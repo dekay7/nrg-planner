@@ -499,6 +499,8 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
         slot.update(ev_kwh=ev, ev_amps=amps, battery_action=action["action"],
                      battery_soc=round(action["energy"] / capacity * 100, 2) if capacity and available else None,
                     import_kwh=action["import_kwh"], export_kwh=action["export_kwh"],
+                    solar_charge_kwh=action["solar_charge_kwh"], grid_charge_kwh=action["grid_charge_kwh"],
+                    battery_discharge_kwh=action["battery_discharge_kwh"], curtailed_kwh=action["curtailed_kwh"],
                       cost=action["import_cost"] - action["export_credit"] if slot["price_known"] and slot["solar_known"] and (not export_required(config) or slot["export_known"]) else None)
         slot["ev_stop_at"] = slot["start"] + ev / (power * amps / config["ev_max_amps"]) * 3600 if amps else None
     active = [s for s in slots if s["ev_kwh"] > .001]
@@ -550,6 +552,7 @@ def plan(now, config, zone, telemetry, stats, prices, solar, live=None, previous
     has_known_cost = bool(economic_slots)
     cost_forecast_until = add_cost_forecast(slots, now, config, prices, stats)
     return {"version": 2, "generated_at": now, "expires_at": now + 420,
+            "battery_initial_soc": soc if available else None, "fallback_active": bool(config.get("_fallback_active")),
             "economic_until": economic_slots[-1]["end"] if economic_slots else now,
             "cost_forecast_until": cost_forecast_until,
             "deadline": due if managed_ev else None, "departure_setting": config["departure_time"],

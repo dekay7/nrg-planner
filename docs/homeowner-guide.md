@@ -44,6 +44,68 @@ not the dashed **Tentative estimate** learned from historical local observations
 Check Pricing health and the source attributes rather than assuming every visible
 current price is live.
 
+## Home energy plan: the next 24 hours
+
+**Unreleased development after 0.3.0.** On **Home Energy**, two graphs show
+hourly energy in the selected plan. The grid-price/appliance-window graph has moved
+to **Why?**; the live **Current power flow** Sankey remains a separate measurement.
+No new setting, control permission or chart dependency is required.
+
+- **Household flows:** lines compare house demand (excluding the EV), solar
+  generation, battery supply, grid exports and applicable solar curtailment.
+  Dashed battery-supply/curtailment lines help distinguish overlapping flows.
+- **Charging & grid import:** separate bars show EV and battery charging; the blue
+  line shows **total** grid imports. Battery charging includes both solar and grid
+  charging; their exact split remains in hourly details.
+- Each graph automatically uses its **own linear, zero-based kWh scale**, with a
+  little space above its highest value. Charging/import peaks cannot flatten the
+  household graph. Compare axis values, not heights between graphs. No peaks are
+  clipped, compressed logarithmically or hidden.
+- Flows are **not stacked or added together**. Total grid imports can also supply
+  house demand, while solar/battery supply may contribute to EV charging. Do not
+  add the grid-import line to charging bars or assume all EV energy comes from
+  the grid. Both charts compare flows, not complete stacked energy balances.
+- Amounts are **kWh per displayed interval**, not instantaneous kW. Current/final
+  hours may be partial. Battery charging/discharging and grid importing/exporting
+  are kept separate even when both occur within an hour; they are not netted.
+
+Hover/tap a point or bar for amounts. Tooltip dates wrap within the chart width, including
+hours crossing midnight or a clock change; exact times and offsets are retained.
+Open **Hourly plan details**, then an hour, for its
+full local date/time/offset, covered minutes, battery charging from solar versus
+grid, modeled ending battery percentage and each battery-mode change. EV details
+show planned current and exact charging stop times where available. The expandable
+summaries work with touch or keyboard Enter/Space; chart zoom/reset changes no
+settings. **Next planned actions** highlights battery modes and upcoming EV charging.
+
+**Save battery** can still accept solar when configured. **Supply home** is a
+selected mode, not proof of discharge: solar may cover demand or the reserve may
+be reached. Totals use the planner's interval-average model, prorated at display
+boundaries; action times do not promise constant instantaneous power. Modeled ending
+SOC is taken from the trajectory, interpolated at a clipped boundary, not averaged.
+Times use Home Assistant's timezone, including separate repeated DST hours, even
+when your browser is in another timezone.
+
+In **Observation** these are proposals and no commands are sent. In **Control**
+the selected schedule remains subject to device checks; requests/readbacks are
+not measured delivery. Later hours beyond dependable economic coverage are a
+**conservative outlook**, not a full-day price optimization. An active fallback
+instead shows its selected baseline, assuming it continues until recovery.
+Neither view extends price allowances or changes equipment behavior.
+
+An **Incomplete outlook** leaves affected hours blank rather than inventing zero
+energy. Independently known house/solar/EV values
+and the missing-input reasons remain in hourly details. A monitoring-only battery
+has no predicted independent dispatch, so its dependent grid flows and ending SOC
+are unknown too. Missing earlier solar also prevents a reliable later battery
+trajectory. Monitoring-only EV charging is only an extrapolation of an already
+observed session, not a future plug-in prediction. If the current display clips a
+fractional EV completion interval, independently known remaining EV energy is shown
+but its whole-site split waits for a new plan instead of assigning already-finished
+charging to the future. Both graphs clear when their plan expires and return
+automatically when a fresh applicable plan is available.
+See [hourly-graph troubleshooting](troubleshooting.md#the-home-energy-plan-is-empty-or-incomplete).
+
 ## The recommendation
 
 - **Good time to use energy:** now is among the better modeled opportunities.
@@ -53,8 +115,9 @@ current price is live.
 - **Price-data fallback active:** economic advice is paused; review the selected
   device baseline rather than assuming a price-based schedule.
 
-The green segment marks a recommended window for the administrator's reference
-appliance, initially **1 kWh over one hour**. The benefit concerns that task, not
+On **Why?**, the green segment of **Grid prices · suggested appliance window**
+marks a recommended window for the administrator's reference appliance, initially
+**1 kWh over one hour**. The benefit concerns that task, not
 the entire house. Use energy whenever it is needed; this advice does not start or
 stop household appliances. Tap/hover a graph point to inspect it and use zoom/reset
 without changing equipment.
@@ -116,9 +179,10 @@ controls; NRG does not promise it will follow the modeled schedule.
 
 ## Modeled energy plan: the battery line
 
-The **Battery %** line is the proposed NRG battery trajectory, not the measured
-percentage gauge. It works in **Observation** when battery planning/control is
-enabled and the battery inputs, compatible controls and selected protection guards
+On **Why?** (and the administrator's energy outlook), the **Battery %** line is
+the proposed NRG battery trajectory, not the measured percentage gauge. It works
+in **Observation** when battery planning/control is enabled and the battery inputs,
+compatible controls and selected protection guards
 are ready. Observation blocks commands, not this forecast.
 
 With monitoring-only equipment, unavailable battery data, or a missing/active

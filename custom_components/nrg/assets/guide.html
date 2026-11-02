@@ -244,11 +244,11 @@ NRG Planner → Configure</strong>, then choose the named section.</p>
 <tbody>
 <tr>
 <td><strong>NRG Planner → Home Energy</strong></td>
-<td>Read prices, household advice, live power flow, enabled equipment, and available cost estimates. This optional homeowner view is read-only.</td>
+<td>Read prices, household advice, the hourly energy plan (unreleased after 0.3.0), live power flow, enabled equipment, and available cost estimates. This optional homeowner view is read-only.</td>
 </tr>
 <tr>
 <td><strong>NRG Planner → Why?</strong></td>
-<td>Read the reason behind the advice, inspect the modeled energy timeline, and open this handbook.</td>
+<td>Read the reason behind the advice, inspect grid prices and the suggested appliance window (moved here in unreleased hourly-graph development), inspect the modeled energy timeline, and open this handbook.</td>
 </tr>
 <tr>
 <td><strong>NRG Planner settings</strong></td>
@@ -345,6 +345,10 @@ update another installation automatically. See <a href="#installation-updates-an
 <tr>
 <td>Read-only homeowner dashboard</td>
 <td>Home Energy and Why? explain current prices, advice, measured equipment status, coverage and the modeled timeline. Equipment cards follow the selected components. <a href="#homeowner-guide">Read the dashboard</a>.</td>
+</tr>
+<tr>
+<td>Hourly home energy graphs (<strong>unreleased after 0.3.0</strong>)</td>
+<td>Home Energy separates household/solar/battery-supply/export lines from EV/battery charging bars and total grid-import lines, over the next 24 hours. Independent linear kWh scales keep charging peaks from flattening household flows, without clipping peaks, stacking overlapping totals or attributing all EV energy to the grid. Exact action periods and solar/grid charging details remain in keyboard/touch-accessible hourly summaries. Hover/tap tooltips wrap within the chart width without losing dates or offsets. Incomplete data stays unknown; Observation and all control permissions are unchanged. The price/appliance-window chart moves to Why?. <a href="#homeowner-guide-home-energy-plan-the-next-24-hours">Read the hourly plan</a>.</td>
 </tr>
 <tr>
 <td>Administrator settings dashboard</td>
@@ -823,6 +827,7 @@ the graphs, <a href="#faq">common questions</a> for typical decisions, or
 <ul>
 <li><a href="#homeowner-guide-electricity-price-now">Electricity price now</a></li>
 <li><a href="#homeowner-guide-pricing-health-and-missing-price-protection">Pricing health and missing-price protection</a></li>
+<li><a href="#homeowner-guide-home-energy-plan-the-next-24-hours">Home energy plan: the next 24 hours</a></li>
 <li><a href="#homeowner-guide-the-recommendation">The recommendation</a></li>
 <li><a href="#homeowner-guide-current-power-flow-the-sankey-diagram">Current power flow: the Sankey diagram</a></li>
 <li><a href="#homeowner-guide-only-the-equipment-this-home-has">Only the equipment this home has</a></li>
@@ -872,6 +877,63 @@ still needs confirmed fresh live recovery. See <a href="#pricing-brief-comed-liv
 not the dashed <strong>Tentative estimate</strong> learned from historical local observations.
 Check Pricing health and the source attributes rather than assuming every visible
 current price is live.</p>
+<h3 id="homeowner-guide-home-energy-plan-the-next-24-hours">Home energy plan: the next 24 hours</h3>
+<p><strong>Unreleased development after 0.3.0.</strong> On <strong>Home Energy</strong>, two graphs show
+hourly energy in the selected plan. The grid-price/appliance-window graph has moved
+to <strong>Why?</strong>; the live <strong>Current power flow</strong> Sankey remains a separate measurement.
+No new setting, control permission or chart dependency is required.</p>
+<ul>
+<li><strong>Household flows:</strong> lines compare house demand (excluding the EV), solar
+  generation, battery supply, grid exports and applicable solar curtailment.
+  Dashed battery-supply/curtailment lines help distinguish overlapping flows.</li>
+<li><strong>Charging &amp; grid import:</strong> separate bars show EV and battery charging; the blue
+  line shows <strong>total</strong> grid imports. Battery charging includes both solar and grid
+  charging; their exact split remains in hourly details.</li>
+<li>Each graph automatically uses its <strong>own linear, zero-based kWh scale</strong>, with a
+  little space above its highest value. Charging/import peaks cannot flatten the
+  household graph. Compare axis values, not heights between graphs. No peaks are
+  clipped, compressed logarithmically or hidden.</li>
+<li>Flows are <strong>not stacked or added together</strong>. Total grid imports can also supply
+  house demand, while solar/battery supply may contribute to EV charging. Do not
+  add the grid-import line to charging bars or assume all EV energy comes from
+  the grid. Both charts compare flows, not complete stacked energy balances.</li>
+<li>Amounts are <strong>kWh per displayed interval</strong>, not instantaneous kW. Current/final
+  hours may be partial. Battery charging/discharging and grid importing/exporting
+  are kept separate even when both occur within an hour; they are not netted.</li>
+</ul>
+<p>Hover/tap a point or bar for amounts. Tooltip dates wrap within the chart width, including
+hours crossing midnight or a clock change; exact times and offsets are retained.
+Open <strong>Hourly plan details</strong>, then an hour, for its
+full local date/time/offset, covered minutes, battery charging from solar versus
+grid, modeled ending battery percentage and each battery-mode change. EV details
+show planned current and exact charging stop times where available. The expandable
+summaries work with touch or keyboard Enter/Space; chart zoom/reset changes no
+settings. <strong>Next planned actions</strong> highlights battery modes and upcoming EV charging.</p>
+<p><strong>Save battery</strong> can still accept solar when configured. <strong>Supply home</strong> is a
+selected mode, not proof of discharge: solar may cover demand or the reserve may
+be reached. Totals use the planner's interval-average model, prorated at display
+boundaries; action times do not promise constant instantaneous power. Modeled ending
+SOC is taken from the trajectory, interpolated at a clipped boundary, not averaged.
+Times use Home Assistant's timezone, including separate repeated DST hours, even
+when your browser is in another timezone.</p>
+<p>In <strong>Observation</strong> these are proposals and no commands are sent. In <strong>Control</strong>
+the selected schedule remains subject to device checks; requests/readbacks are
+not measured delivery. Later hours beyond dependable economic coverage are a
+<strong>conservative outlook</strong>, not a full-day price optimization. An active fallback
+instead shows its selected baseline, assuming it continues until recovery.
+Neither view extends price allowances or changes equipment behavior.</p>
+<p>An <strong>Incomplete outlook</strong> leaves affected hours blank rather than inventing zero
+energy. Independently known house/solar/EV values
+and the missing-input reasons remain in hourly details. A monitoring-only battery
+has no predicted independent dispatch, so its dependent grid flows and ending SOC
+are unknown too. Missing earlier solar also prevents a reliable later battery
+trajectory. Monitoring-only EV charging is only an extrapolation of an already
+observed session, not a future plug-in prediction. If the current display clips a
+fractional EV completion interval, independently known remaining EV energy is shown
+but its whole-site split waits for a new plan instead of assigning already-finished
+charging to the future. Both graphs clear when their plan expires and return
+automatically when a fresh applicable plan is available.
+See <a href="#troubleshooting-the-home-energy-plan-is-empty-or-incomplete">hourly-graph troubleshooting</a>.</p>
 <h3 id="homeowner-guide-the-recommendation">The recommendation</h3>
 <ul>
 <li><strong>Good time to use energy:</strong> now is among the better modeled opportunities.</li>
@@ -881,8 +943,9 @@ current price is live.</p>
 <li><strong>Price-data fallback active:</strong> economic advice is paused; review the selected
   device baseline rather than assuming a price-based schedule.</li>
 </ul>
-<p>The green segment marks a recommended window for the administrator's reference
-appliance, initially <strong>1 kWh over one hour</strong>. The benefit concerns that task, not
+<p>On <strong>Why?</strong>, the green segment of <strong>Grid prices · suggested appliance window</strong>
+marks a recommended window for the administrator's reference appliance, initially
+<strong>1 kWh over one hour</strong>. The benefit concerns that task, not
 the entire house. Use energy whenever it is needed; this advice does not start or
 stop household appliances. Tap/hover a graph point to inspect it and use zoom/reset
 without changing equipment.</p>
@@ -931,9 +994,10 @@ capacity and reserve, rather than claiming a measured battery-health test.</p>
 following another controller. Monitoring-only equipment continues to use its own
 controls; NRG does not promise it will follow the modeled schedule.</p>
 <h3 id="homeowner-guide-modeled-energy-plan-the-battery-line">Modeled energy plan: the battery line</h3>
-<p>The <strong>Battery %</strong> line is the proposed NRG battery trajectory, not the measured
-percentage gauge. It works in <strong>Observation</strong> when battery planning/control is
-enabled and the battery inputs, compatible controls and selected protection guards
+<p>On <strong>Why?</strong> (and the administrator's energy outlook), the <strong>Battery %</strong> line is
+the proposed NRG battery trajectory, not the measured percentage gauge. It works
+in <strong>Observation</strong> when battery planning/control is enabled and the battery inputs,
+compatible controls and selected protection guards
 are ready. Observation blocks commands, not this forecast.</p>
 <p>With monitoring-only equipment, unavailable battery data, or a missing/active
 selected guard, NRG omits the trajectory instead of inventing a flat percentage.
@@ -2818,6 +2882,8 @@ selections remain saved. Disabled/nonexistent components need no calibration set
 <li><a href="#troubleshooting-advice-says-waiting-for-dependable-coverage">Advice says Waiting for dependable coverage</a></li>
 <li><a href="#troubleshooting-power-flows-are-missing-reversed-or-inconsistent">Power flows are missing, reversed, or inconsistent</a></li>
 <li><a href="#troubleshooting-the-plan-exists-but-my-car-or-battery-is-not-following-it">The plan exists, but my car or battery is not following it</a></li>
+<li><a href="#troubleshooting-the-home-energy-plan-is-empty-or-incomplete">The Home Energy plan is empty or incomplete</a></li>
+<li><a href="#troubleshooting-charging-peaks-make-household-flows-hard-to-read">Charging peaks make household flows hard to read</a></li>
 <li><a href="#troubleshooting-the-modeled-battery-line-is-missing">The modeled battery line is missing</a></li>
 <li><a href="#troubleshooting-my-sleeping-cars-readings-are-considered-old">My sleeping car's readings are considered old</a></li>
 <li><a href="#troubleshooting-ev-ready-time-is-late-or-there-is-a-departure-shortfall">EV ready time is late or there is a departure shortfall</a></li>
@@ -2873,6 +2939,10 @@ administrators. You can configure and use native entities without these views.</
   Add a supported forecast or use your contracted flat/timed rates.</li>
 <li>If entity IDs were renamed, the bundled dashboard still refers to the initial
   <code>nrg_*</code> IDs. Update the references in your own dashboard copy.</li>
+<li>If an hourly energy tooltip is unusually wide, refresh the dashboard after
+  updating its bundled YAML. Newer development templates wrap long midnight/DST
+  date labels within the available chart width. Updating NRG does not replace a
+  separate dashboard copy you maintain yourself.</li>
 </ul>
 <h3 id="troubleshooting-electricity-price-is-unknown-too-high-or-100-times-wrong">Electricity price is unknown, too high, or 100 times wrong</h3>
 <p>Open <strong>Configure → Tariff</strong> and check supply and delivery separately.</p>
@@ -2945,6 +3015,45 @@ meters are not replaced with forecast flows. See <a href="#homeowner-guide-curre
 device is ready. <strong>Protection guards</strong>, <strong>EV ready</strong>, and <strong>Battery ready</strong> identify
 additional checks. Commands and device response may take time; feedback should
 confirm settings. Do not map forced battery export to NRG's serve-home action.</p>
+<h3 id="troubleshooting-the-home-energy-plan-is-empty-or-incomplete">The Home Energy plan is empty or incomplete</h3>
+<p>The hourly Home Energy graph is <strong>unreleased development after 0.3.0</strong>. Installed
+0.3.0 dashboards still show the price/appliance-window graph in that location.
+In newer source, that price graph is on <strong>Why?</strong> beside its explanation.</p>
+<ol>
+<li>Open <strong>Hourly plan details</strong> beneath the graph. Its reasons distinguish stale
+   plans, missing solar/EV coverage, battery monitoring-only operation and unready
+   controls/guards. Unknown whole-site flows are not zero; independent demand or
+   solar values may still be shown in the details.</li>
+<li>For a battery forecast, follow the battery-input/readiness checks below.
+   Do not enable live Control just to obtain a graph: Observation supports a
+   proposed schedule when the modeled equipment and guards are ready. Monitoring
+   another controller does not make its future dispatch predictable.</li>
+<li>Missing daylight earlier in the plan also invalidates later battery/grid
+   trajectories. Fix the solar source coverage rather than reading later points
+   as a complete forecast. Known absent equipment, unlike missing data, contributes
+   zero without needing mappings.</li>
+<li>A fresh price is not required to label an already selected physical baseline,
+   but later conservative/fallback hours are not guaranteed economic decisions.
+   Review the displayed coverage and baseline labels.</li>
+<li>If hourly details are absent after updating a dashboard separately, update the
+   integration and generated dashboard together, restart as required and refresh
+   the browser. Older plans do not contain the new flow details. Check the separately
+   installed ApexCharts Card 2.2.3 resource if there is a card error.</li>
+</ol>
+<p>No new permission, reset or learning deletion is needed. Valid fresh inputs restore
+the graph automatically; zoom/reset only affects the view. Full date/time/offset
+labels in the native details distinguish repeated DST hours. See
+<a href="#homeowner-guide-home-energy-plan-the-next-24-hours">reading the hourly graph</a>.</p>
+<h3 id="troubleshooting-charging-peaks-make-household-flows-hard-to-read">Charging peaks make household flows hard to read</h3>
+<p>The newer development dashboard separates <strong>Household flows</strong> from <strong>Charging &amp;
+grid import</strong>, with independent linear, zero-based kWh axes. EV charging, battery
+charging and grid-import peaks no longer set the household panel's scale. Every
+amount remains available in the graphs and <strong>Hourly plan details</strong>; no peak is
+clipped or log-compressed. Compare numeric axis values rather than heights between
+panels. Total grid imports and charging overlap, so the lower panel is not stacked.</p>
+<p>Refresh the dashboard after updating its bundled YAML. A separate dashboard copy
+you maintain yourself will need the corresponding layout update too. This display
+change requires no new setting, permission, learning reset or equipment command.</p>
 <h3 id="troubleshooting-the-modeled-battery-line-is-missing">The modeled battery line is missing</h3>
 <p>Observation mode supports the proposed battery trajectory. It does not need Control
 mode or permission to issue live commands.</p>
@@ -3398,6 +3507,7 @@ accounts, or data.</p><p class="back"><a href="#contents">Back to contents ↑</
 <li><a href="#design-measurements-and-statistics">Measurements and statistics</a></li>
 <li><a href="#design-ev-candidates">EV candidates</a></li>
 <li><a href="#design-battery-search">Battery search</a></li>
+<li><a href="#design-hourly-plan-presentation">Hourly plan presentation</a></li>
 <li><a href="#design-household-advice-and-execution">Household advice and execution</a></li>
 </ul>
 </div>
@@ -3553,6 +3663,33 @@ wear cost defaults to zero.</p>
 is allowed. The modeled serve mode supplies home demand; it must not be mapped to
 a forced export operation. Solar surplus exports when permitted/nonnegative,
 otherwise it is modeled as curtailed. Native response is checked separately.</p>
+<h3 id="design-hourly-plan-presentation">Hourly plan presentation</h3>
+<p>The Home Energy hourly graph is <strong>unreleased development after 0.3.0</strong>. The
+selected transition's AC-side solar/grid charging, battery discharge and curtailment
+are exposed as additive slot fields. <code>hourly.py</code> derives a bounded read-only
+24-hour projection for the plan sensor's <code>hourly</code> attribute, without changing the
+command plan, search, prices, advice, costs or writer eligibility. Two graphs and
+native hourly details consume the same projection. Household/solar/battery-supply/
+export lines have a separate linear kWh axis from EV/battery charging bars and
+total grid-import lines. All values remain positive gross energy, not stacked,
+netted, clipped or log-transformed; a per-panel maximum adds 10% display headroom.
+No charging is subtracted from grid imports or assigned an inferred source.
+No new persisted state or recorder history is introduced; the existing plan-sensor
+exclusion still applies.</p>
+<p>Local-hour and offset-change boundaries use UTC identities and the HA timezone.
+Interval energy is prorated by overlap, preserving gross flows and the AC balance:
+<code>grid + solar + battery discharge = house + EV + solar/grid battery charge + export
++ curtailment</code>. Stored-energy conversion losses are not subtracted again. SOC uses
+modeled endpoints, interpolated at clipped boundaries, while action periods retain
+exact changes and EV stop times. The interval-average model is not an instantaneous
+power trace. Repeated/skipped and half-hour DST transitions remain explicit.</p>
+<p>Physical and economic availability are distinct. Applicable missing inputs leave
+affected hours blank in both graphs; independent known demand/solar can remain
+in text. Missing earlier solar invalidates later stored-energy flows.
+Monitoring-only battery dispatch is not predicted. Economic coverage, conservative
+later hold and active fallback baselines are labeled separately; none authorizes a
+new mode. Expired plans clear on both sensor and chart checks. The existing grid
+price/appliance chart moves to Why?; the live Sankey stays separate.</p>
 <h3 id="design-household-advice-and-execution">Household advice and execution</h3>
 <p>Replay the selected modes with the reference appliance starting now or at each
 15-minute boundary in the next day. Both the baseline and appliance scenario end at
@@ -4072,6 +4209,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 <li><a href="#review-solar-dawndusk-coverage-correction-unreleased">Solar dawn/dusk coverage correction — unreleased</a></li>
 <li><a href="#review-tentative-unpublished-comed-cost-forecast-unreleased">Tentative unpublished ComEd cost forecast — unreleased</a></li>
 <li><a href="#review-030-release-candidate-verification-2026-10-24">0.3.0 release-candidate verification — 2026-10-24</a></li>
+<li><a href="#review-hourly-home-energy-plan-unreleased-after-030">Hourly home energy plan — unreleased after 0.3.0</a></li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -4506,6 +4644,46 @@ the outstanding publication gate for the requested release. This is owner-report
 validation, not independent physical-equipment verification. Final publication
 requires the exact-commit hosted checks above; the known upstream dependency
 findings remain visible and published tags stay fixed.</p>
+<h3 id="review-hourly-home-energy-plan-unreleased-after-030">Hourly home energy plan — unreleased after 0.3.0</h3>
+<p>The feature branch replaces the homeowner's price/appliance-window chart with
+24-hour household-flow and charging/grid-import graphs, and moves the existing
+price chart to Why?.
+Selected transition flow fields feed a bounded read-only hourly projection;
+command selection, price eligibility, advice, costs, Observation defaults,
+permissions, settings and learning are unchanged. Native expandable details share
+that projection and retain exact action/current periods, charging sources, ending
+SOC and explicit incomplete/fallback/conservative-outlook labels.</p>
+<p>Local verification: <strong>652 tests pass</strong>, including executable Node chart/timezone/
+resize code, HA-rendered native templates, independent AC-balance arithmetic,
+within-hour modes, fractional EV stops, SOC clipping, missing/monitoring data,
+DST and fractional-offset zones. Ruff F checks, dependency consistency,
+privacy/history, whitespace and UI/brand reproducibility checks pass. No new
+runtime or frontend dependency is introduced; the existing plan-sensor recorder
+exclusion still applies. An invented mixed-equipment example adds about 15 KB
+of hourly attributes and takes about 2 ms per projection locally.</p>
+<p>A standalone Chromium renderer loaded the actual ApexCharts Card 2.2.3 bundle
+with invented HA state. Desktop/390-pixel touch inspection, aligned shared amounts,
+zoom/reset, light/dark rendering, section resizing and Chicago HA versus Kathmandu
+browser clocks passed without console errors or page overflow. A follow-up reproduced
+an over-wide midnight tooltip from ApexCharts' default no-wrap styling. Scoped
+wrapping and a plot/card-width cap retain exact dates/offsets; 900-, 390- and
+280-pixel Chromium checks verify ordinary/midnight tooltip bounds and complete
+labels. Executable regressions cover resizing and exact midnight/DST labels.
+Width-only resize handling prevents a bundled parent-height redraw from clearing
+tooltips. A second readability follow-up separates household/solar/battery-supply/
+export lines from charging bars and total grid-import lines, with independent
+zero-based linear kWh scales and 10% headroom. No peaks are clipped, transformed,
+netted or subtracted, and grid-import totals are not stacked with charging.
+Executable tests retain exact energy, including solar-assisted EV charging.
+Chromium checks cover both panels' hover/touch, zoom/reset, resizing, tooltip
+bounds and an invented 50 kWh import peak that leaves the household scale unchanged.
+These checks are not a full installed-HA walkthrough, a deployment or
+physical-equipment verification. Hosted PR CI/Hassfest/HACS and installed-dashboard review remain
+separate PR gates; no release or version change is included.</p>
+<p>The dependency audit <strong>still fails</strong>, now with <strong>40 advisories: 39 for Pillow
+12.3.0 and one for uv 0.12.23</strong>, the same HA-managed packages discussed above.
+Reported fixes remain Pillow 13.0.0 and uv 0.13.4. No pins, overrides, advisory
+exclusions or audit workflows change; these findings are not resolved by the graph.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as
