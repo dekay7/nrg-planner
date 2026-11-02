@@ -309,10 +309,10 @@ links to the guide that explains how to use the feature and its limits. The
 <a href="#settings">settings reference</a> lists every catalogue default, mapping role,
 control-state name and script-adapter role.</p>
 <h3 id="features-which-features-are-in-my-installation">Which features are in my installation?</h3>
-<p>The current source targets <strong>0.4.0</strong> (draft; not published).
-The latest published numbered release is <strong>0.3.0</strong>. Entries explicitly marked
-<strong>unreleased</strong> below are planned for 0.4.0, not part of the published 0.3.0 release.
-See the <a href="https://github.com/dekay7/nrg-planner/blob/release/v0.4.0/docs/releases/0.4.0.md">0.4.0 draft release notes</a>.
+<p>The current source targets <strong>0.4.0</strong>.
+The latest published numbered release is <strong>0.4.0</strong>. The hourly home energy graphs
+and ComEd DST-day forecast recovery are included in that release.
+See the <a href="https://github.com/dekay7/nrg-planner/releases/tag/v0.4.0">0.4.0 release notes</a>.
 Work merged after a release is <strong>unreleased development</strong> until the next release
 is published, even if its source manifest still has the previous version.
 Documentation on GitHub's main branch can therefore describe features not present
@@ -349,7 +349,7 @@ update another installation automatically. See <a href="#installation-updates-an
 <td>Home Energy and Why? explain current prices, advice, measured equipment status, coverage and the modeled timeline. Equipment cards follow the selected components. <a href="#homeowner-guide">Read the dashboard</a>.</td>
 </tr>
 <tr>
-<td>Hourly home energy graphs (<strong>0.4.0 draft; unreleased</strong>)</td>
+<td>Hourly home energy graphs (<strong>available in 0.4.0</strong>)</td>
 <td>Home Energy separates household/solar/battery-supply/export lines from EV/battery charging bars and total grid-import lines, over the next 24 hours. Independent linear kWh scales keep charging peaks from flattening household flows, without clipping peaks, stacking overlapping totals or attributing all EV energy to the grid. Exact action periods and solar/grid charging details remain in keyboard/touch-accessible hourly summaries. Hover/tap tooltips wrap within the chart width without losing dates or offsets. Incomplete data stays unknown; Observation and all control permissions are unchanged. The price/appliance-window chart moves to Why?. <a href="#homeowner-guide-home-energy-plan-the-next-24-hours">Read the hourly plan</a>.</td>
 </tr>
 <tr>
@@ -396,7 +396,7 @@ update another installation automatically. See <a href="#installation-updates-an
 <td>Current-hour running average, dated published forecasts and locally recorded tentative estimates are distinct sources. Old HTTP-success responses do not become fresh observations. <a href="#pricing-comed-price-sources-and-freshness">Sources and freshness</a>.</td>
 </tr>
 <tr>
-<td>ComEd DST-day forecast recovery (<strong>0.4.0 draft; unreleased</strong>)</td>
+<td>ComEd DST-day forecast recovery (<strong>available in 0.4.0</strong>)</td>
 <td>Preserve unambiguous published hours when one local hour-ending label repeats or does not exist. Missing intervals are not guessed, and source health explains omissions; live-price/control guards are unchanged. <a href="#pricing-comed-price-sources-and-freshness">Sources and DST limits</a>.</td>
 </tr>
 <tr>
@@ -581,7 +581,7 @@ There is no separately calculated capacity-charge saving. See
 </tr>
 <tr>
 <td><strong>0.4.0</strong></td>
-<td><strong>Draft; unpublished.</strong> Read-only hourly Home Energy flow and charging/grid-import graphs with independent scales, accessible hourly details and bounded date/offset tooltips; price/appliance-window chart moved to Why?; preservation of unambiguous ComEd DST-day forecast hours with explicit missing-interval health notes; GitHub-committed Dependabot metadata accepted by privacy/history checks without relaxing secret detection.</td>
+<td>Read-only hourly Home Energy flow and charging/grid-import graphs with independent scales, accessible hourly details and bounded date/offset tooltips; price/appliance-window chart moved to Why?; preservation of unambiguous ComEd DST-day forecast hours with explicit missing-interval health notes; GitHub-committed Dependabot metadata accepted by privacy/history checks without relaxing secret detection.</td>
 </tr>
 </tbody>
 </table></div>
@@ -696,11 +696,11 @@ search and Print to save a PDF; reading a loaded copy needs no internet connecti
 <h3 id="installation-updates-and-removal">Updates and removal</h3>
 <p>Check the <a href="#features-development-milestones-since-creation">feature guide and milestones</a>
 when comparing the online docs with your installation. The latest stable release
-is 0.3.0; this source targets the <strong>unpublished 0.4.0 draft</strong>, not an available HACS
-update. Later development work is unreleased until a new release is explicitly
-published. A manually installed development snapshot may report a draft or older
-version, so keep its source commit with your private deployment record. The bundled handbook
-travels with the installed component rather than silently following GitHub main.
+is <strong>0.4.0</strong>, including the hourly Home Energy graphs and ComEd DST forecast fix.
+Later development work is unreleased until a new release is explicitly published.
+A manually installed development snapshot may report a draft or older version,
+so keep its source commit with your private deployment record. The bundled
+handbook travels with the installed component rather than silently following GitHub main.
 Do not move a published tag to make its contents match development docs.</p>
 <p>Routine development commits do not offer updates to users following stable
 releases. A published stable GitHub Release makes a new version available in HACS;
@@ -4218,6 +4218,7 @@ validation. Test scenarios in this repository are invented.</p><p class="back"><
 <li><a href="#review-030-release-candidate-verification-2026-10-24">0.3.0 release-candidate verification — 2026-10-24</a></li>
 <li><a href="#review-hourly-home-energy-plan-unreleased-after-030">Hourly home energy plan — unreleased after 0.3.0</a></li>
 <li><a href="#review-040-release-draft-preparation-2026-11-02">0.4.0 release-draft preparation — 2026-11-02</a></li>
+<li><a href="#review-040-publication-authorization-2026-11-02">0.4.0 publication authorization — 2026-11-02</a></li>
 <li><a href="#review-publication-decision-2026-10-20">Publication decision — 2026-10-20</a></li>
 <li><a href="#review-release-baseline-010">Release baseline — 0.1.0</a></li>
 <li><a href="#review-maintenance-and-release-follow-up">Maintenance and release follow-up</a></li>
@@ -4716,6 +4717,26 @@ draft and release-preparation PR. Installed-HA desktop/mobile dashboard review
 and live behavior revalidation are still pending for this candidate. The earlier
 0.3.0 live confirmation does not validate the new dashboards. No deployment,
 published release or published-tag movement is authorized by this draft request.</p>
+<h3 id="review-040-publication-authorization-2026-11-02">0.4.0 publication authorization — 2026-11-02</h3>
+<p>After reviewing the draft, the owner explicitly requested publication and an
+update of the existing Home Assistant installation. The 0.4.0 availability wording
+is finalized, and generated assets are rebuilt from source. The release includes
+only merged work plus version/documentation and upgrade-regression preparation;
+no equipment permission, setting default or control action is added.</p>
+<p>The draft candidate <code>d9e6c9b</code> passes 655 local tests and hosted tests/privacy,
+asset reproduction, Hassfest and HACS in <a href="https://github.com/dekay7/nrg-planner/actions/runs/41404180715">push validation</a>
+and <a href="https://github.com/dekay7/nrg-planner/actions/runs/41404209048">PR validation</a>.
+Both hosted dependency audits confirm the same 40 HA-pinned Pillow/uv advisories
+documented above. Final release-commit checks are linked from the GitHub release
+and <a href="https://github.com/dekay7/nrg-planner/pull/25">preparation PR #25</a>; the audit
+failure is not suppressed or described as fully green validation.</p>
+<p>Deployment is a separate, owner-authorized operation using a private backup,
+component-only replacement, configuration checking and restart. Settings, learning,
+ledgers and explicit control permissions must be retained; no household deployment
+data or credentials belong in this public record. Automated installed-version and
+persistence checks do not constitute an installed-browser walkthrough or independent
+verification of physical-equipment response. Those limits remain explicit in the
+release notes. Published tags stay fixed.</p>
 <h3 id="review-publication-decision-2026-10-20">Publication decision — 2026-10-20</h3>
 <p>The owner confirmed that the live checks worked and explicitly authorized public
 source publication. The Home Assistant-pinned dependency findings are accepted as

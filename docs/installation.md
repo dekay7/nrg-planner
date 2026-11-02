@@ -116,11 +116,11 @@ search and Print to save a PDF; reading a loaded copy needs no internet connecti
 
 Check the [feature guide and milestones](features.md#development-milestones-since-creation)
 when comparing the online docs with your installation. The latest stable release
-is 0.3.0; this source targets the **unpublished 0.4.0 draft**, not an available HACS
-update. Later development work is unreleased until a new release is explicitly
-published. A manually installed development snapshot may report a draft or older
-version, so keep its source commit with your private deployment record. The bundled handbook
-travels with the installed component rather than silently following GitHub main.
+is **0.4.0**, including the hourly Home Energy graphs and ComEd DST forecast fix.
+Later development work is unreleased until a new release is explicitly published.
+A manually installed development snapshot may report a draft or older version,
+so keep its source commit with your private deployment record. The bundled
+handbook travels with the installed component rather than silently following GitHub main.
 Do not move a published tag to make its contents match development docs.
 
 Routine development commits do not offer updates to users following stable

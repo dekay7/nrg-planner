@@ -129,8 +129,8 @@ def test_feature_availability_and_retired_behavior_are_explicit():
     inventory = (DOCS / "features.md").read_text()
     assert "**0.1.0**" in inventory and "**0.2.0**" in inventory
     assert f"The current source targets **{VERSION}**" in inventory
-    assert "The latest published numbered release is **0.3.0**" in inventory
-    assert "draft; not published" in inventory
+    assert f"The latest published numbered release is **{VERSION}**" in inventory
+    assert "draft; not published" not in inventory
     assert f"| **{VERSION}** |" in inventory
     assert "**unreleased development**" in inventory
     assert "summer peak-import heuristic is retired" in inventory

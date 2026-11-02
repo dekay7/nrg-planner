@@ -3,16 +3,16 @@
 Home Assistant energy planning with independent supply and delivery tariffs,
 optional EV/battery/solar support, and controls mapped to existing HA entities.
 
-**Early development · version 0.4.0.** This is an **unpublished release draft**;
-0.3.0 remains the latest stable release. See the
+**Early development · version 0.4.0.** See the
 [release notes](docs/releases/0.4.0.md) and [project review](docs/review.md) for
-changes, validation results and open release items. NRG Planner is not included
-in the default HACS catalog.
+changes, validation results and known findings. NRG Planner is not included in
+the default HACS catalog.
 
-> **Documentation scope:** this source targets the 0.4.0 draft, including the hourly
-> Home Energy graphs and ComEd DST forecast fix. These changes are not yet in a
-> published HACS release; see [the feature guide and development milestones](docs/features.md)
-> for release coverage, and [pricing resilience](docs/pricing.md#brief-comed-live-data-delays)
+> **Documentation scope:** these features are included in 0.4.0, including the
+> hourly Home Energy graphs and ComEd DST forecast fix. Later main-branch work
+> may not be in your installed HACS release; see
+> [the feature guide and development milestones](docs/features.md) for release
+> coverage, and [pricing resilience](docs/pricing.md#brief-comed-live-data-delays)
 > for ComEd delay-handling rules—not a live provider-status claim.
 
 ## What it does
