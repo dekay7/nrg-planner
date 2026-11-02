@@ -134,8 +134,8 @@ NRG Planner → Configure**, then choose the named section.
 
 | Screen | What you do there |
 |---|---|
-| **NRG Planner → Home Energy** | Read prices, household advice, live power flow, enabled equipment, and available cost estimates. This optional homeowner view is read-only. |
-| **NRG Planner → Why?** | Read the reason behind the advice, inspect the modeled energy timeline, and open this handbook. |
+| **NRG Planner → Home Energy** | Read prices, household advice, the hourly energy plan (unreleased after 0.3.0), live power flow, enabled equipment, and available cost estimates. This optional homeowner view is read-only. |
+| **NRG Planner → Why?** | Read the reason behind the advice, inspect grid prices and the suggested appliance window (moved here in unreleased hourly-graph development), inspect the modeled energy timeline, and open this handbook. |
 | **NRG Planner settings** | Use the optional administrator dashboard for components, operation, price-data fallback, rates/resilience, equipment assumptions, learning, sources, notifications, and details. |
 | **Settings → Devices & services → NRG Planner → Configure** | Use the setup forms to save rates, period schedules, measurements, forecast sources, control adapters, and notification services. Dashboards are not required. |
 | **Home Assistant's Energy dashboard configuration** | Select the actual power meters used by the live power-flow diagram. NRG's own mappings do not configure that diagram. |

@@ -392,6 +392,173 @@ def price_chart():
                 "xaxis": {"labels": {"datetimeUTC": False}}, "noData": {"text": "Waiting for a fresh forecast"}}}
 
 
+def home_time_formatter(detailed=False):
+    # ApexCharts Card 2.2.3 shifts timestamps by the CURRENT offset difference
+    # for HA's server-timezone profile. Undo that shift before explicit IANA
+    # formatting, so both profile choices and future DST folds label correctly.
+    options = "weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZoneName:'shortOffset'" if detailed else "hour:'2-digit',minute:'2-digit',hourCycle:'h23'"
+    hour_lookup = """const row=h?.states?.['sensor.nrg_plan']?.attributes?.hourly?.rows?.find(r=>Math.abs((r.start+r.end)*500-t)<1);
+if(row)return row.label;
+""" if detailed else ""
+    return "EVAL:function(value,timestamp){" + r"""
+const h=document.querySelector('home-assistant')?.hass, zone=h?.config?.time_zone || 'UTC';
+let t=Number.isFinite(timestamp)?timestamp:Number(value);
+if(!Number.isFinite(t))return value;
+if(h?.locale?.time_zone==='server'){
+  const now=new Date(), offset=new Intl.DateTimeFormat('en-US',{timeZone:zone,timeZoneName:'longOffset'}).formatToParts(now).find(p=>p.type==='timeZoneName').value;
+  const m=offset.match(/GMT([+-])(\d{2}):(\d{2})/), home=m?(m[1]==='-'?-1:1)*(Number(m[2])*60+Number(m[3])):0;
+  t+=(-now.getTimezoneOffset()-home)*60000;
+}
+""" + hour_lookup + "return new Intl.DateTimeFormat(undefined,{timeZone:zone," + options + "}).format(new Date(t));}"
+
+
+def home_energy_generator(key, component=None):
+    return f"const key='{key}', component={json.dumps(component)};\n" + """const p=entity?.attributes?.plan, h=entity?.attributes?.hourly;
+if(!Number.isFinite(p?.expires_at) || p.expires_at*1000<=Date.now() || !Array.isArray(h?.rows))return [];
+const rows=h.rows.filter(r=>Number.isFinite(r.start) && Number.isFinite(r.end) && r.end>r.start && r.end*1000>Date.now() && r.start*1000<end.getTime() && r.end*1000>start.getTime());
+// Keep ALL timestamps aligned, even for known-absent/zero series hidden by the
+// legend. Empty arrays corrupt shared inspection in the pinned ApexCharts.
+const absent=component && p.components?.[component]===false;
+const supported=!component || absent || p.components?.[component]===true;
+return rows.map(r=>{const v=absent?0:r[key];return [(r.start+r.end)*500,supported && r.complete && Number.isFinite(v) && v>=0 ? v : null];});"""
+
+
+def home_energy_events():
+    # The bundled ApexCharts parent observer redraws on height-only changes too
+    # (including tooltip layout), clearing inspection. Observe width only while
+    # retaining responsive HA section/sidebar layouts via the public chart API.
+    return "EVAL:function(ctx){" + """
+const el=ctx.el, parent=el.closest('ha-card') || el.parentElement;
+// ApexCharts defaults to nowrap; midnight/DST interval labels can exceed the card.
+// Keep the native shared tooltip, but wrap it within the actual plot width.
+if(!el.querySelector('style[data-nrg-tooltip]')){
+  const style=document.createElement('style');style.dataset.nrgTooltip='';
+  style.textContent=`.apexcharts-tooltip{box-sizing:border-box;max-width:min(20rem,var(--nrg-tooltip-width,calc(100% - 16px)));white-space:normal;overflow-wrap:anywhere;transform:translateX(var(--nrg-tooltip-offset,0px))}
+.apexcharts-tooltip .apexcharts-tooltip-title{white-space:normal;overflow-wrap:anywhere}
+.apexcharts-tooltip .apexcharts-tooltip-text{min-width:0}`;
+  el.append(style);
+}
+const plot=el.querySelector('.apexcharts-grid');
+if(plot && parent){
+  const bounds=plot.getBoundingClientRect(), right=parent.getBoundingClientRect().right;
+  el.style.setProperty('--nrg-tooltip-width',Math.max(0,Math.min(bounds.width,right-bounds.left)-16)+'px');
+  // Very narrow cards can have a plot extending past their clipped right edge.
+  el.style.setProperty('--nrg-tooltip-offset',Math.min(0,right-bounds.right)+'px');
+}
+if(parent && el.nrgWidthOwner!==ctx){
+  el.nrgWidthObserver?.disconnect();
+  let width;
+  const observer=new ResizeObserver(entries=>{
+    if(!el.isConnected){observer.disconnect();return;}
+    const next=Math.round(entries[0].contentRect.width);
+    if(width===undefined){width=next;return;}
+    if(next<=0 || next===width)return;
+    width=next;ctx.updateOptions({chart:{width:next}},false,false);
+  });
+  observer.observe(parent);el.nrgWidthObserver=observer;el.nrgWidthOwner=ctx;
+}
+""" + "(" + touch_inspection().removeprefix("EVAL:") + ")(ctx); }"
+
+
+def home_energy_chart(charging=False):
+    # Independent linear scales keep large charging/import peaks out of the
+    # household panel. Compare gross flows; never infer an EV's energy source,
+    # subtract charging from grid imports, clip peaks or transform the values.
+    flows = (
+        ("import_kwh", "Grid import (total)", "#3b82f6", None, "line"),
+        ("ev_kwh", "EV charging", "#8b5cf6", "ev", "column"),
+        ("battery_charge_kwh", "Battery charging", "#0d9488", "battery", "column"),
+    ) if charging else (
+        ("house_kwh", "House demand", "#64748b", None, "line"),
+        ("solar_kwh", "Solar generation", "#f59e0b", "solar", "line"),
+        ("battery_discharge_kwh", "Battery supply", "#22a06b", "battery", "line"),
+        ("export_kwh", "Grid export", "#06b6d4", "solar", "line"),
+        ("curtailed_kwh", "Solar curtailment", "#a3a3a3", "solar", "line"),
+    )
+    series = []
+    for key, name, color, component, kind in flows:
+        series.append({"entity": "sensor.nrg_plan", "name": name, "type": kind, "color": color,
+                       "curve": "straight", "stroke_width": 0 if kind == "column" else (3 if key == "house_kwh" else 2),
+                       "stroke_dash": 4 if key in ("battery_discharge_kwh", "curtailed_kwh") else 0,
+                       "unit": "kWh", "float_precision": 2, "extend_to": False,
+                       "show": {"in_header": False, "legend_value": False},
+                       "data_generator": home_energy_generator(key, component)})
+    return {"type": "custom:apexcharts-card", "graph_span": "24h", "span": {"start": "minute"},
+            "stacked": False, "cache": False, "update_interval": "1min",
+            "header": {"show": True, "title": ("Charging & grid import" if charging else "Household flows") + " · next 24 hours"},
+            "grid_options": {"rows": "auto"},
+            "now": {"show": True, "label": "Now"}, "series": series,
+            # One native axis avoids per-series hidden-axis label-width padding.
+            "apex_config": {"yaxis": {"min": 0, "decimalsInFloat": 1, "title": {"text": "kWh per interval"},
+                "max": "EVAL:function(max){return Number.isFinite(max) && max>0?max*1.1:1;}",
+                "labels": {"minWidth": 38, "maxWidth": 38}},
+                "chart": {"type": "line", "height": 240 if charging else 280, "animations": {"enabled": False},
+                "redrawOnParentResize": False, "redrawOnWindowResize": False,
+                "zoom": {"enabled": True, "type": "x"},
+                "events": {"mounted": home_energy_events(), "updated": home_energy_events()},
+                "toolbar": {"show": True, "tools": {"download": False, "selection": False, "zoom": True,
+                    "zoomin": True, "zoomout": False, "pan": False, "reset": True}}},
+                "plotOptions": {"bar": {"columnWidth": "70%"}}, "dataLabels": {"enabled": False},
+                "legend": {"showForNullSeries": False, "showForZeroSeries": False},
+                "markers": {"size": 2, "hover": {"size": 4}},
+                "tooltip": {"shared": True, "intersect": False, "hideEmptySeries": True,
+                    "x": {"formatter": home_time_formatter(True)},
+                    "y": {"formatter": "EVAL:function(v){return Number.isFinite(v)?Math.abs(v).toFixed(2)+' kWh':'Unknown';}"}},
+                "xaxis": {"labels": {"formatter": home_time_formatter()}},
+                "noData": {"text": "Waiting for a complete hourly plan · see details below"}}}
+
+
+def home_energy_details():
+    # Native details/summary is keyboard/touch accessible. Exact actions stay out
+    # of undocumented chart metadata and use the SAME projection as the columns.
+    return {**markdown("""{% set p = state_attr('sensor.nrg_plan','plan') or {} %}
+{% set h = state_attr('sensor.nrg_plan','hourly') or {} %}
+{% macro energy(v) %}{{ (v | round(2) ~ ' kWh') if v is number else 'Unknown' }}{% endmacro %}
+{% if p.get('expires_at', 0) <= as_timestamp(now()) or not h.get('rows') %}
+**Waiting for a fresh home energy plan.** {{ h.get('reason', 'Update the integration and dashboard together if hourly details are missing.') }}
+{% else %}
+**{{ 'Proposed schedule · Observation, no commands sent' if state_attr('sensor.nrg_plan','operating_mode') == 'Observation' else 'Selected schedule · subject to device checks, not measured delivery' }}**
+
+Updated {{ p.generated_at | timestamp_custom('%H:%M %Z') }} · {{ h.timezone }}. The two charts have independent linear kWh scales so charging peaks do not flatten household flows. Compare axis values, not heights between charts. House demand excludes the EV; grid import is the whole site's total, not an extra amount to add to charging. Flows are not stacked or netted.
+
+Points/bars show kWh per interval, not instantaneous kW. Current/final hours can be partial; hover/tap for amounts and open an hour below for exact actions.
+
+{% if h.get('fallback_active') %}**Price-data fallback baseline.** The outlook assumes fallback continues until recovery; prices and recovery time may be unknown.
+{% elif p.get('economic_until', 0) < h.get('end', 0) %}**Limited economic coverage.** Later hours are a conservative outlook, not a price-optimized schedule. Battery hold after dependable coverage can still accept solar when configured.
+{% endif %}
+{% if h.get('status') == 'partial' %}**Incomplete outlook.** Incomplete hours are gaps in the graph, not zero energy. Independently known values and missing-input reasons remain in hourly details.
+{% set ns = namespace(reasons=[]) %}{% for row in h.rows %}{% for reason in row.reasons %}{% if reason not in ns.reasons %}{% set ns.reasons = ns.reasons + [reason] %}{% endif %}{% endfor %}{% endfor %}
+{% for reason in ns.reasons %}- {{ reason }}
+{% endfor %}{% endif %}
+{% set first = h.rows[0] %}**Current-hour remainder:** grid import {{ energy(first.import_kwh) }}{% if p.components.get('battery') %} · battery supply {{ energy(first.battery_discharge_kwh) }} · battery charging {{ energy(first.battery_charge_kwh) }}{% endif %}.
+
+{% if h.get('next_actions') %}### Next planned actions
+{% for action in h.next_actions %}- {{ action.text }}
+{% endfor %}{% endif %}
+<details><summary><strong>Hourly plan details · {{ h.timezone }}</strong></summary>
+
+Energy totals use interval averages, prorated at the displayed boundaries. Actions retain exact times; this is not a promise of constant power. Battery charging and supply, and grid import and export, are not netted. Save battery may accept solar; Supply home may deliver nothing when solar or reserve covers the need.
+
+{% if p.components.get('ev') %}**EV basis:** {{ h.get('ev_basis') }}. Monitoring-only equipment follows its own controls; future plug-ins are not predicted.
+
+{% endif %}{% for row in h.rows %}<details><summary>{{ row.label }} · {{ row.minutes | round(1) }} min{{ ' · incomplete' if not row.complete else '' }}</summary>
+
+**Supply:** grid {{ energy(row.import_kwh) }}{% if p.components.get('solar') %} · solar {{ energy(row.solar_kwh) }}{% endif %}{% if p.components.get('battery') %} · battery {{ energy(row.battery_discharge_kwh) }}{% endif %}.
+
+**Use:** house {{ energy(row.house_kwh) }}{% if p.components.get('ev') %} · EV {{ energy(row.ev_kwh) }}{% endif %}{% if p.components.get('battery') %} · battery charging {{ energy(row.battery_charge_kwh) }} (solar {{ energy(row.solar_charge_kwh) }}, grid {{ energy(row.grid_charge_kwh) }}){% endif %}{% if p.components.get('solar') %} · export {{ energy(row.export_kwh) }} · curtailment {{ energy(row.curtailed_kwh) }}{% endif %}.
+
+{% if row.battery_soc is number %}**Modeled ending battery:** {{ row.battery_soc | round(1) }}%.
+
+{% endif %}{% for period in row.periods %}- {{ period.label }}: {% if period.battery %}{{ {'hold': 'Save battery', 'serve': 'Supply home', 'charge': 'Charge from grid'}.get(period.battery, 'Unknown action') }} · {% endif %}{{ {'economic': 'Within dependable economic coverage', 'outlook': 'Conservative later outlook', 'fallback': 'Price-data fallback baseline'}.get(period.coverage) }}.
+{% endfor %}{% for window in row.ev_windows %}- {{ window.label }}: EV charging at {{ window.amps | round(0) }} A; selected charging run ends {{ window.stop_label }}.
+{% endfor %}{% for reason in row.reasons %}- **Unavailable:** {{ reason }}
+{% endfor %}
+</details>
+
+{% endfor %}</details>
+{% endif %}"""), "grid_options": {"rows": "auto"}}
+
+
 def timeline():
     series = []
     for key, name, color, axis in (("solar_kwh", "Solar", "#f59e0b", "power"), ("house_kwh", "House", "#3b82f6", "power"),
@@ -505,7 +672,7 @@ def build():
 {{ 'Advice only; devices follow their own controls.' if not controlled else ('Observation: schedules are suggestions.' if state_attr('sensor.nrg_plan','operating_mode') == 'Observation' else 'NRG controls the enabled devices when their checks pass.') }}
 [Why this advice?](/nrg-home/why)""")
     home = {"title": "NRG Planner", "views": [
-        view("Home Energy", "now", [[price, metric("pricing_health"), pricing_health_note(), grid([metric("supply_price"), metric("delivery_price")]), advice, price_chart()], [
+        view("Home Energy", "now", [[price, metric("pricing_health"), pricing_health_note(), grid([metric("supply_price"), metric("delivery_price")]), advice, home_energy_chart(), home_energy_chart(charging=True), home_energy_details()], [
             power_flow(), markdown("The same live power-flow Sankey as the Energy dashboard's Now tab. Configure your power meters in the Energy dashboard; NRG never substitutes an estimated flow."),
             grid([conditional("has_solar", metric("solar_power")), metric("home_power"), metric("grid_power"), conditional("has_ev", metric("ev_power"))]),
             grid([conditional("has_battery", {"type": "gauge", "entity": "sensor.nrg_battery_soc", "name": "Home battery", "min": 0, "max": 100}),
@@ -516,7 +683,7 @@ def build():
             conditional("cost_metered", metric("net_cost_eod")), conditional("cost_metered", metric("cost_coverage")),
             conditional("cost_metered", markdown("Net cost is purchases minus export credits using observed power and your supply + delivery rates. Fixed charges and unconfigured taxes are excluded.\n\n" + cost_forecast_note)),
             conditional("cost_metered", markdown("Connect a grid or whole-home meter in Settings to track net energy cost. Price advice works without one."), False)]]),
-        view("Why?", "why", [[advice, markdown("{{ state_attr('sensor.nrg_advice','reason') or 'Waiting for a current explanation.' }}"), markdown("""{% set p = state_attr('sensor.nrg_plan','plan') or {} %}{% set a = p.get('household', {}) %}
+        view("Why?", "why", [[advice, markdown("{{ state_attr('sensor.nrg_advice','reason') or 'Waiting for a current explanation.' }}"), price_chart(), markdown("""{% set p = state_attr('sensor.nrg_plan','plan') or {} %}{% set a = p.get('household', {}) %}
 {% if a.get('best_cost') is number %}### Selected appliance window
 {% if a.get('reference_kwh') is number and a.get('reference_minutes') is number %}**Reference appliance:** {{ a.reference_kwh | round(2) }} kWh over {{ a.reference_minutes | round(0) }} minutes.{% endif %}
 
@@ -530,7 +697,7 @@ def build():
 
 **Battery value basis:** {{ 'Limited — conservative known-price reference for uncovered energy' if v.get('comparison_limited') else 'Permitted refill potential' }}. Charging capability, car demand, battery modes, losses and charging power are included. Refill potential is not a promised charging schedule.{% endif %}
 """), markdown("""## What the recommendation means
-The green graph segment is a suggested window for your reference appliance. The line is the grid buying price, not a claim that solar or stored energy is free.
+The green segment on this tab's grid-price graph is a suggested window for your reference appliance. The line is the grid buying price, not a claim that solar or stored energy is free. Home Energy shows the whole-home plan separately.
 
 **Good time:** now is among the better opportunities. **Use as usual:** moving the load is not worth the difference. **Wait:** a sufficiently cheaper complete window is available.
 

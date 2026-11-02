@@ -145,147 +145,253 @@ views:
       graph_span: 24h
       span:
         start: minute
+      stacked: false
       cache: false
       update_interval: 1min
       header:
         show: true
-        title: Grid prices · suggested appliance window
+        title: Household flows · next 24 hours
+      grid_options:
+        columns: full
+        rows: auto
       now:
         show: true
         label: Now
       series:
       - entity: sensor.nrg_plan
-        name: Current / contracted rates
+        name: House demand
         type: line
-        curve: stepline
-        color: '#f59e0b'
+        color: '#64748b'
+        curve: straight
         stroke_width: 3
         stroke_dash: 0
-        unit: ¢/kWh
+        unit: kWh
         float_precision: 2
         extend_to: false
         show:
           in_header: false
           legend_value: false
-        data_generator: "const kind = 'live';\nconst p = entity?.attributes?.plan;\nif (!p || p.expires_at * 1000\
-          \ <= Date.now()) return [];\nconst rows = Array.isArray(p.slots) ? p.slots : [], h = p.household || {},\
-          \ points = [];\nfunction emit(time, value) {\n  if (points.length && points[points.length-1][0] === time)\
-          \ points[points.length-1][1] = value;\n  else points.push([time,value]);\n}\nfor (const s of rows) {\n\
-          \  const a = Math.max(start.getTime(), s.start * 1000), b = Math.min(end.getTime(), s.end * 1000);\n \
-          \ const rate = s.display_import_price === undefined ? s.import_price : s.display_import_price;\n  if (b\
-          \ <= a || !Number.isFinite(rate)) continue;\n  emit(a,null);\n  const matches = kind === 'live' ? ['flat','running_average','time_of_use','external_live'].includes(s.price_source)\n\
-          \    : kind === 'forecast' ? ['day_ahead','external_forecast'].includes(s.price_source)\n     : kind ===\
-          \ 'estimate' ? s.price_source === 'recorded_estimate' : Number.isFinite(h.best_start) && Number.isFinite(h.best_end);\n\
-          \  let left = a, right = b;\n  if (kind === 'suggested') { left = Math.max(a, h.best_start * 1000); right\
-          \ = Math.min(b, h.best_end * 1000); }\n  if (matches && right > left) { emit(left,rate*100); emit(right-1,rate*100);\
-          \ emit(right,null); }\n  emit(b,null);\n}\nreturn points;"
+        data_generator: 'const key=''house_kwh'', component=null;
+
+          const p=entity?.attributes?.plan, h=entity?.attributes?.hourly;
+
+          if(!Number.isFinite(p?.expires_at) || p.expires_at*1000<=Date.now() || !Array.isArray(h?.rows))return
+          [];
+
+          const rows=h.rows.filter(r=>Number.isFinite(r.start) && Number.isFinite(r.end) && r.end>r.start && r.end*1000>Date.now()
+          && r.start*1000<end.getTime() && r.end*1000>start.getTime());
+
+          // Keep ALL timestamps aligned, even for known-absent/zero series hidden by the
+
+          // legend. Empty arrays corrupt shared inspection in the pinned ApexCharts.
+
+          const absent=component && p.components?.[component]===false;
+
+          const supported=!component || absent || p.components?.[component]===true;
+
+          return rows.map(r=>{const v=absent?0:r[key];return [(r.start+r.end)*500,supported && r.complete && Number.isFinite(v)
+          && v>=0 ? v : null];});'
       - entity: sensor.nrg_plan
-        name: Published outlook
+        name: Solar generation
         type: line
-        curve: stepline
-        color: '#3b82f6'
+        color: '#f59e0b'
+        curve: straight
         stroke_width: 2
         stroke_dash: 0
-        unit: ¢/kWh
+        unit: kWh
         float_precision: 2
         extend_to: false
         show:
           in_header: false
           legend_value: false
-        data_generator: "const kind = 'forecast';\nconst p = entity?.attributes?.plan;\nif (!p || p.expires_at *\
-          \ 1000 <= Date.now()) return [];\nconst rows = Array.isArray(p.slots) ? p.slots : [], h = p.household\
-          \ || {}, points = [];\nfunction emit(time, value) {\n  if (points.length && points[points.length-1][0]\
-          \ === time) points[points.length-1][1] = value;\n  else points.push([time,value]);\n}\nfor (const s of\
-          \ rows) {\n  const a = Math.max(start.getTime(), s.start * 1000), b = Math.min(end.getTime(), s.end *\
-          \ 1000);\n  const rate = s.display_import_price === undefined ? s.import_price : s.display_import_price;\n\
-          \  if (b <= a || !Number.isFinite(rate)) continue;\n  emit(a,null);\n  const matches = kind === 'live'\
-          \ ? ['flat','running_average','time_of_use','external_live'].includes(s.price_source)\n    : kind ===\
-          \ 'forecast' ? ['day_ahead','external_forecast'].includes(s.price_source)\n     : kind === 'estimate'\
-          \ ? s.price_source === 'recorded_estimate' : Number.isFinite(h.best_start) && Number.isFinite(h.best_end);\n\
-          \  let left = a, right = b;\n  if (kind === 'suggested') { left = Math.max(a, h.best_start * 1000); right\
-          \ = Math.min(b, h.best_end * 1000); }\n  if (matches && right > left) { emit(left,rate*100); emit(right-1,rate*100);\
-          \ emit(right,null); }\n  emit(b,null);\n}\nreturn points;"
+        data_generator: 'const key=''solar_kwh'', component="solar";
+
+          const p=entity?.attributes?.plan, h=entity?.attributes?.hourly;
+
+          if(!Number.isFinite(p?.expires_at) || p.expires_at*1000<=Date.now() || !Array.isArray(h?.rows))return
+          [];
+
+          const rows=h.rows.filter(r=>Number.isFinite(r.start) && Number.isFinite(r.end) && r.end>r.start && r.end*1000>Date.now()
+          && r.start*1000<end.getTime() && r.end*1000>start.getTime());
+
+          // Keep ALL timestamps aligned, even for known-absent/zero series hidden by the
+
+          // legend. Empty arrays corrupt shared inspection in the pinned ApexCharts.
+
+          const absent=component && p.components?.[component]===false;
+
+          const supported=!component || absent || p.components?.[component]===true;
+
+          return rows.map(r=>{const v=absent?0:r[key];return [(r.start+r.end)*500,supported && r.complete && Number.isFinite(v)
+          && v>=0 ? v : null];});'
       - entity: sensor.nrg_plan
-        name: Tentative estimate
+        name: Battery supply
         type: line
-        curve: stepline
-        color: '#94a3b8'
-        stroke_width: 2
-        stroke_dash: 6
-        unit: ¢/kWh
-        float_precision: 2
-        extend_to: false
-        show:
-          in_header: false
-          legend_value: false
-        data_generator: "const kind = 'estimate';\nconst p = entity?.attributes?.plan;\nif (!p || p.expires_at *\
-          \ 1000 <= Date.now()) return [];\nconst rows = Array.isArray(p.slots) ? p.slots : [], h = p.household\
-          \ || {}, points = [];\nfunction emit(time, value) {\n  if (points.length && points[points.length-1][0]\
-          \ === time) points[points.length-1][1] = value;\n  else points.push([time,value]);\n}\nfor (const s of\
-          \ rows) {\n  const a = Math.max(start.getTime(), s.start * 1000), b = Math.min(end.getTime(), s.end *\
-          \ 1000);\n  const rate = s.display_import_price === undefined ? s.import_price : s.display_import_price;\n\
-          \  if (b <= a || !Number.isFinite(rate)) continue;\n  emit(a,null);\n  const matches = kind === 'live'\
-          \ ? ['flat','running_average','time_of_use','external_live'].includes(s.price_source)\n    : kind ===\
-          \ 'forecast' ? ['day_ahead','external_forecast'].includes(s.price_source)\n     : kind === 'estimate'\
-          \ ? s.price_source === 'recorded_estimate' : Number.isFinite(h.best_start) && Number.isFinite(h.best_end);\n\
-          \  let left = a, right = b;\n  if (kind === 'suggested') { left = Math.max(a, h.best_start * 1000); right\
-          \ = Math.min(b, h.best_end * 1000); }\n  if (matches && right > left) { emit(left,rate*100); emit(right-1,rate*100);\
-          \ emit(right,null); }\n  emit(b,null);\n}\nreturn points;"
-      - entity: sensor.nrg_plan
-        name: Suggested appliance window
-        type: line
-        curve: stepline
         color: '#22a06b'
-        stroke_width: 5
-        stroke_dash: 0
-        unit: ¢/kWh
+        curve: straight
+        stroke_width: 2
+        stroke_dash: 4
+        unit: kWh
         float_precision: 2
         extend_to: false
         show:
           in_header: false
           legend_value: false
-        data_generator: "const kind = 'suggested';\nconst p = entity?.attributes?.plan;\nif (!p || p.expires_at\
-          \ * 1000 <= Date.now()) return [];\nconst rows = Array.isArray(p.slots) ? p.slots : [], h = p.household\
-          \ || {}, points = [];\nfunction emit(time, value) {\n  if (points.length && points[points.length-1][0]\
-          \ === time) points[points.length-1][1] = value;\n  else points.push([time,value]);\n}\nfor (const s of\
-          \ rows) {\n  const a = Math.max(start.getTime(), s.start * 1000), b = Math.min(end.getTime(), s.end *\
-          \ 1000);\n  const rate = s.display_import_price === undefined ? s.import_price : s.display_import_price;\n\
-          \  if (b <= a || !Number.isFinite(rate)) continue;\n  emit(a,null);\n  const matches = kind === 'live'\
-          \ ? ['flat','running_average','time_of_use','external_live'].includes(s.price_source)\n    : kind ===\
-          \ 'forecast' ? ['day_ahead','external_forecast'].includes(s.price_source)\n     : kind === 'estimate'\
-          \ ? s.price_source === 'recorded_estimate' : Number.isFinite(h.best_start) && Number.isFinite(h.best_end);\n\
-          \  let left = a, right = b;\n  if (kind === 'suggested') { left = Math.max(a, h.best_start * 1000); right\
-          \ = Math.min(b, h.best_end * 1000); }\n  if (matches && right > left) { emit(left,rate*100); emit(right-1,rate*100);\
-          \ emit(right,null); }\n  emit(b,null);\n}\nreturn points;"
-      yaxis:
-      - decimals: 1
-        apex_config:
-          title:
-            text: ¢/kWh
+        data_generator: 'const key=''battery_discharge_kwh'', component="battery";
+
+          const p=entity?.attributes?.plan, h=entity?.attributes?.hourly;
+
+          if(!Number.isFinite(p?.expires_at) || p.expires_at*1000<=Date.now() || !Array.isArray(h?.rows))return
+          [];
+
+          const rows=h.rows.filter(r=>Number.isFinite(r.start) && Number.isFinite(r.end) && r.end>r.start && r.end*1000>Date.now()
+          && r.start*1000<end.getTime() && r.end*1000>start.getTime());
+
+          // Keep ALL timestamps aligned, even for known-absent/zero series hidden by the
+
+          // legend. Empty arrays corrupt shared inspection in the pinned ApexCharts.
+
+          const absent=component && p.components?.[component]===false;
+
+          const supported=!component || absent || p.components?.[component]===true;
+
+          return rows.map(r=>{const v=absent?0:r[key];return [(r.start+r.end)*500,supported && r.complete && Number.isFinite(v)
+          && v>=0 ? v : null];});'
+      - entity: sensor.nrg_plan
+        name: Grid export
+        type: line
+        color: '#06b6d4'
+        curve: straight
+        stroke_width: 2
+        stroke_dash: 0
+        unit: kWh
+        float_precision: 2
+        extend_to: false
+        show:
+          in_header: false
+          legend_value: false
+        data_generator: 'const key=''export_kwh'', component="solar";
+
+          const p=entity?.attributes?.plan, h=entity?.attributes?.hourly;
+
+          if(!Number.isFinite(p?.expires_at) || p.expires_at*1000<=Date.now() || !Array.isArray(h?.rows))return
+          [];
+
+          const rows=h.rows.filter(r=>Number.isFinite(r.start) && Number.isFinite(r.end) && r.end>r.start && r.end*1000>Date.now()
+          && r.start*1000<end.getTime() && r.end*1000>start.getTime());
+
+          // Keep ALL timestamps aligned, even for known-absent/zero series hidden by the
+
+          // legend. Empty arrays corrupt shared inspection in the pinned ApexCharts.
+
+          const absent=component && p.components?.[component]===false;
+
+          const supported=!component || absent || p.components?.[component]===true;
+
+          return rows.map(r=>{const v=absent?0:r[key];return [(r.start+r.end)*500,supported && r.complete && Number.isFinite(v)
+          && v>=0 ? v : null];});'
+      - entity: sensor.nrg_plan
+        name: Solar curtailment
+        type: line
+        color: '#a3a3a3'
+        curve: straight
+        stroke_width: 2
+        stroke_dash: 4
+        unit: kWh
+        float_precision: 2
+        extend_to: false
+        show:
+          in_header: false
+          legend_value: false
+        data_generator: 'const key=''curtailed_kwh'', component="solar";
+
+          const p=entity?.attributes?.plan, h=entity?.attributes?.hourly;
+
+          if(!Number.isFinite(p?.expires_at) || p.expires_at*1000<=Date.now() || !Array.isArray(h?.rows))return
+          [];
+
+          const rows=h.rows.filter(r=>Number.isFinite(r.start) && Number.isFinite(r.end) && r.end>r.start && r.end*1000>Date.now()
+          && r.start*1000<end.getTime() && r.end*1000>start.getTime());
+
+          // Keep ALL timestamps aligned, even for known-absent/zero series hidden by the
+
+          // legend. Empty arrays corrupt shared inspection in the pinned ApexCharts.
+
+          const absent=component && p.components?.[component]===false;
+
+          const supported=!component || absent || p.components?.[component]===true;
+
+          return rows.map(r=>{const v=absent?0:r[key];return [(r.start+r.end)*500,supported && r.complete && Number.isFinite(v)
+          && v>=0 ? v : null];});'
       apex_config:
+        yaxis:
+          min: 0
+          decimalsInFloat: 1
+          title:
+            text: kWh per interval
+          max: EVAL:function(max){return Number.isFinite(max) && max>0?max*1.1:1;}
+          labels:
+            minWidth: 38
+            maxWidth: 38
         chart:
-          height: 290
+          type: line
+          height: 280
           animations:
             enabled: false
+          redrawOnParentResize: false
+          redrawOnWindowResize: false
+          zoom:
+            enabled: true
+            type: x
           events:
-            mounted: "EVAL:function(ctx) {\n      const svg=ctx.el.querySelector('.apexcharts-svg'); if(!svg ||\
-              \ svg.dataset.nrgTouch)return;\n      svg.dataset.nrgTouch='on'; let timer,multiple=false;\n     \
-              \ const show=p=>svg.isConnected && svg.dispatchEvent(new MouseEvent('mousemove',{bubbles:true,view:window,clientX:p.clientX,clientY:p.clientY}));\n\
+            mounted: "EVAL:function(ctx){\nconst el=ctx.el, parent=el.closest('ha-card') || el.parentElement;\n\
+              // ApexCharts defaults to nowrap; midnight/DST interval labels can exceed the card.\n// Keep the native\
+              \ shared tooltip, but wrap it within the actual plot width.\nif(!el.querySelector('style[data-nrg-tooltip]')){\n\
+              \  const style=document.createElement('style');style.dataset.nrgTooltip='';\n  style.textContent=`.apexcharts-tooltip{box-sizing:border-box;max-width:min(20rem,var(--nrg-tooltip-width,calc(100%\
+              \ - 16px)));white-space:normal;overflow-wrap:anywhere;transform:translateX(var(--nrg-tooltip-offset,0px))}\n\
+              .apexcharts-tooltip .apexcharts-tooltip-title{white-space:normal;overflow-wrap:anywhere}\n.apexcharts-tooltip\
+              \ .apexcharts-tooltip-text{min-width:0}`;\n  el.append(style);\n}\nconst plot=el.querySelector('.apexcharts-grid');\n\
+              if(plot && parent){\n  const bounds=plot.getBoundingClientRect(), right=parent.getBoundingClientRect().right;\n\
+              \  el.style.setProperty('--nrg-tooltip-width',Math.max(0,Math.min(bounds.width,right-bounds.left)-16)+'px');\n\
+              \  // Very narrow cards can have a plot extending past their clipped right edge.\n  el.style.setProperty('--nrg-tooltip-offset',Math.min(0,right-bounds.right)+'px');\n\
+              }\nif(parent && el.nrgWidthOwner!==ctx){\n  el.nrgWidthObserver?.disconnect();\n  let width;\n  const\
+              \ observer=new ResizeObserver(entries=>{\n    if(!el.isConnected){observer.disconnect();return;}\n\
+              \    const next=Math.round(entries[0].contentRect.width);\n    if(width===undefined){width=next;return;}\n\
+              \    if(next<=0 || next===width)return;\n    width=next;ctx.updateOptions({chart:{width:next}},false,false);\n\
+              \  });\n  observer.observe(parent);el.nrgWidthObserver=observer;el.nrgWidthOwner=ctx;\n}\n(function(ctx)\
+              \ {\n      const svg=ctx.el.querySelector('.apexcharts-svg'); if(!svg || svg.dataset.nrgTouch)return;\n\
+              \      svg.dataset.nrgTouch='on'; let timer,multiple=false;\n      const show=p=>svg.isConnected &&\
+              \ svg.dispatchEvent(new MouseEvent('mousemove',{bubbles:true,view:window,clientX:p.clientX,clientY:p.clientY}));\n\
               \      const move=e=>{clearTimeout(timer);if(e.touches.length!==1){multiple=true;return;}if(!multiple)show(e.touches[0]);};\n\
               \      svg.addEventListener('touchstart',move,{passive:true});svg.addEventListener('touchmove',move,{passive:true});\n\
               \      svg.addEventListener('touchend',e=>{clearTimeout(timer);if(multiple){if(!e.touches.length)multiple=false;return;}\n\
               \        if(e.touches.length || !e.changedTouches[0])return;const p={clientX:e.changedTouches[0].clientX,clientY:e.changedTouches[0].clientY};timer=setTimeout(()=>show(p),100);},{passive:true});\n\
               \      svg.addEventListener('touchcancel',()=>{clearTimeout(timer);multiple=false;},{passive:true});\n\
-              \    }"
-            updated: "EVAL:function(ctx) {\n      const svg=ctx.el.querySelector('.apexcharts-svg'); if(!svg ||\
-              \ svg.dataset.nrgTouch)return;\n      svg.dataset.nrgTouch='on'; let timer,multiple=false;\n     \
-              \ const show=p=>svg.isConnected && svg.dispatchEvent(new MouseEvent('mousemove',{bubbles:true,view:window,clientX:p.clientX,clientY:p.clientY}));\n\
+              \    })(ctx); }"
+            updated: "EVAL:function(ctx){\nconst el=ctx.el, parent=el.closest('ha-card') || el.parentElement;\n\
+              // ApexCharts defaults to nowrap; midnight/DST interval labels can exceed the card.\n// Keep the native\
+              \ shared tooltip, but wrap it within the actual plot width.\nif(!el.querySelector('style[data-nrg-tooltip]')){\n\
+              \  const style=document.createElement('style');style.dataset.nrgTooltip='';\n  style.textContent=`.apexcharts-tooltip{box-sizing:border-box;max-width:min(20rem,var(--nrg-tooltip-width,calc(100%\
+              \ - 16px)));white-space:normal;overflow-wrap:anywhere;transform:translateX(var(--nrg-tooltip-offset,0px))}\n\
+              .apexcharts-tooltip .apexcharts-tooltip-title{white-space:normal;overflow-wrap:anywhere}\n.apexcharts-tooltip\
+              \ .apexcharts-tooltip-text{min-width:0}`;\n  el.append(style);\n}\nconst plot=el.querySelector('.apexcharts-grid');\n\
+              if(plot && parent){\n  const bounds=plot.getBoundingClientRect(), right=parent.getBoundingClientRect().right;\n\
+              \  el.style.setProperty('--nrg-tooltip-width',Math.max(0,Math.min(bounds.width,right-bounds.left)-16)+'px');\n\
+              \  // Very narrow cards can have a plot extending past their clipped right edge.\n  el.style.setProperty('--nrg-tooltip-offset',Math.min(0,right-bounds.right)+'px');\n\
+              }\nif(parent && el.nrgWidthOwner!==ctx){\n  el.nrgWidthObserver?.disconnect();\n  let width;\n  const\
+              \ observer=new ResizeObserver(entries=>{\n    if(!el.isConnected){observer.disconnect();return;}\n\
+              \    const next=Math.round(entries[0].contentRect.width);\n    if(width===undefined){width=next;return;}\n\
+              \    if(next<=0 || next===width)return;\n    width=next;ctx.updateOptions({chart:{width:next}},false,false);\n\
+              \  });\n  observer.observe(parent);el.nrgWidthObserver=observer;el.nrgWidthOwner=ctx;\n}\n(function(ctx)\
+              \ {\n      const svg=ctx.el.querySelector('.apexcharts-svg'); if(!svg || svg.dataset.nrgTouch)return;\n\
+              \      svg.dataset.nrgTouch='on'; let timer,multiple=false;\n      const show=p=>svg.isConnected &&\
+              \ svg.dispatchEvent(new MouseEvent('mousemove',{bubbles:true,view:window,clientX:p.clientX,clientY:p.clientY}));\n\
               \      const move=e=>{clearTimeout(timer);if(e.touches.length!==1){multiple=true;return;}if(!multiple)show(e.touches[0]);};\n\
               \      svg.addEventListener('touchstart',move,{passive:true});svg.addEventListener('touchmove',move,{passive:true});\n\
               \      svg.addEventListener('touchend',e=>{clearTimeout(timer);if(multiple){if(!e.touches.length)multiple=false;return;}\n\
               \        if(e.touches.length || !e.changedTouches[0])return;const p={clientX:e.changedTouches[0].clientX,clientY:e.changedTouches[0].clientY};timer=setTimeout(()=>show(p),100);},{passive:true});\n\
               \      svg.addEventListener('touchcancel',()=>{clearTimeout(timer);multiple=false;},{passive:true});\n\
-              \    }"
+              \    })(ctx); }"
           toolbar:
             show: true
             tools:
@@ -296,23 +402,386 @@ views:
               zoomout: false
               pan: false
               reset: true
-        stroke:
-          lineCap: butt
+        plotOptions:
+          bar:
+            columnWidth: 70%
+        dataLabels:
+          enabled: false
         legend:
           showForNullSeries: false
+          showForZeroSeries: false
+        markers:
+          size: 2
+          hover:
+            size: 4
         tooltip:
-          shared: false
+          shared: true
           intersect: false
+          hideEmptySeries: true
           x:
-            formatter: EVAL:function(v){return new Intl.DateTimeFormat(undefined,{weekday:'short',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new
-              Date(v));}
+            formatter: "EVAL:function(value,timestamp){\nconst h=document.querySelector('home-assistant')?.hass,\
+              \ zone=h?.config?.time_zone || 'UTC';\nlet t=Number.isFinite(timestamp)?timestamp:Number(value);\n\
+              if(!Number.isFinite(t))return value;\nif(h?.locale?.time_zone==='server'){\n  const now=new Date(),\
+              \ offset=new Intl.DateTimeFormat('en-US',{timeZone:zone,timeZoneName:'longOffset'}).formatToParts(now).find(p=>p.type==='timeZoneName').value;\n\
+              \  const m=offset.match(/GMT([+-])(\\d{2}):(\\d{2})/), home=m?(m[1]==='-'?-1:1)*(Number(m[2])*60+Number(m[3])):0;\n\
+              \  t+=(-now.getTimezoneOffset()-home)*60000;\n}\nconst row=h?.states?.['sensor.nrg_plan']?.attributes?.hourly?.rows?.find(r=>Math.abs((r.start+r.end)*500-t)<1);\n\
+              if(row)return row.label;\nreturn new Intl.DateTimeFormat(undefined,{timeZone:zone,weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZoneName:'shortOffset'}).format(new\
+              \ Date(t));}"
+          y:
+            formatter: EVAL:function(v){return Number.isFinite(v)?Math.abs(v).toFixed(2)+' kWh':'Unknown';}
         xaxis:
           labels:
-            datetimeUTC: false
+            formatter: "EVAL:function(value,timestamp){\nconst h=document.querySelector('home-assistant')?.hass,\
+              \ zone=h?.config?.time_zone || 'UTC';\nlet t=Number.isFinite(timestamp)?timestamp:Number(value);\n\
+              if(!Number.isFinite(t))return value;\nif(h?.locale?.time_zone==='server'){\n  const now=new Date(),\
+              \ offset=new Intl.DateTimeFormat('en-US',{timeZone:zone,timeZoneName:'longOffset'}).formatToParts(now).find(p=>p.type==='timeZoneName').value;\n\
+              \  const m=offset.match(/GMT([+-])(\\d{2}):(\\d{2})/), home=m?(m[1]==='-'?-1:1)*(Number(m[2])*60+Number(m[3])):0;\n\
+              \  t+=(-now.getTimezoneOffset()-home)*60000;\n}\nreturn new Intl.DateTimeFormat(undefined,{timeZone:zone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new\
+              \ Date(t));}"
         noData:
-          text: Waiting for a fresh forecast
+          text: Waiting for a complete hourly plan · see details below
+    - type: custom:apexcharts-card
+      graph_span: 24h
+      span:
+        start: minute
+      stacked: false
+      cache: false
+      update_interval: 1min
+      header:
+        show: true
+        title: Charging & grid import · next 24 hours
       grid_options:
         columns: full
+        rows: auto
+      now:
+        show: true
+        label: Now
+      series:
+      - entity: sensor.nrg_plan
+        name: Grid import (total)
+        type: line
+        color: '#3b82f6'
+        curve: straight
+        stroke_width: 2
+        stroke_dash: 0
+        unit: kWh
+        float_precision: 2
+        extend_to: false
+        show:
+          in_header: false
+          legend_value: false
+        data_generator: 'const key=''import_kwh'', component=null;
+
+          const p=entity?.attributes?.plan, h=entity?.attributes?.hourly;
+
+          if(!Number.isFinite(p?.expires_at) || p.expires_at*1000<=Date.now() || !Array.isArray(h?.rows))return
+          [];
+
+          const rows=h.rows.filter(r=>Number.isFinite(r.start) && Number.isFinite(r.end) && r.end>r.start && r.end*1000>Date.now()
+          && r.start*1000<end.getTime() && r.end*1000>start.getTime());
+
+          // Keep ALL timestamps aligned, even for known-absent/zero series hidden by the
+
+          // legend. Empty arrays corrupt shared inspection in the pinned ApexCharts.
+
+          const absent=component && p.components?.[component]===false;
+
+          const supported=!component || absent || p.components?.[component]===true;
+
+          return rows.map(r=>{const v=absent?0:r[key];return [(r.start+r.end)*500,supported && r.complete && Number.isFinite(v)
+          && v>=0 ? v : null];});'
+      - entity: sensor.nrg_plan
+        name: EV charging
+        type: column
+        color: '#8b5cf6'
+        curve: straight
+        stroke_width: 0
+        stroke_dash: 0
+        unit: kWh
+        float_precision: 2
+        extend_to: false
+        show:
+          in_header: false
+          legend_value: false
+        data_generator: 'const key=''ev_kwh'', component="ev";
+
+          const p=entity?.attributes?.plan, h=entity?.attributes?.hourly;
+
+          if(!Number.isFinite(p?.expires_at) || p.expires_at*1000<=Date.now() || !Array.isArray(h?.rows))return
+          [];
+
+          const rows=h.rows.filter(r=>Number.isFinite(r.start) && Number.isFinite(r.end) && r.end>r.start && r.end*1000>Date.now()
+          && r.start*1000<end.getTime() && r.end*1000>start.getTime());
+
+          // Keep ALL timestamps aligned, even for known-absent/zero series hidden by the
+
+          // legend. Empty arrays corrupt shared inspection in the pinned ApexCharts.
+
+          const absent=component && p.components?.[component]===false;
+
+          const supported=!component || absent || p.components?.[component]===true;
+
+          return rows.map(r=>{const v=absent?0:r[key];return [(r.start+r.end)*500,supported && r.complete && Number.isFinite(v)
+          && v>=0 ? v : null];});'
+      - entity: sensor.nrg_plan
+        name: Battery charging
+        type: column
+        color: '#0d9488'
+        curve: straight
+        stroke_width: 0
+        stroke_dash: 0
+        unit: kWh
+        float_precision: 2
+        extend_to: false
+        show:
+          in_header: false
+          legend_value: false
+        data_generator: 'const key=''battery_charge_kwh'', component="battery";
+
+          const p=entity?.attributes?.plan, h=entity?.attributes?.hourly;
+
+          if(!Number.isFinite(p?.expires_at) || p.expires_at*1000<=Date.now() || !Array.isArray(h?.rows))return
+          [];
+
+          const rows=h.rows.filter(r=>Number.isFinite(r.start) && Number.isFinite(r.end) && r.end>r.start && r.end*1000>Date.now()
+          && r.start*1000<end.getTime() && r.end*1000>start.getTime());
+
+          // Keep ALL timestamps aligned, even for known-absent/zero series hidden by the
+
+          // legend. Empty arrays corrupt shared inspection in the pinned ApexCharts.
+
+          const absent=component && p.components?.[component]===false;
+
+          const supported=!component || absent || p.components?.[component]===true;
+
+          return rows.map(r=>{const v=absent?0:r[key];return [(r.start+r.end)*500,supported && r.complete && Number.isFinite(v)
+          && v>=0 ? v : null];});'
+      apex_config:
+        yaxis:
+          min: 0
+          decimalsInFloat: 1
+          title:
+            text: kWh per interval
+          max: EVAL:function(max){return Number.isFinite(max) && max>0?max*1.1:1;}
+          labels:
+            minWidth: 38
+            maxWidth: 38
+        chart:
+          type: line
+          height: 240
+          animations:
+            enabled: false
+          redrawOnParentResize: false
+          redrawOnWindowResize: false
+          zoom:
+            enabled: true
+            type: x
+          events:
+            mounted: "EVAL:function(ctx){\nconst el=ctx.el, parent=el.closest('ha-card') || el.parentElement;\n\
+              // ApexCharts defaults to nowrap; midnight/DST interval labels can exceed the card.\n// Keep the native\
+              \ shared tooltip, but wrap it within the actual plot width.\nif(!el.querySelector('style[data-nrg-tooltip]')){\n\
+              \  const style=document.createElement('style');style.dataset.nrgTooltip='';\n  style.textContent=`.apexcharts-tooltip{box-sizing:border-box;max-width:min(20rem,var(--nrg-tooltip-width,calc(100%\
+              \ - 16px)));white-space:normal;overflow-wrap:anywhere;transform:translateX(var(--nrg-tooltip-offset,0px))}\n\
+              .apexcharts-tooltip .apexcharts-tooltip-title{white-space:normal;overflow-wrap:anywhere}\n.apexcharts-tooltip\
+              \ .apexcharts-tooltip-text{min-width:0}`;\n  el.append(style);\n}\nconst plot=el.querySelector('.apexcharts-grid');\n\
+              if(plot && parent){\n  const bounds=plot.getBoundingClientRect(), right=parent.getBoundingClientRect().right;\n\
+              \  el.style.setProperty('--nrg-tooltip-width',Math.max(0,Math.min(bounds.width,right-bounds.left)-16)+'px');\n\
+              \  // Very narrow cards can have a plot extending past their clipped right edge.\n  el.style.setProperty('--nrg-tooltip-offset',Math.min(0,right-bounds.right)+'px');\n\
+              }\nif(parent && el.nrgWidthOwner!==ctx){\n  el.nrgWidthObserver?.disconnect();\n  let width;\n  const\
+              \ observer=new ResizeObserver(entries=>{\n    if(!el.isConnected){observer.disconnect();return;}\n\
+              \    const next=Math.round(entries[0].contentRect.width);\n    if(width===undefined){width=next;return;}\n\
+              \    if(next<=0 || next===width)return;\n    width=next;ctx.updateOptions({chart:{width:next}},false,false);\n\
+              \  });\n  observer.observe(parent);el.nrgWidthObserver=observer;el.nrgWidthOwner=ctx;\n}\n(function(ctx)\
+              \ {\n      const svg=ctx.el.querySelector('.apexcharts-svg'); if(!svg || svg.dataset.nrgTouch)return;\n\
+              \      svg.dataset.nrgTouch='on'; let timer,multiple=false;\n      const show=p=>svg.isConnected &&\
+              \ svg.dispatchEvent(new MouseEvent('mousemove',{bubbles:true,view:window,clientX:p.clientX,clientY:p.clientY}));\n\
+              \      const move=e=>{clearTimeout(timer);if(e.touches.length!==1){multiple=true;return;}if(!multiple)show(e.touches[0]);};\n\
+              \      svg.addEventListener('touchstart',move,{passive:true});svg.addEventListener('touchmove',move,{passive:true});\n\
+              \      svg.addEventListener('touchend',e=>{clearTimeout(timer);if(multiple){if(!e.touches.length)multiple=false;return;}\n\
+              \        if(e.touches.length || !e.changedTouches[0])return;const p={clientX:e.changedTouches[0].clientX,clientY:e.changedTouches[0].clientY};timer=setTimeout(()=>show(p),100);},{passive:true});\n\
+              \      svg.addEventListener('touchcancel',()=>{clearTimeout(timer);multiple=false;},{passive:true});\n\
+              \    })(ctx); }"
+            updated: "EVAL:function(ctx){\nconst el=ctx.el, parent=el.closest('ha-card') || el.parentElement;\n\
+              // ApexCharts defaults to nowrap; midnight/DST interval labels can exceed the card.\n// Keep the native\
+              \ shared tooltip, but wrap it within the actual plot width.\nif(!el.querySelector('style[data-nrg-tooltip]')){\n\
+              \  const style=document.createElement('style');style.dataset.nrgTooltip='';\n  style.textContent=`.apexcharts-tooltip{box-sizing:border-box;max-width:min(20rem,var(--nrg-tooltip-width,calc(100%\
+              \ - 16px)));white-space:normal;overflow-wrap:anywhere;transform:translateX(var(--nrg-tooltip-offset,0px))}\n\
+              .apexcharts-tooltip .apexcharts-tooltip-title{white-space:normal;overflow-wrap:anywhere}\n.apexcharts-tooltip\
+              \ .apexcharts-tooltip-text{min-width:0}`;\n  el.append(style);\n}\nconst plot=el.querySelector('.apexcharts-grid');\n\
+              if(plot && parent){\n  const bounds=plot.getBoundingClientRect(), right=parent.getBoundingClientRect().right;\n\
+              \  el.style.setProperty('--nrg-tooltip-width',Math.max(0,Math.min(bounds.width,right-bounds.left)-16)+'px');\n\
+              \  // Very narrow cards can have a plot extending past their clipped right edge.\n  el.style.setProperty('--nrg-tooltip-offset',Math.min(0,right-bounds.right)+'px');\n\
+              }\nif(parent && el.nrgWidthOwner!==ctx){\n  el.nrgWidthObserver?.disconnect();\n  let width;\n  const\
+              \ observer=new ResizeObserver(entries=>{\n    if(!el.isConnected){observer.disconnect();return;}\n\
+              \    const next=Math.round(entries[0].contentRect.width);\n    if(width===undefined){width=next;return;}\n\
+              \    if(next<=0 || next===width)return;\n    width=next;ctx.updateOptions({chart:{width:next}},false,false);\n\
+              \  });\n  observer.observe(parent);el.nrgWidthObserver=observer;el.nrgWidthOwner=ctx;\n}\n(function(ctx)\
+              \ {\n      const svg=ctx.el.querySelector('.apexcharts-svg'); if(!svg || svg.dataset.nrgTouch)return;\n\
+              \      svg.dataset.nrgTouch='on'; let timer,multiple=false;\n      const show=p=>svg.isConnected &&\
+              \ svg.dispatchEvent(new MouseEvent('mousemove',{bubbles:true,view:window,clientX:p.clientX,clientY:p.clientY}));\n\
+              \      const move=e=>{clearTimeout(timer);if(e.touches.length!==1){multiple=true;return;}if(!multiple)show(e.touches[0]);};\n\
+              \      svg.addEventListener('touchstart',move,{passive:true});svg.addEventListener('touchmove',move,{passive:true});\n\
+              \      svg.addEventListener('touchend',e=>{clearTimeout(timer);if(multiple){if(!e.touches.length)multiple=false;return;}\n\
+              \        if(e.touches.length || !e.changedTouches[0])return;const p={clientX:e.changedTouches[0].clientX,clientY:e.changedTouches[0].clientY};timer=setTimeout(()=>show(p),100);},{passive:true});\n\
+              \      svg.addEventListener('touchcancel',()=>{clearTimeout(timer);multiple=false;},{passive:true});\n\
+              \    })(ctx); }"
+          toolbar:
+            show: true
+            tools:
+              download: false
+              selection: false
+              zoom: true
+              zoomin: true
+              zoomout: false
+              pan: false
+              reset: true
+        plotOptions:
+          bar:
+            columnWidth: 70%
+        dataLabels:
+          enabled: false
+        legend:
+          showForNullSeries: false
+          showForZeroSeries: false
+        markers:
+          size: 2
+          hover:
+            size: 4
+        tooltip:
+          shared: true
+          intersect: false
+          hideEmptySeries: true
+          x:
+            formatter: "EVAL:function(value,timestamp){\nconst h=document.querySelector('home-assistant')?.hass,\
+              \ zone=h?.config?.time_zone || 'UTC';\nlet t=Number.isFinite(timestamp)?timestamp:Number(value);\n\
+              if(!Number.isFinite(t))return value;\nif(h?.locale?.time_zone==='server'){\n  const now=new Date(),\
+              \ offset=new Intl.DateTimeFormat('en-US',{timeZone:zone,timeZoneName:'longOffset'}).formatToParts(now).find(p=>p.type==='timeZoneName').value;\n\
+              \  const m=offset.match(/GMT([+-])(\\d{2}):(\\d{2})/), home=m?(m[1]==='-'?-1:1)*(Number(m[2])*60+Number(m[3])):0;\n\
+              \  t+=(-now.getTimezoneOffset()-home)*60000;\n}\nconst row=h?.states?.['sensor.nrg_plan']?.attributes?.hourly?.rows?.find(r=>Math.abs((r.start+r.end)*500-t)<1);\n\
+              if(row)return row.label;\nreturn new Intl.DateTimeFormat(undefined,{timeZone:zone,weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZoneName:'shortOffset'}).format(new\
+              \ Date(t));}"
+          y:
+            formatter: EVAL:function(v){return Number.isFinite(v)?Math.abs(v).toFixed(2)+' kWh':'Unknown';}
+        xaxis:
+          labels:
+            formatter: "EVAL:function(value,timestamp){\nconst h=document.querySelector('home-assistant')?.hass,\
+              \ zone=h?.config?.time_zone || 'UTC';\nlet t=Number.isFinite(timestamp)?timestamp:Number(value);\n\
+              if(!Number.isFinite(t))return value;\nif(h?.locale?.time_zone==='server'){\n  const now=new Date(),\
+              \ offset=new Intl.DateTimeFormat('en-US',{timeZone:zone,timeZoneName:'longOffset'}).formatToParts(now).find(p=>p.type==='timeZoneName').value;\n\
+              \  const m=offset.match(/GMT([+-])(\\d{2}):(\\d{2})/), home=m?(m[1]==='-'?-1:1)*(Number(m[2])*60+Number(m[3])):0;\n\
+              \  t+=(-now.getTimezoneOffset()-home)*60000;\n}\nreturn new Intl.DateTimeFormat(undefined,{timeZone:zone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new\
+              \ Date(t));}"
+        noData:
+          text: Waiting for a complete hourly plan · see details below
+    - type: markdown
+      content: '{% set p = state_attr(''sensor.nrg_plan'',''plan'') or {} %}
+
+        {% set h = state_attr(''sensor.nrg_plan'',''hourly'') or {} %}
+
+        {% macro energy(v) %}{{ (v | round(2) ~ '' kWh'') if v is number else ''Unknown'' }}{% endmacro %}
+
+        {% if p.get(''expires_at'', 0) <= as_timestamp(now()) or not h.get(''rows'') %}
+
+        **Waiting for a fresh home energy plan.** {{ h.get(''reason'', ''Update the integration and dashboard together
+        if hourly details are missing.'') }}
+
+        {% else %}
+
+        **{{ ''Proposed schedule · Observation, no commands sent'' if state_attr(''sensor.nrg_plan'',''operating_mode'')
+        == ''Observation'' else ''Selected schedule · subject to device checks, not measured delivery'' }}**
+
+
+        Updated {{ p.generated_at | timestamp_custom(''%H:%M %Z'') }} · {{ h.timezone }}. The two charts have independent
+        linear kWh scales so charging peaks do not flatten household flows. Compare axis values, not heights between
+        charts. House demand excludes the EV; grid import is the whole site''s total, not an extra amount to add
+        to charging. Flows are not stacked or netted.
+
+
+        Points/bars show kWh per interval, not instantaneous kW. Current/final hours can be partial; hover/tap for
+        amounts and open an hour below for exact actions.
+
+
+        {% if h.get(''fallback_active'') %}**Price-data fallback baseline.** The outlook assumes fallback continues
+        until recovery; prices and recovery time may be unknown.
+
+        {% elif p.get(''economic_until'', 0) < h.get(''end'', 0) %}**Limited economic coverage.** Later hours are
+        a conservative outlook, not a price-optimized schedule. Battery hold after dependable coverage can still
+        accept solar when configured.
+
+        {% endif %}
+
+        {% if h.get(''status'') == ''partial'' %}**Incomplete outlook.** Incomplete hours are gaps in the graph,
+        not zero energy. Independently known values and missing-input reasons remain in hourly details.
+
+        {% set ns = namespace(reasons=[]) %}{% for row in h.rows %}{% for reason in row.reasons %}{% if reason not
+        in ns.reasons %}{% set ns.reasons = ns.reasons + [reason] %}{% endif %}{% endfor %}{% endfor %}
+
+        {% for reason in ns.reasons %}- {{ reason }}
+
+        {% endfor %}{% endif %}
+
+        {% set first = h.rows[0] %}**Current-hour remainder:** grid import {{ energy(first.import_kwh) }}{% if p.components.get(''battery'')
+        %} · battery supply {{ energy(first.battery_discharge_kwh) }} · battery charging {{ energy(first.battery_charge_kwh)
+        }}{% endif %}.
+
+
+        {% if h.get(''next_actions'') %}### Next planned actions
+
+        {% for action in h.next_actions %}- {{ action.text }}
+
+        {% endfor %}{% endif %}
+
+        <details><summary><strong>Hourly plan details · {{ h.timezone }}</strong></summary>
+
+
+        Energy totals use interval averages, prorated at the displayed boundaries. Actions retain exact times; this
+        is not a promise of constant power. Battery charging and supply, and grid import and export, are not netted.
+        Save battery may accept solar; Supply home may deliver nothing when solar or reserve covers the need.
+
+
+        {% if p.components.get(''ev'') %}**EV basis:** {{ h.get(''ev_basis'') }}. Monitoring-only equipment follows
+        its own controls; future plug-ins are not predicted.
+
+
+        {% endif %}{% for row in h.rows %}<details><summary>{{ row.label }} · {{ row.minutes | round(1) }} min{{
+        '' · incomplete'' if not row.complete else '''' }}</summary>
+
+
+        **Supply:** grid {{ energy(row.import_kwh) }}{% if p.components.get(''solar'') %} · solar {{ energy(row.solar_kwh)
+        }}{% endif %}{% if p.components.get(''battery'') %} · battery {{ energy(row.battery_discharge_kwh) }}{%
+        endif %}.
+
+
+        **Use:** house {{ energy(row.house_kwh) }}{% if p.components.get(''ev'') %} · EV {{ energy(row.ev_kwh) }}{%
+        endif %}{% if p.components.get(''battery'') %} · battery charging {{ energy(row.battery_charge_kwh) }} (solar
+        {{ energy(row.solar_charge_kwh) }}, grid {{ energy(row.grid_charge_kwh) }}){% endif %}{% if p.components.get(''solar'')
+        %} · export {{ energy(row.export_kwh) }} · curtailment {{ energy(row.curtailed_kwh) }}{% endif %}.
+
+
+        {% if row.battery_soc is number %}**Modeled ending battery:** {{ row.battery_soc | round(1) }}%.
+
+
+        {% endif %}{% for period in row.periods %}- {{ period.label }}: {% if period.battery %}{{ {''hold'': ''Save
+        battery'', ''serve'': ''Supply home'', ''charge'': ''Charge from grid''}.get(period.battery, ''Unknown action'')
+        }} · {% endif %}{{ {''economic'': ''Within dependable economic coverage'', ''outlook'': ''Conservative later
+        outlook'', ''fallback'': ''Price-data fallback baseline''}.get(period.coverage) }}.
+
+        {% endfor %}{% for window in row.ev_windows %}- {{ window.label }}: EV charging at {{ window.amps | round(0)
+        }} A; selected charging run ends {{ window.stop_label }}.
+
+        {% endfor %}{% for reason in row.reasons %}- **Unavailable:** {{ reason }}
+
+        {% endfor %}
+
+        </details>
+
+
+        {% endfor %}</details>
+
+        {% endif %}'
+      grid_options:
+        columns: full
+        rows: auto
   - type: grid
     cards:
     - type: power-sankey
@@ -633,6 +1102,178 @@ views:
       content: '{{ state_attr(''sensor.nrg_advice'',''reason'') or ''Waiting for a current explanation.'' }}'
       grid_options:
         columns: full
+    - type: custom:apexcharts-card
+      graph_span: 24h
+      span:
+        start: minute
+      cache: false
+      update_interval: 1min
+      header:
+        show: true
+        title: Grid prices · suggested appliance window
+      now:
+        show: true
+        label: Now
+      series:
+      - entity: sensor.nrg_plan
+        name: Current / contracted rates
+        type: line
+        curve: stepline
+        color: '#f59e0b'
+        stroke_width: 3
+        stroke_dash: 0
+        unit: ¢/kWh
+        float_precision: 2
+        extend_to: false
+        show:
+          in_header: false
+          legend_value: false
+        data_generator: "const kind = 'live';\nconst p = entity?.attributes?.plan;\nif (!p || p.expires_at * 1000\
+          \ <= Date.now()) return [];\nconst rows = Array.isArray(p.slots) ? p.slots : [], h = p.household || {},\
+          \ points = [];\nfunction emit(time, value) {\n  if (points.length && points[points.length-1][0] === time)\
+          \ points[points.length-1][1] = value;\n  else points.push([time,value]);\n}\nfor (const s of rows) {\n\
+          \  const a = Math.max(start.getTime(), s.start * 1000), b = Math.min(end.getTime(), s.end * 1000);\n \
+          \ const rate = s.display_import_price === undefined ? s.import_price : s.display_import_price;\n  if (b\
+          \ <= a || !Number.isFinite(rate)) continue;\n  emit(a,null);\n  const matches = kind === 'live' ? ['flat','running_average','time_of_use','external_live'].includes(s.price_source)\n\
+          \    : kind === 'forecast' ? ['day_ahead','external_forecast'].includes(s.price_source)\n     : kind ===\
+          \ 'estimate' ? s.price_source === 'recorded_estimate' : Number.isFinite(h.best_start) && Number.isFinite(h.best_end);\n\
+          \  let left = a, right = b;\n  if (kind === 'suggested') { left = Math.max(a, h.best_start * 1000); right\
+          \ = Math.min(b, h.best_end * 1000); }\n  if (matches && right > left) { emit(left,rate*100); emit(right-1,rate*100);\
+          \ emit(right,null); }\n  emit(b,null);\n}\nreturn points;"
+      - entity: sensor.nrg_plan
+        name: Published outlook
+        type: line
+        curve: stepline
+        color: '#3b82f6'
+        stroke_width: 2
+        stroke_dash: 0
+        unit: ¢/kWh
+        float_precision: 2
+        extend_to: false
+        show:
+          in_header: false
+          legend_value: false
+        data_generator: "const kind = 'forecast';\nconst p = entity?.attributes?.plan;\nif (!p || p.expires_at *\
+          \ 1000 <= Date.now()) return [];\nconst rows = Array.isArray(p.slots) ? p.slots : [], h = p.household\
+          \ || {}, points = [];\nfunction emit(time, value) {\n  if (points.length && points[points.length-1][0]\
+          \ === time) points[points.length-1][1] = value;\n  else points.push([time,value]);\n}\nfor (const s of\
+          \ rows) {\n  const a = Math.max(start.getTime(), s.start * 1000), b = Math.min(end.getTime(), s.end *\
+          \ 1000);\n  const rate = s.display_import_price === undefined ? s.import_price : s.display_import_price;\n\
+          \  if (b <= a || !Number.isFinite(rate)) continue;\n  emit(a,null);\n  const matches = kind === 'live'\
+          \ ? ['flat','running_average','time_of_use','external_live'].includes(s.price_source)\n    : kind ===\
+          \ 'forecast' ? ['day_ahead','external_forecast'].includes(s.price_source)\n     : kind === 'estimate'\
+          \ ? s.price_source === 'recorded_estimate' : Number.isFinite(h.best_start) && Number.isFinite(h.best_end);\n\
+          \  let left = a, right = b;\n  if (kind === 'suggested') { left = Math.max(a, h.best_start * 1000); right\
+          \ = Math.min(b, h.best_end * 1000); }\n  if (matches && right > left) { emit(left,rate*100); emit(right-1,rate*100);\
+          \ emit(right,null); }\n  emit(b,null);\n}\nreturn points;"
+      - entity: sensor.nrg_plan
+        name: Tentative estimate
+        type: line
+        curve: stepline
+        color: '#94a3b8'
+        stroke_width: 2
+        stroke_dash: 6
+        unit: ¢/kWh
+        float_precision: 2
+        extend_to: false
+        show:
+          in_header: false
+          legend_value: false
+        data_generator: "const kind = 'estimate';\nconst p = entity?.attributes?.plan;\nif (!p || p.expires_at *\
+          \ 1000 <= Date.now()) return [];\nconst rows = Array.isArray(p.slots) ? p.slots : [], h = p.household\
+          \ || {}, points = [];\nfunction emit(time, value) {\n  if (points.length && points[points.length-1][0]\
+          \ === time) points[points.length-1][1] = value;\n  else points.push([time,value]);\n}\nfor (const s of\
+          \ rows) {\n  const a = Math.max(start.getTime(), s.start * 1000), b = Math.min(end.getTime(), s.end *\
+          \ 1000);\n  const rate = s.display_import_price === undefined ? s.import_price : s.display_import_price;\n\
+          \  if (b <= a || !Number.isFinite(rate)) continue;\n  emit(a,null);\n  const matches = kind === 'live'\
+          \ ? ['flat','running_average','time_of_use','external_live'].includes(s.price_source)\n    : kind ===\
+          \ 'forecast' ? ['day_ahead','external_forecast'].includes(s.price_source)\n     : kind === 'estimate'\
+          \ ? s.price_source === 'recorded_estimate' : Number.isFinite(h.best_start) && Number.isFinite(h.best_end);\n\
+          \  let left = a, right = b;\n  if (kind === 'suggested') { left = Math.max(a, h.best_start * 1000); right\
+          \ = Math.min(b, h.best_end * 1000); }\n  if (matches && right > left) { emit(left,rate*100); emit(right-1,rate*100);\
+          \ emit(right,null); }\n  emit(b,null);\n}\nreturn points;"
+      - entity: sensor.nrg_plan
+        name: Suggested appliance window
+        type: line
+        curve: stepline
+        color: '#22a06b'
+        stroke_width: 5
+        stroke_dash: 0
+        unit: ¢/kWh
+        float_precision: 2
+        extend_to: false
+        show:
+          in_header: false
+          legend_value: false
+        data_generator: "const kind = 'suggested';\nconst p = entity?.attributes?.plan;\nif (!p || p.expires_at\
+          \ * 1000 <= Date.now()) return [];\nconst rows = Array.isArray(p.slots) ? p.slots : [], h = p.household\
+          \ || {}, points = [];\nfunction emit(time, value) {\n  if (points.length && points[points.length-1][0]\
+          \ === time) points[points.length-1][1] = value;\n  else points.push([time,value]);\n}\nfor (const s of\
+          \ rows) {\n  const a = Math.max(start.getTime(), s.start * 1000), b = Math.min(end.getTime(), s.end *\
+          \ 1000);\n  const rate = s.display_import_price === undefined ? s.import_price : s.display_import_price;\n\
+          \  if (b <= a || !Number.isFinite(rate)) continue;\n  emit(a,null);\n  const matches = kind === 'live'\
+          \ ? ['flat','running_average','time_of_use','external_live'].includes(s.price_source)\n    : kind ===\
+          \ 'forecast' ? ['day_ahead','external_forecast'].includes(s.price_source)\n     : kind === 'estimate'\
+          \ ? s.price_source === 'recorded_estimate' : Number.isFinite(h.best_start) && Number.isFinite(h.best_end);\n\
+          \  let left = a, right = b;\n  if (kind === 'suggested') { left = Math.max(a, h.best_start * 1000); right\
+          \ = Math.min(b, h.best_end * 1000); }\n  if (matches && right > left) { emit(left,rate*100); emit(right-1,rate*100);\
+          \ emit(right,null); }\n  emit(b,null);\n}\nreturn points;"
+      yaxis:
+      - decimals: 1
+        apex_config:
+          title:
+            text: ¢/kWh
+      apex_config:
+        chart:
+          height: 290
+          animations:
+            enabled: false
+          events:
+            mounted: "EVAL:function(ctx) {\n      const svg=ctx.el.querySelector('.apexcharts-svg'); if(!svg ||\
+              \ svg.dataset.nrgTouch)return;\n      svg.dataset.nrgTouch='on'; let timer,multiple=false;\n     \
+              \ const show=p=>svg.isConnected && svg.dispatchEvent(new MouseEvent('mousemove',{bubbles:true,view:window,clientX:p.clientX,clientY:p.clientY}));\n\
+              \      const move=e=>{clearTimeout(timer);if(e.touches.length!==1){multiple=true;return;}if(!multiple)show(e.touches[0]);};\n\
+              \      svg.addEventListener('touchstart',move,{passive:true});svg.addEventListener('touchmove',move,{passive:true});\n\
+              \      svg.addEventListener('touchend',e=>{clearTimeout(timer);if(multiple){if(!e.touches.length)multiple=false;return;}\n\
+              \        if(e.touches.length || !e.changedTouches[0])return;const p={clientX:e.changedTouches[0].clientX,clientY:e.changedTouches[0].clientY};timer=setTimeout(()=>show(p),100);},{passive:true});\n\
+              \      svg.addEventListener('touchcancel',()=>{clearTimeout(timer);multiple=false;},{passive:true});\n\
+              \    }"
+            updated: "EVAL:function(ctx) {\n      const svg=ctx.el.querySelector('.apexcharts-svg'); if(!svg ||\
+              \ svg.dataset.nrgTouch)return;\n      svg.dataset.nrgTouch='on'; let timer,multiple=false;\n     \
+              \ const show=p=>svg.isConnected && svg.dispatchEvent(new MouseEvent('mousemove',{bubbles:true,view:window,clientX:p.clientX,clientY:p.clientY}));\n\
+              \      const move=e=>{clearTimeout(timer);if(e.touches.length!==1){multiple=true;return;}if(!multiple)show(e.touches[0]);};\n\
+              \      svg.addEventListener('touchstart',move,{passive:true});svg.addEventListener('touchmove',move,{passive:true});\n\
+              \      svg.addEventListener('touchend',e=>{clearTimeout(timer);if(multiple){if(!e.touches.length)multiple=false;return;}\n\
+              \        if(e.touches.length || !e.changedTouches[0])return;const p={clientX:e.changedTouches[0].clientX,clientY:e.changedTouches[0].clientY};timer=setTimeout(()=>show(p),100);},{passive:true});\n\
+              \      svg.addEventListener('touchcancel',()=>{clearTimeout(timer);multiple=false;},{passive:true});\n\
+              \    }"
+          toolbar:
+            show: true
+            tools:
+              download: false
+              selection: false
+              zoom: true
+              zoomin: true
+              zoomout: false
+              pan: false
+              reset: true
+        stroke:
+          lineCap: butt
+        legend:
+          showForNullSeries: false
+        tooltip:
+          shared: false
+          intersect: false
+          x:
+            formatter: EVAL:function(v){return new Intl.DateTimeFormat(undefined,{weekday:'short',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new
+              Date(v));}
+        xaxis:
+          labels:
+            datetimeUTC: false
+        noData:
+          text: Waiting for a fresh forecast
+      grid_options:
+        columns: full
     - type: markdown
       content: '{% set p = state_attr(''sensor.nrg_plan'',''plan'') or {} %}{% set a = p.get(''household'', {})
         %}
@@ -670,8 +1311,9 @@ views:
     - type: markdown
       content: '## What the recommendation means
 
-        The green graph segment is a suggested window for your reference appliance. The line is the grid buying
-        price, not a claim that solar or stored energy is free.
+        The green segment on this tab''s grid-price graph is a suggested window for your reference appliance. The
+        line is the grid buying price, not a claim that solar or stored energy is free. Home Energy shows the whole-home
+        plan separately.
 
 
         **Good time:** now is among the better opportunities. **Use as usual:** moving the load is not worth the
@@ -696,7 +1338,7 @@ views:
       show_icon: false
       tap_action:
         action: url
-        url_path: /nrg-planner/guide.html?v=bdaefd2798b0
+        url_path: /nrg-planner/guide.html?v=75fe6d8a783a
       grid_options:
         columns: full
   - type: grid

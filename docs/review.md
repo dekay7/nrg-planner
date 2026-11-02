@@ -411,6 +411,51 @@ validation, not independent physical-equipment verification. Final publication
 requires the exact-commit hosted checks above; the known upstream dependency
 findings remain visible and published tags stay fixed.
 
+## Hourly home energy plan — unreleased after 0.3.0
+
+The feature branch replaces the homeowner's price/appliance-window chart with
+24-hour household-flow and charging/grid-import graphs, and moves the existing
+price chart to Why?.
+Selected transition flow fields feed a bounded read-only hourly projection;
+command selection, price eligibility, advice, costs, Observation defaults,
+permissions, settings and learning are unchanged. Native expandable details share
+that projection and retain exact action/current periods, charging sources, ending
+SOC and explicit incomplete/fallback/conservative-outlook labels.
+
+Local verification: **652 tests pass**, including executable Node chart/timezone/
+resize code, HA-rendered native templates, independent AC-balance arithmetic,
+within-hour modes, fractional EV stops, SOC clipping, missing/monitoring data,
+DST and fractional-offset zones. Ruff F checks, dependency consistency,
+privacy/history, whitespace and UI/brand reproducibility checks pass. No new
+runtime or frontend dependency is introduced; the existing plan-sensor recorder
+exclusion still applies. An invented mixed-equipment example adds about 15 KB
+of hourly attributes and takes about 2 ms per projection locally.
+
+A standalone Chromium renderer loaded the actual ApexCharts Card 2.2.3 bundle
+with invented HA state. Desktop/390-pixel touch inspection, aligned shared amounts,
+zoom/reset, light/dark rendering, section resizing and Chicago HA versus Kathmandu
+browser clocks passed without console errors or page overflow. A follow-up reproduced
+an over-wide midnight tooltip from ApexCharts' default no-wrap styling. Scoped
+wrapping and a plot/card-width cap retain exact dates/offsets; 900-, 390- and
+280-pixel Chromium checks verify ordinary/midnight tooltip bounds and complete
+labels. Executable regressions cover resizing and exact midnight/DST labels.
+Width-only resize handling prevents a bundled parent-height redraw from clearing
+tooltips. A second readability follow-up separates household/solar/battery-supply/
+export lines from charging bars and total grid-import lines, with independent
+zero-based linear kWh scales and 10% headroom. No peaks are clipped, transformed,
+netted or subtracted, and grid-import totals are not stacked with charging.
+Executable tests retain exact energy, including solar-assisted EV charging.
+Chromium checks cover both panels' hover/touch, zoom/reset, resizing, tooltip
+bounds and an invented 50 kWh import peak that leaves the household scale unchanged.
+These checks are not a full installed-HA walkthrough, a deployment or
+physical-equipment verification. Hosted PR CI/Hassfest/HACS and installed-dashboard review remain
+separate PR gates; no release or version change is included.
+
+The dependency audit **still fails**, now with **40 advisories: 39 for Pillow
+12.3.0 and one for uv 0.12.23**, the same HA-managed packages discussed above.
+Reported fixes remain Pillow 13.0.0 and uv 0.13.4. No pins, overrides, advisory
+exclusions or audit workflows change; these findings are not resolved by the graph.
+
 ## Publication decision — 2026-10-20
 
 The owner confirmed that the live checks worked and explicitly authorized public

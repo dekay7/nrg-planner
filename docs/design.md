@@ -185,6 +185,37 @@ is allowed. The modeled serve mode supplies home demand; it must not be mapped t
 a forced export operation. Solar surplus exports when permitted/nonnegative,
 otherwise it is modeled as curtailed. Native response is checked separately.
 
+## Hourly plan presentation
+
+The Home Energy hourly graph is **unreleased development after 0.3.0**. The
+selected transition's AC-side solar/grid charging, battery discharge and curtailment
+are exposed as additive slot fields. `hourly.py` derives a bounded read-only
+24-hour projection for the plan sensor's `hourly` attribute, without changing the
+command plan, search, prices, advice, costs or writer eligibility. Two graphs and
+native hourly details consume the same projection. Household/solar/battery-supply/
+export lines have a separate linear kWh axis from EV/battery charging bars and
+total grid-import lines. All values remain positive gross energy, not stacked,
+netted, clipped or log-transformed; a per-panel maximum adds 10% display headroom.
+No charging is subtracted from grid imports or assigned an inferred source.
+No new persisted state or recorder history is introduced; the existing plan-sensor
+exclusion still applies.
+
+Local-hour and offset-change boundaries use UTC identities and the HA timezone.
+Interval energy is prorated by overlap, preserving gross flows and the AC balance:
+`grid + solar + battery discharge = house + EV + solar/grid battery charge + export
++ curtailment`. Stored-energy conversion losses are not subtracted again. SOC uses
+modeled endpoints, interpolated at clipped boundaries, while action periods retain
+exact changes and EV stop times. The interval-average model is not an instantaneous
+power trace. Repeated/skipped and half-hour DST transitions remain explicit.
+
+Physical and economic availability are distinct. Applicable missing inputs leave
+affected hours blank in both graphs; independent known demand/solar can remain
+in text. Missing earlier solar invalidates later stored-energy flows.
+Monitoring-only battery dispatch is not predicted. Economic coverage, conservative
+later hold and active fallback baselines are labeled separately; none authorizes a
+new mode. Expired plans clear on both sensor and chart checks. The existing grid
+price/appliance chart moves to Why?; the live Sankey stays separate.
+
 ## Household advice and execution
 
 Replay the selected modes with the reference appliance starting now or at each
